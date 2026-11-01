@@ -1,0 +1,127 @@
+/* Lilac & Sage — generated from tokens.json by scripts/build.mjs. Do not edit. */
+
+
+:root, [data-theme="light"] {
+  --lilac-50: #f7f4fd;
+  --lilac-100: #eee8fb;
+  --lilac-200: #ddd2f6;
+  --lilac-300: #c6b4ee;
+  --lilac-400: #a98ee2;
+  --lilac-500: #8b6ad3;
+  --lilac-600: #6f4fb8;
+  --lilac-700: #563d92;
+  --lilac-800: #3f2d6c;
+  --lilac-900: #2a1e48;
+  --sage-50: #f2faf5;
+  --sage-100: #e1f3e8;
+  --sage-200: #c5e8d3;
+  --sage-300: #9fd8b7;
+  --sage-400: #74c296;
+  --sage-500: #4fa676;
+  --sage-600: #3b875d;
+  --sage-700: #2d6a48;
+  --sage-800: #235339;
+  --sage-900: #173525;
+  --mist-0: #ffffff;
+  --mist-50: #fbfafd;
+  --mist-100: #f3f0f8;
+  --mist-200: #e4dfee;
+  --mist-300: #cfc9dc;
+  --mist-400: #a9a3bc;
+  --mist-500: #7f7894;
+  --mist-600: #5f5973;
+  --mist-700: #454057;
+  --mist-800: #2a2638;
+  --mist-900: #1e1b27;
+  --mist-950: #16141d;
+  --mist-1000: #121018;
+  --bg: var(--mist-50);
+  --surface: var(--mist-0);
+  --surface-sunken: var(--mist-100);
+  --line: var(--mist-200);
+  --line-strong: #8a83a0;
+  --ink: var(--mist-800);
+  --ink-muted: var(--mist-600);
+  --accent: var(--lilac-600);
+  --accent-hover: var(--lilac-700);
+  --on-accent: var(--mist-0);
+  --accent-soft: var(--lilac-100);
+  --on-accent-soft: var(--lilac-700);
+  --link: var(--lilac-600);
+  --sage: var(--sage-200);
+  --sage-hover: var(--sage-300);
+  --on-sage: var(--sage-800);
+  --focus-ring: var(--lilac-500);
+  --success-soft: var(--sage-100);
+  --success-ink: var(--sage-800);
+  --warning-soft: #fcefd9;
+  --warning-ink: #7a4e0e;
+  --danger-soft: #fbe3e7;
+  --danger-ink: #9e2f43;
+  --danger: #b3394f;
+  --on-danger: var(--mist-0);
+  --info-soft: #e1eefa;
+  --info-ink: #245b8a;
+  --shadow-sm: 0 1px 2px rgba(42,38,56,0.06);
+  --shadow-md: 0 8px 24px rgba(42,38,56,0.10);
+}
+
+[data-theme="dark"] {
+  --bg: var(--mist-950);
+  --surface: var(--mist-900);
+  --surface-sunken: var(--mist-1000);
+  --line: #34304a;
+  --line-strong: #6e6888;
+  --ink: #ece8f5;
+  --ink-muted: var(--mist-400);
+  --accent: var(--lilac-300);
+  --accent-hover: var(--lilac-200);
+  --on-accent: var(--lilac-900);
+  --accent-soft: #2e2645;
+  --on-accent-soft: var(--lilac-200);
+  --link: var(--lilac-300);
+  --sage: var(--sage-300);
+  --sage-hover: var(--sage-200);
+  --on-sage: var(--sage-900);
+  --focus-ring: var(--lilac-400);
+  --success-soft: #1c3326;
+  --success-ink: #93d3ae;
+  --warning-soft: #3a2c16;
+  --warning-ink: #f2c987;
+  --danger-soft: #3d1e25;
+  --danger-ink: #f4a9b6;
+  --danger: #e88a9b;
+  --on-danger: #2a1016;
+  --info-soft: #192c3d;
+  --info-ink: #a9cdee;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.display { font-family: var(--font-sans); font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em; }
+.h1 { font-family: var(--font-sans); font-size: 30px; line-height: 36px; font-weight: 700; letter-spacing: -0.01em; }
+.h2 { font-family: var(--font-sans); font-size: 22px; line-height: 28px; font-weight: 650; }
+.h3 { font-family: var(--font-sans); font-size: 17px; line-height: 24px; font-weight: 600; }
+.body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 400; }
+.body-sm { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 400; }
+.label { font-family: var(--font-sans); font-size: 13px; line-height: 16px; font-weight: 600; }
+.caption { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0.02em; }
+.code { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }
+

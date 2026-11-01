@@ -1,0 +1,20 @@
+{
+  "name": "@house/ui-tokens",
+  "version": "1.0.0",
+  "description": "Lilac & Sage design tokens and ls- component styles. Generated from plugins/house-standards; do not edit files here.",
+  "license": "UNLICENSED",
+  "files": ["tokens.css", "bundle.css", "tokens.json"],
+  "exports": {
+    "./tokens.css": "./tokens.css",
+    "./bundle.css": "./bundle.css",
+    "./tokens.json": "./tokens.json"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/YOUR_ORG/house-standards.git",
+    "directory": "packages/ui-tokens"
+  }
+}

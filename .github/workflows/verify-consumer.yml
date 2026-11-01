@@ -1,0 +1,31 @@
+# Reusable check that a consuming repo points at house-standards and hasn't forked it.
+name: verify-consumer
+on:
+  workflow_call:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plugin is registered and enabled
+        run: |
+          set -euo pipefail
+          test -f .claude/settings.json || { echo "::error::.claude/settings.json missing. Run house-standards/scripts/adopt.sh"; exit 1; }
+          jq -e '.extraKnownMarketplaces.house.source.repo | endswith("/house-standards")' .claude/settings.json >/dev/null \
+            || { echo "::error::house marketplace not registered in .claude/settings.json"; exit 1; }
+          jq -e '.enabledPlugins["house-standards@house"] == true' .claude/settings.json >/dev/null \
+            || { echo "::error::house-standards@house not enabled in .claude/settings.json"; exit 1; }
+      - name: Standards are not copied into the repo
+        run: |
+          set -euo pipefail
+          # Copied standards drift; the plugin is the only copy.
+          if grep -rIl --exclude-dir={node_modules,.git} -e "# House standards (always on)" -e "# House engineering standards" . ; then
+            echo "::error::House standards text found in this repo. Remove it; the plugin provides it."; exit 1
+          fi
+      - name: No raw colours in UI code
+        run: |
+          set -euo pipefail
+          # Theme support depends on every colour coming from a token.
+          hits=$(grep -rInE --include=*.{css,scss,ts,tsx,jsx} --exclude-dir={node_modules,.git,dist,build} \
+            '#[0-9a-fA-F]{3,8}\b|rgba?\(' src 2>/dev/null || true)
+          if [ -n "$hits" ]; then echo "$hits"; echo "::error::Use Lilac & Sage tokens instead of raw colours"; exit 1; fi

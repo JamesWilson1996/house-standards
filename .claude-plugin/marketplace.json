@@ -1,0 +1,14 @@
+{
+  "name": "house",
+  "owner": {
+    "name": "YOUR_ORG"
+  },
+  "description": "House engineering standards and the Lilac & Sage design system.",
+  "plugins": [
+    {
+      "name": "house-standards",
+      "source": "./plugins/house-standards",
+      "description": "House engineering standards and the Lilac & Sage design system, loaded into every Claude Code session."
+    }
+  ]
+}

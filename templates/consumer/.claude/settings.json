@@ -1,0 +1,11 @@
+{
+  "extraKnownMarketplaces": {
+    "house": {
+      "source": { "source": "github", "repo": "YOUR_ORG/house-standards" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "house-standards@house": true
+  }
+}

@@ -1,0 +1,8 @@
+name: house-standards
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  verify:
+    uses: YOUR_ORG/house-standards/.github/workflows/verify-consumer.yml@main

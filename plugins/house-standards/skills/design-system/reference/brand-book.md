@@ -1,0 +1,49 @@
+Lilac & Sage is the shared look for every app we build: calm pastel lilac and sage on a lilac-tinted neutral, one friendly sans, soft radii, borders over shadows. Every app uses these tokens and the `ls-` component classes; no app defines its own colours.
+
+## Using this system in an app
+
+- Load `tokens.css` (generated from `tokens.json`) then `components/bundle.css`, once, at the app root. Set `data-theme="light"` or `data-theme="dark"` on `<html>`; follow the OS with `matchMedia('(prefers-color-scheme: dark)')` unless the user has picked a theme. Set the attribute in an inline script in `<head>` before first paint so dark-mode users never see a light flash.
+- Components reference **semantic tokens only** (`bg`, `surface`, `ink`, `accent`, `sage`, `success-ink`…). The `lilac-*`, `sage-*` and `mist-*` scales are primitives: use them only to define new semantic tokens here, never in app code.
+- Publish both files as an internal package (e.g. `@house/ui-tokens`) so every app pins a version; changes land here first, then apps bump.
+- Tailwind (optional): map semantic tokens in `@theme`, e.g. `--color-accent: var(--accent); --color-ink: var(--ink);`, so `bg-accent text-on-accent` stays theme-aware. Never use Tailwind's default palette.
+
+## Colour
+
+- **Lilac is the primary brand colour.** `accent` fills the one primary action per view, selected tabs and focus; text on it is always `on-accent` (white in light, deep lilac in dark — never hard-code white).
+- **Sage is the secondary.** `sage` with `on-sage` for secondary buttons and positive highlights. Do not use sage for destructive or error states.
+- **Pastel fills carry most of the colour.** `accent-soft` for selected rows, nav highlight and soft buttons; status uses the four soft/ink pairs: `success-*` (sage), `warning-*` (peach), `danger-*` (rose), `info-*` (sky).
+- **Status is never colour alone.** Every badge or alert says its state in words and/or a Lucide icon; success and danger are also separated by icon shape.
+- Text: `ink` for primary, `ink-muted` for secondary. Both reach at least 5.5:1 on `bg`, `surface` and `surface-sunken` in both themes; every ink/fill pair in this system is AA (4.5:1) or better.
+- **Dark mode keeps the pastel character.** Solid fills (`accent`, `sage`, `danger`) turn into lighter pastels with deep text on them (`on-accent`, `on-sage`, `on-danger`); soft fills and surfaces turn into deep tinted greys. Never invert colours or pick dark-theme values by hand in an app; every semantic token already has both.
+- Borders: `line` for decorative hairlines, `line-strong` for anything a user operates (inputs, checkboxes) — 3:1 in both themes.
+
+## Type
+
+- One family: **Figtree** (Google Fonts, weights 400–700) for all UI; **JetBrains Mono** for IDs, codes and keys.
+- Scale: `display` 40 · `h1` 30 · `h2` 22 · `h3` 17 · `body` 15 · `body-sm` 13 · `label` 13/600 · `caption` 12 · `code` 13.
+- Sentence case everywhere, including buttons and headings. Use tabular numerals (`font-variant-numeric: tabular-nums`) for money and counts.
+
+## Space, shape, depth
+
+- 4px base: `space-1` 4 → `space-8` 64. Card padding `space-4`; gap between cards `space-5`; between page sections `space-7`.
+- Radius: `radius-sm` 6 (badges, checkboxes), `radius-md` 10 (buttons, inputs, tabs), `radius-lg` 16 (cards, alerts, dialogs), `radius-pill` (switches, avatars).
+- Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus, popovers and dialogs.
+- Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
+- Focus: a 2px solid `focus-ring` outline offset 2px on every interactive element (`:focus-visible`). Never remove it.
+- Motion: 120–150ms ease on colour and transform only; respect `prefers-reduced-motion`.
+
+## Voice
+
+- Plain, warm, brief. Address the user as "you"; the product speaks as "we" only in empty states and errors.
+- Buttons are verbs: "Save changes", "Invite member". Errors say what happened and what to do: "Sync failed. The billing service didn't respond. Try again in a minute."
+- No emoji in UI, no exclamation marks, no ALL CAPS.
+
+## Iconography
+
+- **Lucide** icons (outline, 2px stroke, round caps), drawn with `currentColor` so they take the text colour. 18px in nav, 20px in alerts, 16px inside buttons.
+- No logo is defined yet: each app sets its name in `h3` weight in `ink`. Add marks under `assets/Logos/` when they exist.
+
+## Data & state in the UI
+
+- The backend owns state and actions. The UI renders server state (TanStack Query) and sends commands; it never infers a status the API didn't send. Badges map 1:1 to the API's state enum.
+- Validation errors come from the API (problem+json) and appear in the matching field's help line with `data-invalid`.
