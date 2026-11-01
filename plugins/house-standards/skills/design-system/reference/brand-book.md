@@ -4,7 +4,7 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 
 - Load `tokens.css` (generated from `tokens.json`) then `components/bundle.css`, once, at the app root. Set `data-theme="light"` or `data-theme="dark"` on `<html>`; follow the OS with `matchMedia('(prefers-color-scheme: dark)')` unless the user has picked a theme. Set the attribute in an inline script in `<head>` before first paint so dark-mode users never see a light flash.
 - Components reference **semantic tokens only** (`bg`, `surface`, `ink`, `accent`, `sage`, `success-ink`…). The `lilac-*`, `sage-*` and `mist-*` scales are primitives: use them only to define new semantic tokens here, never in app code.
-- Publish both files as an internal package (e.g. `@house/ui-tokens`) so every app pins a version; changes land here first, then apps bump.
+- Publish both files as an internal package (e.g. `@YOUR_GITHUB_USER/ui-tokens`) so every app pins a version; changes land here first, then apps bump.
 - Tailwind (optional): map semantic tokens in `@theme`, e.g. `--color-accent: var(--accent); --color-ink: var(--ink);`, so `bg-accent text-on-accent` stays theme-aware. Never use Tailwind's default palette.
 
 ## Colour

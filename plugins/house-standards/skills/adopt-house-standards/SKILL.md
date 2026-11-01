@@ -1,6 +1,6 @@
 ---
 name: adopt-house-standards
-description: Wire a repository up to the house standards (plugin settings, CLAUDE.md, CI verify workflow, @house/ui-tokens). Use when creating a new repo, onboarding an existing repo, or when the house-standards verify check fails.
+description: Wire a repository up to the house standards (plugin settings, CLAUDE.md, CI verify workflow, @YOUR_GITHUB_USER/ui-tokens). Use when creating a new repo, onboarding an existing repo, or when the house-standards verify check fails.
 ---
 
 # Adopt house standards in a repo
@@ -13,7 +13,7 @@ The house-standards repo is the single source. A consuming repo never copies sta
 {
   "extraKnownMarketplaces": {
     "house": {
-      "source": { "source": "github", "repo": "YOUR_ORG/house-standards" },
+      "source": { "source": "github", "repo": "YOUR_GITHUB_USER/house-standards" },
       "autoUpdate": true
     }
   },
@@ -32,9 +32,9 @@ name: house-standards
 on: [pull_request]
 jobs:
   verify:
-    uses: YOUR_ORG/house-standards/.github/workflows/verify-consumer.yml@main
+    uses: YOUR_GITHUB_USER/house-standards/.github/workflows/verify-consumer.yml@main
 ```
 
-For frontends, also add `@house/ui-tokens` as a dependency and import `@house/ui-tokens/tokens.css` and `@house/ui-tokens/bundle.css` once at the app root.
+For frontends, also add `@YOUR_GITHUB_USER/ui-tokens` as a dependency and import `@YOUR_GITHUB_USER/ui-tokens/tokens.css` and `@YOUR_GITHUB_USER/ui-tokens/bundle.css` once at the app root.
 
 The `scripts/adopt.sh` script in the house-standards repo does all of this for a local checkout: `./scripts/adopt.sh /path/to/repo`.

@@ -15,11 +15,11 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - [ ] OpenTelemetry, health endpoints and structured logs wired
 - [ ] Playwright journeys and axe check passing in both light and dark themes
 
-## Open decisions (org-level, record outcomes here when made)
+## Open decisions (record outcomes here when made)
 
 - Backend language: TypeScript on Node (shared types with the frontend) or another runtime per team
 - Message broker: RabbitMQ, NATS JetStream, or Postgres-only queues (e.g. pgmq) for smaller apps
 - Database topology: database per service on separate clusters, or schemas on a shared cluster for small apps
 - TanStack Start (SSR) versus Router SPA as the default for internal tools
 - Identity provider
-- Package registry for `@house/ui-tokens` and generated API clients
+- Package registry for `@YOUR_GITHUB_USER/ui-tokens` and generated API clients

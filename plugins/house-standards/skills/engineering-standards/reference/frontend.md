@@ -12,7 +12,7 @@ TanStack fits the backend-owned model: Query treats the server as the source of 
 | Tables | TanStack Table, headless, `manualPagination` and `manualSorting` | The server sorts, filters and pages |
 | API client | Generated from each service's OpenAPI (e.g. orval or openapi-ts) into query and mutation hooks | No hand-written fetch calls |
 | Local UI state | React state, or a tiny store (e.g. TanStack Store) | Only for things the server never needs: open panels, draft text, theme choice |
-| Styling | `@house/ui-tokens` (`tokens.css` + `bundle.css`), optionally Tailwind mapped to the tokens | No raw hex values, no other component kits |
+| Styling | `@YOUR_GITHUB_USER/ui-tokens` (`tokens.css` + `bundle.css`), optionally Tailwind mapped to the tokens | No raw hex values, no other component kits |
 | Icons | Lucide | As set out in the design system |
 
 ## Rules for state
@@ -36,5 +36,5 @@ app-web/
     shared/
       ui/              # thin React wrappers around ls- classes (Button, Field, Badge)
       lib/             # query client, auth, problem+json mapper
-    styles/            # imports @house/ui-tokens
+    styles/            # imports @YOUR_GITHUB_USER/ui-tokens
 ```

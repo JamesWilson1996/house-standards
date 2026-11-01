@@ -3,7 +3,7 @@
   "displayName": "House Standards",
   "description": "Always-on core rules, full engineering standards (ports and adapters, DDD, TDD, PostgreSQL, TanStack) and the Lilac & Sage design system.",
   "author": {
-    "name": "YOUR_ORG"
+    "name": "YOUR_GITHUB_USER"
   },
   "keywords": [
     "standards",

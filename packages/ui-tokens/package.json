@@ -1,5 +1,5 @@
 {
-  "name": "@house/ui-tokens",
+  "name": "@YOUR_GITHUB_USER/ui-tokens",
   "version": "1.0.0",
   "description": "Lilac & Sage design tokens and ls- component styles. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/YOUR_ORG/house-standards.git",
+    "url": "https://github.com/YOUR_GITHUB_USER/house-standards.git",
     "directory": "packages/ui-tokens"
   }
 }

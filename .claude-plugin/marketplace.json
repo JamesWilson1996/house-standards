@@ -1,7 +1,7 @@
 {
   "name": "house",
   "owner": {
-    "name": "YOUR_ORG"
+    "name": "YOUR_GITHUB_USER"
   },
   "description": "House engineering standards and the Lilac & Sage design system.",
   "plugins": [

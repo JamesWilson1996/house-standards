@@ -11,14 +11,14 @@ house-standards (this repo, the only copy)
 │     ├── engineering-standards skill → loaded when designing services, DB, APIs, tests
 │     ├── design-system skill         → loaded when building UI
 │     └── adopt-house-standards skill → wires up new repos
-└── @house/ui-tokens npm package  ──►  apps import tokens.css + bundle.css
+└── @YOUR_GITHUB_USER/ui-tokens npm package  ──►  apps import tokens.css + bundle.css
 ```
 
 - **Always-on rules** (`plugins/house-standards/core-rules.md`, under 50 lines) are printed into context at session start, resume, clear and compact.
 - **Detail** lives in skills, which Claude loads when the task matches, so sessions stay lean.
 - **No pinned version.** `plugin.json` deliberately has no `version`, so each merge to `main` is the new version. Add one only if you want releases gated on a manual bump.
 - **Updates** flow automatically: merge to `main`, and every repo's Claude Code picks up the new plugin version in the background (`autoUpdate: true`). No PRs to consuming repos.
-- **Runtime styles** ship as `@house/ui-tokens`, generated from the same `tokens.json` the skill reads.
+- **Runtime styles** ship as `@YOUR_GITHUB_USER/ui-tokens`, generated from the same `tokens.json` the skill reads.
 
 ## Where to edit
 
@@ -36,17 +36,12 @@ Changes go through pull requests here. The claude.ai Engineering Standards doc a
 
 ## First-time setup
 
-1. Push this repo to GitHub as `<org>/house-standards`, then run `./scripts/set-org.sh <org>` and commit.
-2. Optional but recommended: in claude.ai, **Organization settings → Claude Code → Managed settings**, add the same `extraKnownMarketplaces` and `enabledPlugins` keys from `templates/consumer/.claude/settings.json`. That enables the plugin on every machine and cloud session in the org, including repos that haven't been adopted yet. Requires an owner role on a Team or Enterprise plan.
-3. Tag `ui-tokens-v1.0.0` to publish `@house/ui-tokens` to GitHub Packages.
+1. Create `house-standards` on your GitHub account and push this repo to it.
+2. Run `./scripts/set-owner.sh <your-github-username>`, commit and push.
+3. Run `./scripts/install-user.sh`. This adds the plugin to your personal `~/.claude/settings.json`, so **every repo you open on this machine gets the standards automatically**, adopted or not. Repeat on any other machine you code on.
+4. Tag `ui-tokens-v1.0.0` and push the tag to publish `@YOUR_GITHUB_USER/ui-tokens` to GitHub Packages.
 
-## Installing by hand
-
-Anyone can install it directly, without an adopted repo:
-
-```
-/plugin install house-standards --marketplace YOUR_ORG/house-standards
-```
+Step 3 covers your own machines. Adopting each repo (below) is still worth doing: it makes the standards follow the repo into Claude Code cloud sessions and other machines, and adds the CI check.
 
 ## Adding a repo
 
@@ -67,6 +62,13 @@ For new repos, make this the default by creating them from a GitHub template rep
 - contains a pasted copy of the standards text
 - uses raw hex or `rgb()` colours in `src/` instead of tokens
 
-## Access
+## Public or private?
 
-The marketplace is a private Git repo, so each developer needs read access, and Claude Code clones it with their existing Git credentials. In CI or containers without access, use `CLAUDE_CODE_PLUGIN_SEED_DIR` as described in the Claude Code plugin docs.
+Nothing in here is secret, so a **public** repo is the least friction: the plugin clones anywhere, cloud sessions can read it, and other repos can call the reusable CI workflow with no extra setup.
+
+If you keep it **private**:
+- Locally, Claude Code clones the plugin with your existing Git credentials, so nothing changes.
+- In the house-standards repo, set **Settings → Actions → General → Access** to allow repositories owned by you, or consuming repos can't call `verify-consumer.yml`.
+- Claude Code cloud sessions need GitHub access to this repo to install the plugin.
+
+Either way, installing from GitHub Packages needs a token: add `@YOUR_GITHUB_USER:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=<token with read:packages>` to `~/.npmrc` (and as a CI secret in app repos).
