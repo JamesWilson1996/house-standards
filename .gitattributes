@@ -1,0 +1,3 @@
+* text=auto
+# Bash scripts break with Windows line endings, even when run from Git Bash.
+*.sh text eol=lf

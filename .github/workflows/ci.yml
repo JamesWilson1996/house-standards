@@ -19,3 +19,34 @@ jobs:
         run: for f in $(git ls-files '*.json'); do jq empty "$f"; done
       - name: Plugin validates
         run: npx -y @anthropic-ai/claude-code plugin validate ./plugins/house-standards
+
+  windows-scripts:
+    runs-on: windows-latest
+    defaults:
+      run:
+        # Windows PowerShell 5.1, the version every Windows machine has.
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+      - name: install-user.ps1 merges into existing settings
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:CLAUDE_CONFIG_DIR = Join-Path $env:RUNNER_TEMP 'claude-config'
+          New-Item -ItemType Directory $env:CLAUDE_CONFIG_DIR | Out-Null
+          '{"permissions":{"allow":["Bash(ls)"]}}' | Set-Content (Join-Path $env:CLAUDE_CONFIG_DIR 'settings.json')
+          .\scripts\install-user.ps1
+          .\scripts\install-user.ps1
+          $s = Get-Content (Join-Path $env:CLAUDE_CONFIG_DIR 'settings.json') -Raw | ConvertFrom-Json
+          if (-not $s.enabledPlugins.'house-standards@house') { throw 'plugin not enabled' }
+          if ($s.permissions.allow[0] -ne 'Bash(ls)') { throw 'existing settings lost' }
+      - name: adopt.ps1 wires up a repo
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = Join-Path $env:RUNNER_TEMP 'sample-repo'
+          New-Item -ItemType Directory $repo | Out-Null
+          .\scripts\adopt.ps1 $repo
+          foreach ($f in '.claude\settings.json', '.github\workflows\house-standards.yml', 'CLAUDE.md') {
+            if (-not (Test-Path (Join-Path $repo $f))) { throw "missing $f" }
+          }
+          $bytes = [System.IO.File]::ReadAllBytes((Join-Path $repo '.claude\settings.json'))
+          if ($bytes[0] -eq 0xEF) { throw 'settings.json written with a BOM' }

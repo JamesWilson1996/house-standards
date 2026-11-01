@@ -36,12 +36,25 @@ Changes go through pull requests here. The claude.ai Engineering Standards doc a
 
 ## First-time setup
 
-1. Create `house-standards` on your GitHub account and push this repo to it.
-2. Run `./scripts/set-owner.sh <your-github-username>`, commit and push.
-3. Run `./scripts/install-user.sh`. This adds the plugin to your personal `~/.claude/settings.json`, so **every repo you open on this machine gets the standards automatically**, adopted or not. Repeat on any other machine you code on.
-4. Tag `ui-tokens-v1.0.0` and push the tag to publish `@jameswilson1996/ui-tokens` to GitHub Packages.
+Already done for this repo: it's pushed and the owner is set. On each machine you code on:
 
-Step 3 covers your own machines. Adopting each repo (below) is still worth doing: it makes the standards follow the repo into Claude Code cloud sessions and other machines, and adds the CI check.
+```bash
+# Linux / macOS (needs jq)
+git clone https://github.com/jameswilson1996/house-standards.git
+./house-standards/scripts/install-user.sh
+```
+
+```powershell
+# Windows (PowerShell 5.1 or 7, nothing else to install)
+git clone https://github.com/jameswilson1996/house-standards.git
+powershell -ExecutionPolicy Bypass -File .\house-standards\scripts\install-user.ps1
+```
+
+This adds the plugin to your personal Claude Code settings (`~/.claude/settings.json`, or `%USERPROFILE%\.claude\settings.json` on Windows), so **every repo you open on that machine gets the standards automatically**. It merges with what's there and keeps a `.before-house` backup. `-ExecutionPolicy Bypass` applies to that one command only; it doesn't change your system's policy.
+
+To publish the tokens package, tag `ui-tokens-v1.0.0` and push the tag.
+
+Adopting each repo (below) is still worth doing: the standards then follow the repo into Claude Code cloud sessions, and it gets the CI check.
 
 ## Adding a repo
 
@@ -49,6 +62,10 @@ New or existing repo:
 
 ```bash
 ./scripts/adopt.sh /path/to/repo
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\adopt.ps1 C:\path\to\repo
 ```
 
 This merges the plugin into `.claude/settings.json`, adds a `house-standards` CI check, and creates a repo-specific `CLAUDE.md` stub. Or ask Claude Code in that repo to "adopt house standards"; the skill does the same.

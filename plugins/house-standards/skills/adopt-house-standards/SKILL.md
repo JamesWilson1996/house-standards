@@ -37,4 +37,4 @@ jobs:
 
 For frontends, also add `@jameswilson1996/ui-tokens` as a dependency and import `@jameswilson1996/ui-tokens/tokens.css` and `@jameswilson1996/ui-tokens/bundle.css` once at the app root.
 
-The `scripts/adopt.sh` script in the house-standards repo does all of this for a local checkout: `./scripts/adopt.sh /path/to/repo`.
+The house-standards repo has scripts that do all of this for a local checkout: `./scripts/adopt.sh /path/to/repo` on Linux/macOS, or `powershell -ExecutionPolicy Bypass -File .\scripts\adopt.ps1 C:\path\to\repo` on Windows. If neither is to hand, make the three changes directly with your file tools.
