@@ -1,7 +1,7 @@
 {
   "extraKnownMarketplaces": {
     "house": {
-      "source": { "source": "github", "repo": "YOUR_GITHUB_USER/house-standards" },
+      "source": { "source": "github", "repo": "jameswilson1996/house-standards" },
       "autoUpdate": true
     }
   },

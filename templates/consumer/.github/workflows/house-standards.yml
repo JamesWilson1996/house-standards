@@ -5,4 +5,4 @@ on:
     branches: [main]
 jobs:
   verify:
-    uses: YOUR_GITHUB_USER/house-standards/.github/workflows/verify-consumer.yml@main
+    uses: jameswilson1996/house-standards/.github/workflows/verify-consumer.yml@main

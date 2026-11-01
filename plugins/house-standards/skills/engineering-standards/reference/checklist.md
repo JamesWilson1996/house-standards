@@ -22,4 +22,4 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - Database topology: database per service on separate clusters, or schemas on a shared cluster for small apps
 - TanStack Start (SSR) versus Router SPA as the default for internal tools
 - Identity provider
-- Package registry for `@YOUR_GITHUB_USER/ui-tokens` and generated API clients
+- Package registry for `@jameswilson1996/ui-tokens` and generated API clients

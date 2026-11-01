@@ -5,7 +5,7 @@ description: Lilac & Sage, the house design system (pastel lilac and sage, light
 
 # Lilac & Sage design system
 
-Apps consume this system through the `@YOUR_GITHUB_USER/ui-tokens` package (`tokens.css` + `bundle.css`). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
+Apps consume this system through the `@jameswilson1996/ui-tokens` package (`tokens.css` + `bundle.css`). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
 
 Before building UI:
 

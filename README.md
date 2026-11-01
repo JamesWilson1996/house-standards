@@ -11,14 +11,14 @@ house-standards (this repo, the only copy)
 │     ├── engineering-standards skill → loaded when designing services, DB, APIs, tests
 │     ├── design-system skill         → loaded when building UI
 │     └── adopt-house-standards skill → wires up new repos
-└── @YOUR_GITHUB_USER/ui-tokens npm package  ──►  apps import tokens.css + bundle.css
+└── @jameswilson1996/ui-tokens npm package  ──►  apps import tokens.css + bundle.css
 ```
 
 - **Always-on rules** (`plugins/house-standards/core-rules.md`, under 50 lines) are printed into context at session start, resume, clear and compact.
 - **Detail** lives in skills, which Claude loads when the task matches, so sessions stay lean.
 - **No pinned version.** `plugin.json` deliberately has no `version`, so each merge to `main` is the new version. Add one only if you want releases gated on a manual bump.
 - **Updates** flow automatically: merge to `main`, and every repo's Claude Code picks up the new plugin version in the background (`autoUpdate: true`). No PRs to consuming repos.
-- **Runtime styles** ship as `@YOUR_GITHUB_USER/ui-tokens`, generated from the same `tokens.json` the skill reads.
+- **Runtime styles** ship as `@jameswilson1996/ui-tokens`, generated from the same `tokens.json` the skill reads.
 
 ## Where to edit
 
@@ -39,7 +39,7 @@ Changes go through pull requests here. The claude.ai Engineering Standards doc a
 1. Create `house-standards` on your GitHub account and push this repo to it.
 2. Run `./scripts/set-owner.sh <your-github-username>`, commit and push.
 3. Run `./scripts/install-user.sh`. This adds the plugin to your personal `~/.claude/settings.json`, so **every repo you open on this machine gets the standards automatically**, adopted or not. Repeat on any other machine you code on.
-4. Tag `ui-tokens-v1.0.0` and push the tag to publish `@YOUR_GITHUB_USER/ui-tokens` to GitHub Packages.
+4. Tag `ui-tokens-v1.0.0` and push the tag to publish `@jameswilson1996/ui-tokens` to GitHub Packages.
 
 Step 3 covers your own machines. Adopting each repo (below) is still worth doing: it makes the standards follow the repo into Claude Code cloud sessions and other machines, and adds the CI check.
 
@@ -71,4 +71,4 @@ If you keep it **private**:
 - In the house-standards repo, set **Settings → Actions → General → Access** to allow repositories owned by you, or consuming repos can't call `verify-consumer.yml`.
 - Claude Code cloud sessions need GitHub access to this repo to install the plugin.
 
-Either way, installing from GitHub Packages needs a token: add `@YOUR_GITHUB_USER:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=<token with read:packages>` to `~/.npmrc` (and as a CI secret in app repos).
+Either way, installing from GitHub Packages needs a token: add `@jameswilson1996:registry=https://npm.pkg.github.com` and `//npm.pkg.github.com/:_authToken=<token with read:packages>` to `~/.npmrc` (and as a CI secret in app repos).
