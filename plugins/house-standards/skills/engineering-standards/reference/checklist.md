@@ -9,7 +9,8 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - [ ] Commands are intent endpoints with idempotency keys and version checks; responses include `allowedActions`
 - [ ] Errors are problem+json with field-level `errors[]`
 - [ ] Bounded context, glossary and aggregates documented; tests written first for domain and use cases
-- [ ] No magic strings or numbers; comments explain why and are one or two lines
+- [ ] No magic strings or numbers; comments give the reason in one or two lines
+- [ ] Comments, docs, commit messages and UI copy follow `writing.md` (plain facts, no "X, not Y" framing or filler)
 - [ ] Existing shared modules reused; duplicated logic extracted, with any efficiency refactor in its own commit
 - [ ] Frontend uses Query for all server data, URL search params for view state, and Lilac & Sage tokens only
 - [ ] OpenTelemetry, health endpoints and structured logs wired

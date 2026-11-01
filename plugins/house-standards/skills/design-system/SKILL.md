@@ -19,4 +19,4 @@ Hard rules:
 - Every screen must work in both `data-theme="light"` and `data-theme="dark"`; text on a fill always uses its `on-*` token.
 - Status is never colour alone: pair it with a word or a Lucide icon.
 - Keep the 2px `focus-ring` outline on every interactive element.
-- A genuinely new component belongs in this system first (PR to house-standards), not in one app.
+- A genuinely new component is added to this system first (PR to house-standards), then used from apps.

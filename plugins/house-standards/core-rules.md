@@ -19,9 +19,10 @@ These rules apply to every repo we build. Full detail lives in the `house-standa
 
 ## Practice
 - DDD: services follow bounded contexts; use the business's words; small aggregates guard invariants; value objects over primitives.
-- TDD for domain and use cases: failing test first, test behaviour not implementation, in-memory fakes over mocks. Every bug fix starts with a failing test.
+- TDD for domain and use cases: failing test first; tests assert behaviour through use cases and domain methods; ports use in-memory fakes. Every bug fix starts with a failing test.
 - Pragmatic: no speculative abstractions, boring technology, small reviewable changes.
 - Reuse first: search for an existing helper, component or shared package before writing one. Extract duplicated logic on its second use. Improve efficiency while extracting, with behaviour pinned by tests, in its own commit.
 - No magic strings or numbers: statuses, event types, error codes, routes, query keys and limits are named constants or generated enums.
-- Comments explain why, never how, in one or two lines. No commented-out code; no TODO without a ticket.
+- Comments give the reason code is this way, in one or two lines. No commented-out code; no TODO without a ticket.
+- Writing (comments, docs, commits, PRs, UI copy): state facts plainly and lead with the point. Avoid "X, not Y" framing, throat-clearing, inflated words (robust, seamless, leverage), rhythmic groups of three, recaps and emoji. Use numbers and names over adjectives.
 - Deviations from these rules need a short ADR in `docs/adr/`.

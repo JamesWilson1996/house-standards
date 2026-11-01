@@ -24,7 +24,7 @@ Example markup:
 
 A labelled text input with optional help or error text. Wrap in `div.ls-field`; children are `label.ls-label`, an `input.ls-input` / `select.ls-select` / `textarea.ls-textarea`, and an optional `p.ls-help`.
 
-- Consumer provides: the label (always visible — placeholders are hints, not labels), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
+- Consumer provides: the label (always visible, including when the field has a placeholder), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
 - Errors: set `data-invalid` on the field and `aria-invalid="true"` on the input; the help line turns `danger-ink`. Error text comes from the backend's validation response (problem+json `errors[]`), mapped by field name — don't duplicate business rules in the client.
 - Inputs are 36px tall to align with buttons.
 
