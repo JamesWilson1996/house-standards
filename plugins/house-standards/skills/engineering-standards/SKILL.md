@@ -14,7 +14,7 @@ The always-on core rules are already in context. This skill holds the detail. Re
 | Table, migration, index, repository, tenancy | `reference/postgres.md` |
 | Route, query/mutation hook, form, table, styling | `reference/frontend.md` (and the `design-system` skill for UI) |
 | DDD modelling, tests, refactoring, reuse, naming, comments | `reference/practice.md` |
-| Auth, logging/tracing, health, config, CI, delivery | `reference/cross-cutting.md` |
+| Auth, time and time zones, logging/tracing, health, config, CI, delivery | `reference/cross-cutting.md` |
 | Comments, README, ADR, commit message, PR description, docs, error text | `reference/writing.md` |
 | Before opening a PR or reviewing one | `reference/checklist.md` |
 

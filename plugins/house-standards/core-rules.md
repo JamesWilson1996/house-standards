@@ -8,6 +8,7 @@ These rules apply to every repo we build. Full detail lives in the `house-standa
 - Commands are intent endpoints (`POST /orders/{id}/cancel`), never field patches. Every command takes an `Idempotency-Key`; updates send `If-Match` with the aggregate version.
 - State change and its event commit together via an `outbox` table. Consumers are idempotent via an `inbox` table. Errors are RFC 9457 problem+json with field-level `errors[]`.
 - One service, one database. Never read or write another service's tables.
+- Time: never store local time. Instants are stored and sent in UTC and converted to the user's time zone only for display. Calendar days are plain dates with no time or zone. A repeating time of day is stored as local time plus an IANA zone, and each occurrence is computed in UTC. Code reads time through a `Clock` port.
 
 ## PostgreSQL
 - `snake_case`, plural tables, UUIDv7 `id`, `created_at`/`updated_at timestamptz`, `version integer`. Money as `bigint` minor units + `currency`. Text + `CHECK` instead of native enums. `tenant_id` + row-level security on tenant data.
