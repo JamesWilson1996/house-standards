@@ -29,8 +29,8 @@ Dependencies point inward only: adapters depend on application, application depe
 - **One use case per file**, named as a verb: `PlaceOrder`, `CancelOrder`, `GetOrderSummary`. A use case loads aggregates through a repository port, calls domain methods, saves, and records events, in one transaction.
 - **Aggregates guard invariants.** State changes happen through methods (`order.cancel(reason)`), never by setting fields from outside. Methods return or record domain events.
 - **Wiring happens once**, in a composition root (`src/main.ts` or equivalent). No service locators, no adapter imports inside the core.
-- **The boundary is enforced in CI** with a dependency linter (dependency-cruiser for TypeScript, ArchUnit for JVM); a forbidden import fails the build.
-- **Tests follow the layers:** domain and use cases are unit-tested with in-memory fakes of the ports; adapters get integration tests against a real Postgres (Testcontainers).
+- **The boundary is enforced in CI** with a dependency linter (dependency-cruiser for TypeScript, ArchUnit for JVM, import-linter for Python); a forbidden import fails the build.
+- **Tests follow the layers:** domain and use cases are unit-tested with in-memory fakes of the ports; adapters get integration tests against a real Postgres (Testcontainers). Each port's contract suite runs against both, so the fakes stay faithful (see `practice.md`).
 
 ## Standard service layout
 
@@ -39,7 +39,7 @@ service-orders/
   src/
     domain/          # order.ts, order-status.ts, events.ts
     application/
-      ports/         # order-repository.ts, event-publisher.ts, clock.ts
+      ports/         # order-repository.ts (+ .contract.ts), event-publisher.ts, clock.ts, request-context.ts
       commands/      # place-order.ts, cancel-order.ts
       queries/       # get-order-summary.ts
     adapters/
@@ -47,6 +47,9 @@ service-orders/
       postgres/      # repositories, read-model queries
       messaging/     # outbox relay, consumers
     main.ts          # composition root
+  test/
+    fakes/           # in-memory port implementations
+    builders/        # anOrder(), aPaymentCapturedEvent()
   migrations/
   openapi.yaml
   events/            # event schemas (JSON Schema)
