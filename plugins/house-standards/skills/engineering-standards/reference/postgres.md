@@ -8,7 +8,7 @@ Each service gets its own database (or its own schema and role on a shared clust
 | Names | `snake_case`, plural tables (`orders`), singular columns, foreign keys `<entity>_id`, indexes `ix_<table>_<cols>`, uniques `uq_<table>_<cols>` |
 | Primary keys | `id uuid` generated as UUIDv7 (time-ordered) by the application, so ids exist before insert and sort by creation |
 | Required columns | `id`, `created_at timestamptz not null default now()`, `updated_at timestamptz not null`, `version integer not null default 1` |
-| Time | Always `timestamptz`, stored UTC; never `timestamp` without zone |
+| Time | Instants are `timestamptz`, stored UTC; never `timestamp` without zone. Calendar days (due dates, birthdays) are `date`, never midnight UTC. A repeating time of day is `time` plus a `text` IANA zone column |
 | Money | `bigint` minor units plus a `currency char(3)` column; never `float` or `money` |
 | Enums | `text` with a `CHECK` constraint (or a lookup table), not native `enum` types |
 | Flexible data | `jsonb` only for genuinely schemaless payloads; anything queried or constrained gets real columns |
