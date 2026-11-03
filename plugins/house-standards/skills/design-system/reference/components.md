@@ -8,7 +8,8 @@ Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once pe
 
 - Consumer provides: a `<button>` (or `<a>` for navigation) with class `ls-btn` plus one variant, and a verb-first label in sentence case ("Save changes", not "SAVE" or "Submit").
 - Sizes: default 36px, `ls-btn--sm` 28px for dense tables.
-- Disabled: native `disabled`; for pending server actions keep the button enabled-looking and show a spinner — the action is owned by the backend and may still succeed.
+- Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
+- Pending server actions: keep the button enabled-looking and show a spinner — the action is owned by the backend and may still succeed.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
 
 Example markup:
@@ -16,7 +17,8 @@ Example markup:
 ```html
 <div class="ls-stack">
 <div class="ls-row"><button class="ls-btn ls-btn--primary">Save changes</button><button class="ls-btn ls-btn--secondary">Duplicate</button><button class="ls-btn">Cancel</button><button class="ls-btn ls-btn--soft">Preview</button><button class="ls-btn ls-btn--ghost">More</button><button class="ls-btn ls-btn--danger">Delete project</button></div>
-<div class="ls-row"><button class="ls-btn ls-btn--primary ls-btn--sm">Small primary</button><button class="ls-btn ls-btn--sm">Small</button><button class="ls-btn ls-btn--primary" disabled>Disabled</button></div>
+<div class="ls-row"><button class="ls-btn ls-btn--primary ls-btn--sm">Small primary</button><button class="ls-btn ls-btn--sm">Small</button></div>
+<div class="ls-row"><button class="ls-btn ls-btn--primary" disabled>Save changes</button><button class="ls-btn ls-btn--secondary" disabled>Duplicate</button><button class="ls-btn" disabled>Cancel</button><button class="ls-btn ls-btn--soft" disabled>Preview</button><button class="ls-btn ls-btn--ghost" disabled>More</button><button class="ls-btn ls-btn--danger" disabled>Delete project</button></div>
 </div>
 ```
 
@@ -27,14 +29,78 @@ A labelled text input with optional help or error text. Wrap in `div.ls-field`; 
 - Consumer provides: the label (always visible, including when the field has a placeholder), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
 - Errors: set `data-invalid` on the field and `aria-invalid="true"` on the input; the help line turns `danger-ink`. Error text comes from the backend's validation response (problem+json `errors[]`), mapped by field name — don't duplicate business rules in the client.
 - Inputs are 36px tall to align with buttons.
+- Fields side by side go in `div.ls-row.ls-row--top` so every field starts on the same line. A plain `ls-row` centres its items, which moves a field without help text down.
+- A button that acts on one field (Test, Copy, Generate) goes inside that field, in `div.ls-field__row` with the input. The button lines up with the input and the help text sits below the row. A button in an `ls-row` beside the field centres on the label, input and help together.
+- A button with help text and no input (Export data) goes in an `ls-field` with the help after it. It keeps its own width.
 
 Example markup:
 
 ```html
-<div class="ls-row" style="align-items:flex-start;gap:24px">
+<div class="ls-row ls-row--top ls-row--loose">
 <div class="ls-field"><label class="ls-label" for="n">Project name</label><input class="ls-input" id="n" placeholder="e.g. Field notes" aria-describedby="nh"><p class="ls-help" id="nh">Shown to everyone in the workspace.</p></div>
 <div class="ls-field" data-invalid><label class="ls-label" for="e">Email</label><input class="ls-input" id="e" value="sam@" aria-invalid="true" aria-describedby="eh"><p class="ls-help" id="eh">Enter a complete email address.</p></div>
-<div class="ls-field"><label class="ls-label" for="r">Region</label><select class="ls-select" id="r"><option>Europe (London)</option><option>US East</option></select><p class="ls-help">Disabled example below.</p><input class="ls-input" disabled value="Read-only"></div>
+<div class="ls-field"><label class="ls-label" for="r">Region</label><select class="ls-select" id="r"><option>Europe (London)</option><option>US East</option></select></div>
+<div class="ls-field"><label class="ls-label" for="w">Workspace ID</label><input class="ls-input" id="w" disabled value="ws_0192" aria-describedby="wh"><p class="ls-help" id="wh">Set when the workspace was created.</p></div>
+</div>
+```
+
+Field with an action:
+
+```html
+<form class="ls-form">
+<div class="ls-field"><label class="ls-label" for="cal">Calendar feed URL</label><div class="ls-field__row"><input class="ls-input" id="cal" value="https://example.com/feed.ics" aria-describedby="calh"><button class="ls-btn" type="button">Test feed</button></div><p class="ls-help" id="calh">We check the feed every 15 minutes.</p></div>
+<div class="ls-field"><span class="ls-label">Export</span><button class="ls-btn" type="button" aria-describedby="exph">Download CSV</button><p class="ls-help" id="exph">Includes every transaction from the last 12 months.</p></div>
+</form>
+```
+
+## File picker
+
+A native `input[type=file].ls-file`. The browser's picker button takes the default button style from tokens, and the chosen file name shows beside it in `ink-muted`. Wrap it in an `ls-field` like any other input.
+
+- Consumer provides: the label, `accept` for the allowed types, and help text that states the types and size limit ("CSV or OFX, up to 5 MB").
+- Upload with a backend command once the user confirms. The API's problem+json error goes in the field's help line with `data-invalid`.
+- Keep the native input. Hiding it behind a custom button drops the file name, keyboard access and drag and drop.
+
+Example markup:
+
+```html
+<form class="ls-form">
+<div class="ls-field"><label class="ls-label" for="stmt">Bank statement</label><input class="ls-file" type="file" id="stmt" accept=".csv,.ofx" aria-describedby="stmth"><p class="ls-help" id="stmth">CSV or OFX, up to 5 MB.</p></div>
+<div class="ls-field"><label class="ls-label" for="logo">Logo</label><div class="ls-field__row"><input class="ls-file" type="file" id="logo" accept="image/png,image/svg+xml" aria-describedby="logoh"><button class="ls-btn ls-btn--primary" type="button" disabled>Upload</button></div><p class="ls-help" id="logoh">Choose a PNG or SVG to upload.</p></div>
+</form>
+```
+
+## Form
+
+`form.ls-form` spaces a form's fields, sub-sections and actions with the form spacing tokens. Use it for every form. App code never sets gaps or margins between fields.
+
+| Gap | Token | Value |
+| --- | --- | --- |
+| Label to control, control to help | `form-help-gap` | 6px |
+| Field to field | `form-field-gap` | 16px |
+| Last field to actions | `form-actions-gap` | 24px |
+| Sub-section to sub-section | `form-section-gap` | 32px |
+
+- Children: `ls-field`s, or `section.ls-form__section`s that each start with `h3.ls-form__title`, then `div.ls-form__actions` last.
+- A card holds one form. Split a long form into sub-sections inside the card; don't nest cards.
+- The primary button comes first in `ls-form__actions`. Disable it only while the form can't be submitted, and say why in help text.
+
+Example markup (a settings card with sub-sections, an inline action, a file picker and a disabled primary):
+
+```html
+<div class="ls-card">
+<form class="ls-form">
+<section class="ls-form__section"><h3 class="ls-form__title">Household</h3>
+<div class="ls-field"><label class="ls-label" for="hh">Household name</label><input class="ls-input" id="hh" value="Wilson house"></div>
+<div class="ls-field"><label class="ls-label" for="inv">Invite link</label><div class="ls-field__row"><input class="ls-input" id="inv" value="https://example.com/join/8f2k" readonly aria-describedby="invh"><button class="ls-btn" type="button">Copy link</button></div><p class="ls-help" id="invh">Anyone with the link can join for 7 days.</p></div>
+</section>
+<section class="ls-form__section"><h3 class="ls-form__title">Import</h3>
+<div class="ls-field"><label class="ls-label" for="imp">Statement file</label><input class="ls-file" type="file" id="imp" accept=".csv" aria-describedby="imph"><p class="ls-help" id="imph">CSV, up to 5 MB.</p></div>
+<label class="ls-check"><input type="checkbox"> Skip rows already imported</label>
+</section>
+<div class="ls-form__actions"><button class="ls-btn ls-btn--primary" type="submit" disabled aria-describedby="saveh">Save changes</button><button class="ls-btn" type="button">Cancel</button></div>
+<p class="ls-help" id="saveh">Change a setting to save.</p>
+</form>
 </div>
 ```
 
@@ -48,7 +114,7 @@ Example markup:
 Example markup:
 
 ```html
-<div class="ls-row" style="gap:24px"><label class="ls-check"><input type="checkbox" checked> Email me a weekly summary</label><label class="ls-check"><input type="checkbox"> Include archived</label><label class="ls-switch"><input type="checkbox" role="switch" checked> Notifications</label><label class="ls-switch"><input type="checkbox" role="switch"> Beta features</label></div>
+<div class="ls-row ls-row--loose"><label class="ls-check"><input type="checkbox" checked> Email me a weekly summary</label><label class="ls-check"><input type="checkbox"> Include archived</label><label class="ls-switch"><input type="checkbox" role="switch" checked> Notifications</label><label class="ls-switch"><input type="checkbox" role="switch"> Beta features</label></div>
 ```
 
 ## Badge
@@ -88,13 +154,14 @@ A bounded group of related content. `div.ls-card` (border only) or add `ls-card-
 
 - Consumer provides: content and, if actionable, buttons in the foot.
 - Prefer the `line` border over shadows; never stack cards inside cards.
+- Lay out a set of cards in `div.ls-cards`: a grid with `space-5` gaps and columns at least 260px wide.
 
 Example markup:
 
 ```html
-<div class="ls-row" style="align-items:stretch;gap:16px">
-<div class="ls-card" style="width:280px"><h3 class="ls-card__title">Quarterly review</h3><p class="ls-card__meta">Updated 2 hours ago · 4 contributors</p><div class="ls-card__foot"><button class="ls-btn ls-btn--sm ls-btn--primary">Open</button><button class="ls-btn ls-btn--sm ls-btn--ghost">Share</button></div></div>
-<div class="ls-card ls-card--raised" style="width:280px"><h3 class="ls-card__title">Raised card</h3><p class="ls-card__meta">Use sparingly, e.g. a draggable item or a featured panel.</p><div style="margin-top:12px"><span class="ls-badge ls-badge--success">Active</span></div></div>
+<div class="ls-cards">
+<div class="ls-card"><h3 class="ls-card__title">Quarterly review</h3><p class="ls-card__meta">Updated 2 hours ago · 4 contributors</p><div class="ls-card__foot"><button class="ls-btn ls-btn--sm ls-btn--primary">Open</button><button class="ls-btn ls-btn--sm ls-btn--ghost">Share</button></div></div>
+<div class="ls-card ls-card--raised"><h3 class="ls-card__title">Raised card</h3><p class="ls-card__meta">Use sparingly, e.g. a draggable item or a featured panel.</p><div class="ls-card__foot"><span class="ls-badge ls-badge--success">Active</span></div></div>
 </div>
 ```
 

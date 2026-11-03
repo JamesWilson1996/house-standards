@@ -12,8 +12,11 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 
 /* layout helpers used by previews and apps */
 .ls-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.ls-row--top { align-items: flex-start; } /* rows of fields: centring would push a field without help text down */
+.ls-row--loose { gap: var(--space-5); }
 .ls-stack { display: flex; flex-direction: column; gap: var(--space-3); }
 .ls-pad { padding: var(--space-4); }
+.ls-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-5); }
 
 /* ---------- Button ---------- */
 .ls-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-4);
@@ -29,20 +32,48 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-btn--ghost:hover { background: var(--accent-soft); color: var(--on-accent-soft); }
 .ls-btn--danger { background: var(--danger); color: var(--on-danger); border-color: var(--danger); }
 .ls-btn--sm { height: 28px; padding: 0 var(--space-3); }
-.ls-btn:disabled, .ls-btn[aria-disabled="true"] { opacity: .5; cursor: not-allowed; }
+/* Each variant has its own disabled pair; opacity over a dark-theme fill reads as a muddy block. */
+.ls-btn:is(:disabled, [aria-disabled="true"]) { cursor: not-allowed; background: var(--disabled-fill); color: var(--on-disabled); border-color: var(--disabled-line); }
+.ls-btn--primary:is(:disabled, [aria-disabled="true"]) { background: var(--accent-disabled); color: var(--on-accent-disabled); border-color: var(--accent-disabled); }
+.ls-btn--secondary:is(:disabled, [aria-disabled="true"]) { background: var(--sage-disabled); color: var(--on-sage-disabled); border-color: var(--sage-disabled); }
+.ls-btn--soft:is(:disabled, [aria-disabled="true"]) { border-color: var(--disabled-fill); }
+.ls-btn--ghost:is(:disabled, [aria-disabled="true"]) { background: transparent; border-color: transparent; }
+.ls-btn--danger:is(:disabled, [aria-disabled="true"]) { background: var(--danger-disabled); color: var(--on-danger-disabled); border-color: var(--danger-disabled); }
 
 /* ---------- Field (label + input + help/error) ---------- */
-.ls-field { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
+.ls-field { display: flex; flex-direction: column; gap: var(--form-help-gap); min-width: 220px; }
+.ls-field > .ls-btn { align-self: flex-start; }
+/* Input and action on one line, aligned to the input; label above and help below stay outside the row. */
+.ls-field__row { display: flex; align-items: flex-start; gap: var(--space-2); }
+.ls-field__row > :is(.ls-input, .ls-select) { flex: 1; min-width: 0; }
+.ls-field__row > .ls-btn { flex: none; }
 .ls-label { font: 600 13px/16px var(--font-sans); color: var(--ink); }
 .ls-input, .ls-select, .ls-textarea { height: 36px; padding: 0 var(--space-3); font: 400 15px/22px var(--font-sans); color: var(--ink);
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
 .ls-textarea { height: auto; min-height: 88px; padding: var(--space-2) var(--space-3); resize: vertical; }
 .ls-input::placeholder, .ls-textarea::placeholder { color: var(--ink-muted); }
 .ls-input:focus-visible, .ls-select:focus-visible, .ls-textarea:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; border-color: var(--accent); }
-.ls-input:disabled { background: var(--surface-sunken); color: var(--ink-muted); }
-.ls-help { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
-.ls-field[data-invalid] .ls-input { border-color: var(--danger); }
+.ls-input:disabled, .ls-select:disabled, .ls-textarea:disabled { background: var(--surface-sunken); color: var(--ink-muted); cursor: not-allowed; }
+.ls-help { margin: 0; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.ls-field[data-invalid] :is(.ls-input, .ls-select, .ls-textarea) { border-color: var(--danger); }
 .ls-field[data-invalid] .ls-help { color: var(--danger-ink); }
+
+/* ---------- File picker (native input, themed picker button) ---------- */
+.ls-file { min-height: 36px; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); cursor: pointer; }
+.ls-file::file-selector-button { height: 36px; margin-right: var(--space-3); padding: 0 var(--space-4); font: 600 13px/16px var(--font-sans); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); cursor: pointer; transition: background-color .12s ease; }
+.ls-file:hover::file-selector-button { background: var(--surface-sunken); }
+.ls-file:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-md); }
+.ls-file:disabled { cursor: not-allowed; }
+.ls-file:disabled::file-selector-button { background: var(--disabled-fill); color: var(--on-disabled); border-color: var(--disabled-line); cursor: not-allowed; }
+.ls-field[data-invalid] .ls-file::file-selector-button { border-color: var(--danger); }
+
+/* ---------- Form (spacing between fields, sections and actions) ---------- */
+.ls-form, .ls-form__section { display: flex; flex-direction: column; gap: var(--form-field-gap); }
+.ls-form { margin: 0; }
+.ls-form__section + .ls-form__section { margin-top: calc(var(--form-section-gap) - var(--form-field-gap)); }
+.ls-form__title { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--ink); }
+.ls-form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: calc(var(--form-actions-gap) - var(--form-field-gap)); }
 
 /* ---------- Checkbox & Switch ---------- */
 .ls-check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 15px; cursor: pointer; }
