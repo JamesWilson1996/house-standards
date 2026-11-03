@@ -15,6 +15,7 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - [ ] Frontend uses Query for all server data, URL search params for view state, and Lilac & Sage tokens only
 - [ ] OpenTelemetry, health endpoints and structured logs wired
 - [ ] Playwright journeys and axe check passing in both light and dark themes
+- [ ] Each page with a form has the layout check from `frontend.md` in both themes
 
 ## Open decisions (record outcomes here when made)
 

@@ -23,6 +23,33 @@ TanStack fits the backend-owned model: Query treats the server as the source of 
 - **Long-running work** (a `202` response) is followed by polling the status URL with `refetchInterval`, or server-sent events where live updates are needed.
 - Route loaders prefetch with `queryClient.ensureQueryData` so pages render without waterfalls.
 
+## Layout check for forms
+
+The raw-colour lint catches colours but not layout, so every page with a form gets a Playwright test that runs in both themes:
+
+- Load the page with `data-theme="light"`, then `"dark"`, and take a full-page screenshot with `expect(page).toHaveScreenshot()`. Commit the baselines, and regenerate them with `--update-snapshots` only when the design changes.
+- Assert alignment from bounding boxes: in each `.ls-field__row` the button's top and height match the input's; in each `.ls-row--top` every field's top matches; each `.ls-help` starts below its row.
+- Assert no element under the form has a `style` attribute, and no file input lacks the `ls-file` class.
+- Run axe on the same page in both themes.
+
+```ts
+for (const theme of ["light", "dark"] as const) {
+  test(`settings form layout (${theme})`, async ({ page }) => {
+    await page.goto("/settings");
+    await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+    for (const row of await page.locator(".ls-field__row").all()) {
+      const input = await row.locator(".ls-input, .ls-select, .ls-file").first().boundingBox();
+      const button = await row.locator(".ls-btn").first().boundingBox();
+      expect(button!.y).toBeCloseTo(input!.y, 0);
+      expect(button!.height).toBeCloseTo(input!.height, 0);
+    }
+    await expect(page.locator("form [style]")).toHaveCount(0);
+    await expect(page.locator('input[type="file"]:not(.ls-file)')).toHaveCount(0);
+    await expect(page).toHaveScreenshot(`settings-${theme}.png`, { fullPage: true });
+  });
+}
+```
+
 ## Standard app layout
 
 ```

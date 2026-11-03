@@ -16,6 +16,7 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 - Text: `ink` for primary, `ink-muted` for secondary. Both reach at least 5.5:1 on `bg`, `surface` and `surface-sunken` in both themes; every ink/fill pair in this system is AA (4.5:1) or better.
 - **Dark mode keeps the pastel character.** Solid fills (`accent`, `sage`, `danger`) turn into lighter pastels with deep text on them (`on-accent`, `on-sage`, `on-danger`); soft fills and surfaces turn into deep tinted greys. Never invert colours or pick dark-theme values by hand in an app; every semantic token already has both.
 - Borders: `line` for decorative hairlines, `line-strong` for anything a user operates (inputs, checkboxes) — 3:1 in both themes.
+- Disabled: each button variant has a fill and text pair (`disabled-fill`/`on-disabled`, `accent-disabled`/`on-accent-disabled`, `sage-disabled`/`on-sage-disabled`, `danger-disabled`/`on-danger-disabled`). Disabled text reaches at least 3.6:1 on its fill in both themes, and a disabled primary stays lilac. Never fade a control with `opacity`.
 
 ## Type
 
@@ -26,6 +27,7 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 ## Space, shape, depth
 
 - 4px base: `space-1` 4 → `space-8` 64. Card padding `space-4`; gap between cards `space-5`; between page sections `space-7`.
+- Forms (`ls-form`): `form-help-gap` 6 from label to control and control to help text; `form-field-gap` 16 from field to field; `form-actions-gap` 24 from the last field to the actions; `form-section-gap` 32 between sub-sections in a card.
 - Radius: `radius-sm` 6 (badges, checkboxes), `radius-md` 10 (buttons, inputs, tabs), `radius-lg` 16 (cards, alerts, dialogs), `radius-pill` (switches, avatars).
 - Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus, popovers and dialogs.
 - Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
