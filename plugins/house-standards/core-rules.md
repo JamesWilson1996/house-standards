@@ -27,3 +27,4 @@ These rules apply to every repo we build. Full detail lives in the `house-standa
 - Comments give the reason code is this way, in one or two lines. No commented-out code; no TODO without a ticket.
 - Writing (comments, docs, commits, PRs, UI copy): state facts plainly and lead with the point. Avoid "X, not Y" framing, throat-clearing, inflated words (robust, seamless, leverage), rhythmic groups of three, recaps and emoji. Use numbers and names over adjectives.
 - Deviations from these rules need a short ADR in `docs/adr/`.
+- When a house-standards hook blocks or asks, follow its reason: regenerate a generated file, fix what lint or `check:changed` reports, or ask the user. Don't work around it.

@@ -17,11 +17,68 @@ TanStack fits the backend-owned model: Query treats the server as the source of 
 
 ## Rules for state
 
-- **Mutations send commands and then invalidate.** After a command succeeds, invalidate the affected query keys (or set the returned resource into the cache). Optimistic updates only for low-risk, easily reversed actions, always rolled back on error.
+- **Mutations send commands and then invalidate.** Each mutation lists the query keys it affects in `meta.invalidates`, and the shared query client's `MutationCache` invalidates them once the command succeeds. Components don't call `invalidateQueries` themselves.
+- **A command's response goes into the cache only when it is the same representation as the read.** Generated schemas often alias each other while the endpoints fill different fields, so TypeScript accepts a `setQueryData` that blanks fields on screen. When the representations differ, invalidate, or merge only the fields the command owns.
+- **Optimistic updates** only for low-risk, easily reversed actions: cancel the query, snapshot, set the new value, roll back on error. Invalidation still comes from `meta.invalidates`.
 - **Query keys follow one factory per resource**: `orderKeys.all`, `orderKeys.list(filters)`, `orderKeys.detail(id)`.
 - **Buttons follow `allowedActions`** from the API. If the backend did not offer an action, the UI does not show it.
 - **Long-running work** (a `202` response) is followed by polling the status URL with `refetchInterval`, or server-sent events where live updates are needed.
 - Route loaders prefetch with `queryClient.ensureQueryData` so pages render without waterfalls.
+
+```ts
+// shared/lib/query-client.ts
+declare module '@tanstack/react-query' {
+  interface Register {
+    mutationMeta: { invalidates?: readonly QueryKey[] }
+  }
+}
+
+export const queryClient = new QueryClient({
+  mutationCache: new MutationCache({
+    onSuccess: (_data, _variables, _context, mutation) =>
+      Promise.all(
+        (mutation.meta?.invalidates ?? []).map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
+  }),
+})
+
+// features/orders/components/cancel-order-button.tsx
+const cancelOrder = useMutation({
+  ...cancelOrderMutation(), // generated from the OpenAPI document
+  meta: { invalidates: [orderKeys.all] },
+})
+```
+
+## URL state
+
+- Every search param is optional and falls back to `undefined` on bad input: `z.string().optional().catch(undefined)`. A missing param and a malformed one read the same, and the URL never carries a default.
+- Defaults are applied where the value is read: `const { page = 1 } = Route.useSearch()`. A default in the schema writes itself into the URL, so the param can't be cleared and a first visit looks like an explicit choice.
+- An empty value is written as `undefined`, which removes the key.
+- Typing and filtering navigate with `replace: true`, so each keystroke doesn't add a history entry. Selecting a record pushes a new entry, so Back returns to the list.
+- `loaderDeps` returns only the params the loader reads. Returning the whole search object reruns the loader on every unrelated change.
+- Standard keys: `q` for free text, `sort`, `page` or `cursor`, `tab`, and the record's id name (`orderId`) for selection.
+- Components read search state from the route and receive it as props. It is never copied into `useState`.
+
+```ts
+const ordersSearch = z.object({
+  q: z.string().optional().catch(undefined),
+  status: z.enum(ORDER_STATUSES).optional().catch(undefined),
+  cursor: z.string().optional().catch(undefined),
+})
+
+export const Route = createFileRoute('/orders/')({
+  validateSearch: ordersSearch,
+  loaderDeps: ({ search: { q, status, cursor } }) => ({ q, status, cursor }),
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(listOrdersOptions(deps)),
+})
+
+function OrdersPage() {
+  const { q = '' } = Route.useSearch()
+  const navigate = Route.useNavigate()
+  const onSearchChange = (value: string) =>
+    navigate({ search: (prev) => ({ ...prev, q: value || undefined, cursor: undefined }), replace: true })
+}
+```
 
 ## Layout check for forms
 
@@ -64,4 +121,9 @@ app-web/
       ui/              # thin React wrappers around ls- classes (Button, Field, Badge)
       lib/             # query client, auth, problem+json mapper
     styles/            # imports @jameswilson1996/ui-tokens
+    test/
+      msw/<resource>/  # default handlers.ts and fixtures.ts per API resource
+      render-route.tsx # real router and a fresh query client per test
 ```
+
+Tests are covered in `frontend-testing.md`.

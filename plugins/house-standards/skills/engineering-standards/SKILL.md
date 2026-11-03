@@ -10,11 +10,12 @@ The always-on core rules are already in context. This skill holds the detail. Re
 | Task | Read |
 | --- | --- |
 | New service, new module, layer or dependency question | `reference/architecture.md` |
-| Endpoint, command, query, event, saga, error response, BFF | `reference/state-and-actions.md` |
+| Endpoint, command, query, event, event schema change, saga, retry, dead-letter queue, error response, BFF | `reference/state-and-actions.md` |
 | Table, migration, index, repository, tenancy | `reference/postgres.md` |
-| Route, query/mutation hook, form, table, styling | `reference/frontend.md` (and the `design-system` skill for UI) |
-| DDD modelling, tests, refactoring, reuse, naming, comments | `reference/practice.md` |
-| Auth, time and time zones, logging/tracing, health, config, CI, delivery | `reference/cross-cutting.md` |
+| Route, search params, query/mutation hook, cache, form, table, styling | `reference/frontend.md` (and the `design-system` skill for UI) |
+| Frontend test, MSW handler or fixture, Playwright journey | `reference/frontend-testing.md` |
+| DDD modelling, tests, test builders, port contract suites, refactoring, reuse, naming, comments | `reference/practice.md` |
+| Auth, operation context, time and time zones, logging/tracing, personal data in telemetry, health, config, CI, delivery | `reference/cross-cutting.md` |
 | Comments, README, ADR, commit message, PR description, docs, error text | `reference/writing.md` |
 | Before opening a PR or reviewing one | `reference/checklist.md` |
 

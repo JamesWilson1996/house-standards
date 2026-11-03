@@ -15,6 +15,8 @@ jobs:
         run: |
           node scripts/build.mjs
           git diff --exit-code || { echo "::error::Generated files are stale. Run node scripts/build.mjs and commit."; exit 1; }
+      - name: Hook rules pass their tests
+        run: node --test "plugins/house-standards/hooks/**/*.test.mjs"
       - name: JSON is valid
         run: for f in $(git ls-files '*.json'); do jq empty "$f"; done
       - name: Plugin validates
