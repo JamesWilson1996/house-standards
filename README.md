@@ -8,6 +8,7 @@ The single source for our engineering standards and the Lilac & Sage design syst
 house-standards (this repo, the only copy)
 ├── Claude Code plugin  ──►  every repo's .claude/settings.json enables it (autoUpdate)
 │     ├── core rules     →  injected at every session start (SessionStart hook)
+│     ├── guardrail hooks →  block generated-file edits, force pushes, --no-verify; lint each edit; check:changed on stop
 │     ├── engineering-standards skill → loaded when designing services, DB, APIs, tests
 │     ├── design-system skill         → loaded when building UI
 │     └── adopt-house-standards skill → wires up new repos
@@ -16,6 +17,11 @@ house-standards (this repo, the only copy)
 
 - **Always-on rules** (`plugins/house-standards/core-rules.md`, under 50 lines) are printed into context at session start, resume, clear and compact.
 - **Detail** lives in skills, which Claude loads when the task matches, so sessions stay lean.
+- **Hooks** (`plugins/house-standards/hooks/`) need Node on the machine. The rules are pure functions in `hooks/lib/rules.mjs` with tests beside them; add a rule there with an allow and a deny case. They give Claude fast feedback and fail open on errors. CI and branch protection stay the gate.
+  - Before an edit: refuse files marked `linguist-generated` in `.gitattributes`; ask before changing `.github/workflows/`, `.claude/settings.json` or `.gitattributes`.
+  - Before a shell command: refuse `git push --force` (use `--force-with-lease`) and `--no-verify`; ask before pushing to `main`, `master` or the origin default branch.
+  - After an edit: run the repo's `lint:file` script or `lint-file` just recipe on the file.
+  - On stop with uncommitted changes: run `check:changed` or `check-changed`, sending Claude back up to 3 times.
 - **No pinned version.** `plugin.json` deliberately has no `version`, so each merge to `main` is the new version. Add one only if you want releases gated on a manual bump.
 - **Updates** flow automatically: merge to `main`, and every repo's Claude Code picks up the new plugin version in the background (`autoUpdate: true`). No PRs to consuming repos.
 - **Runtime styles** ship as `@jameswilson1996/ui-tokens`, generated from the same `tokens.json` the skill reads.

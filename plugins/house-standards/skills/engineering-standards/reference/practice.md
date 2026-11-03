@@ -17,10 +17,46 @@ We build with domain-driven design and test-driven development, applied pragmati
 - **Red, green, refactor** for domain and application code: write a failing test that names a behaviour, make it pass with the simplest code, then clean up.
 - **Tests assert behaviour.** They call use cases and domain methods and check the outcomes and events that result. The domain itself is never mocked.
 - **Fakes over mocks.** Ports get in-memory fakes shared across tests; mocking libraries are reserved for adapters at the edge.
+- **Each port has one contract suite**, a set of behaviour tests that every implementation runs: the in-memory fake in the unit suite and the real adapter against Testcontainers. A fake that drifts from the adapter fails its own suite, so tests built on it stay trustworthy.
+- **Test data comes from builders**, one per aggregate and event (`anOrder().shipped().build()`), kept with the tests that use them. Tests override only the fields the behaviour depends on. Values look real (`claims@acme-insurance.com`, `PO-2024-1847`); placeholders such as `"foo"` hide which fields matter. An arrange step longer than about 10 lines needs a builder. Builders that several services need move to a shared test-support package.
+- **Every state-changing consumer has a duplicate-delivery test:** deliver the same event twice and assert that the state and the published events match a single delivery.
 - **Names read as specifications:** `cancelling a shipped order is rejected`, not `testCancel2`. Arrange, act, assert, one behaviour per test.
 - **Shape of the suite:** many fast domain/use-case tests, fewer adapter integration tests, a handful of end-to-end journeys. The unit suite runs in under 30 seconds.
 - **Every bug fix starts with a failing test** that reproduces it.
 - **Coverage:** the domain and application layers are fully covered. Adapters and generated code have no coverage target.
+
+```ts
+// application/ports/order-repository.contract.ts
+export function orderRepositoryContract(makeRepository: () => Promise<OrderRepository>) {
+  test('a saved order is returned by id', async () => {
+    const orders = await makeRepository()
+    const order = anOrder().build()
+
+    await orders.save(order)
+
+    expect(await orders.get(order.id)).toEqual(order)
+  })
+
+  test('saving a stale version is rejected', async () => { /* … */ })
+}
+
+// adapters/postgres/postgres-order-repository.integration.test.ts
+orderRepositoryContract(async () => new PostgresOrderRepository(await testDatabase()))
+
+// test/fakes/in-memory-order-repository.test.ts
+orderRepositoryContract(async () => new InMemoryOrderRepository())
+
+// application/commands/mark-order-paid.test.ts
+test('a duplicate payment.captured event marks the order paid once', async () => {
+  const event = aPaymentCapturedEvent().forOrder(order.id).build()
+
+  await onPaymentCaptured(event)
+  await onPaymentCaptured(event)
+
+  expect(await orders.get(order.id)).toMatchObject({ status: OrderStatus.Paid, version: order.version + 1 })
+  expect(outbox.published).toHaveLength(1)
+})
+```
 
 ## Pragmatism
 
