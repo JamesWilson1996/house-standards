@@ -107,6 +107,59 @@ for (const theme of ["light", "dark"] as const) {
 }
 ```
 
+## Layout check for dialogs and popovers
+
+Every page that opens an `ls-dialog` or `ls-popover` gets the same check, in both themes. Run it in two Playwright projects, 1280px and 375px wide:
+
+- Open the dialog by its URL (`/bills?bill=<id>`). Assert it is modal, its box sits inside the viewport, and its header and foot stay visible after the body scrolls to the end. At 375px it fills the viewport.
+- Press Escape, then reopen and press Back: each time the dialog closes, the search param is gone, and focus is back on the trigger.
+- Open each popover and assert its box sits inside the viewport and the element at its centre is inside it, so nothing draws over it.
+- Screenshot the open dialog and popover, and run axe with them open.
+
+```ts
+const inViewport = async (page: Page, box: { x: number; y: number; width: number; height: number }) => {
+  const { width, height } = page.viewportSize()!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(width);
+  expect(box.y + box.height).toBeLessThanOrEqual(height);
+};
+
+for (const theme of ["light", "dark"] as const) {
+  test(`bill dialog and popover (${theme})`, async ({ page }) => {
+    await page.goto("/bills");
+    await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
+    const trigger = page.getByRole("link", { name: "Council tax" });
+    await trigger.click();
+    const dialog = page.getByRole("dialog", { name: "Council tax" });
+    await expect(dialog).toBeVisible();
+    expect(await dialog.evaluate((d) => d.matches(":modal"))).toBe(true);
+    await inViewport(page, (await dialog.boundingBox())!);
+    await dialog.locator(".ls-dialog__body").evaluate((b) => b.scrollTo(0, b.scrollHeight));
+    await inViewport(page, (await dialog.locator(".ls-dialog__foot").boundingBox())!);
+    await expect(page).toHaveScreenshot(`bill-dialog-${theme}.png`);
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(page).not.toHaveURL(/bill=/);
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await page.goBack();
+    await expect(dialog).toBeHidden();
+    await expect(page).not.toHaveURL(/bill=/);
+
+    const card = page.locator(".ls-popover:popover-open");
+    await page.getByRole("button", { name: "Due this week" }).click();
+    const box = (await card.boundingBox())!;
+    await inViewport(page, box);
+    const onTop = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest(".ls-popover"),
+      { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+    expect(onTop).toBe(true);
+    await page.keyboard.press("Escape");
+    await expect(card).toHaveCount(0);
+  });
+}
+```
+
 ## Standard app layout
 
 ```

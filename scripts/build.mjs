@@ -20,7 +20,7 @@ const isThemed = (token) => typeof token.value !== "string";
 const declare = (list, theme) => list.map((t) => `  --${t.name}: ${resolve(t.value, theme)};`).join("\n");
 
 const themedFamilies = [...tokens.color.tokens, ...(tokens.shadow?.tokens ?? [])];
-const staticFamilies = [...tokens.spacing.tokens, ...tokens.radius.tokens];
+const staticFamilies = [...tokens.spacing.tokens, ...tokens.radius.tokens, ...(tokens.size?.tokens ?? [])];
 const fontVars = Object.entries(tokens.type.families).map(([key, stack]) => `  --font-${key}: ${stack};`);
 const typeClasses = tokens.type.groups.flatMap((group) =>
   group.styles.map((style) => {
