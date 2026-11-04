@@ -71,8 +71,10 @@
   --on-sage-disabled: var(--sage-600);
   --danger-disabled: #fbe3e7;
   --on-danger-disabled: #b9586b;
+  --backdrop: rgba(42,38,56,0.40);
   --shadow-sm: 0 1px 2px rgba(42,38,56,0.06);
   --shadow-md: 0 8px 24px rgba(42,38,56,0.10);
+  --shadow-lg: 0 24px 48px rgba(42,38,56,0.18);
 }
 
 [data-theme="dark"] {
@@ -112,8 +114,10 @@
   --on-sage-disabled: var(--sage-500);
   --danger-disabled: #3d1e25;
   --on-danger-disabled: #b86577;
+  --backdrop: rgba(8,7,12,0.70);
   --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
   --shadow-md: 0 8px 24px rgba(0,0,0,0.5);
+  --shadow-lg: 0 24px 48px rgba(0,0,0,0.6);
 }
 
 :root {
@@ -133,6 +137,13 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-pill: 999px;
+  --dialog-sm: 400px;
+  --dialog-md: 560px;
+  --dialog-lg: 800px;
+  --popover-width: 320px;
+  --tooltip-width: 240px;
+  --overlay-margin: var(--space-4);
+  --popover-offset: var(--space-2);
   --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }

@@ -29,7 +29,8 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 - 4px base: `space-1` 4 → `space-8` 64. Card padding `space-4`; gap between cards `space-5`; between page sections `space-7`.
 - Forms (`ls-form`): `form-help-gap` 6 from label to control and control to help text; `form-field-gap` 16 from field to field; `form-actions-gap` 24 from the last field to the actions; `form-section-gap` 32 between sub-sections in a card.
 - Radius: `radius-sm` 6 (badges, checkboxes), `radius-md` 10 (buttons, inputs, tabs), `radius-lg` 16 (cards, alerts, dialogs), `radius-pill` (switches, avatars).
-- Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus, popovers and dialogs.
+- Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus and popovers; `shadow-lg` for dialogs, over a `backdrop` scrim.
+- Overlays: dialogs are `dialog-sm` 400, `dialog-md` 560 or `dialog-lg` 800 wide and fill the screen at 640px and below. Popovers grow to `popover-width` 320 (tooltips `tooltip-width` 240), and sit `popover-offset` 8 from their trigger and the viewport edge. Dialogs keep `overlay-margin` 16 from the viewport edge.
 - Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
 - Focus: a 2px solid `focus-ring` outline offset 2px on every interactive element (`:focus-visible`). Never remove it.
 - Motion: 120–150ms ease on colour and transform only; respect `prefers-reduced-motion`.
@@ -51,3 +52,4 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 
 - The backend owns state and actions. The UI renders server state (TanStack Query) and sends commands; it never infers a status the API didn't send. Badges map 1:1 to the API's state enum.
 - Validation errors come from the API (problem+json) and appear in the matching field's help line with `data-invalid`.
+- Details and filtered lists open in an `ls-dialog` over the current page, with the open state in the URL, so Back or Escape returns the user to where they were.

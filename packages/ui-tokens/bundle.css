@@ -136,3 +136,38 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-nav__item:hover { background: var(--surface); color: var(--ink); }
 .ls-nav__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); font-weight: 600; }
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
+
+/* ---------- Dialog (native <dialog> opened with showModal()) ---------- */
+/* Sizes are set here because the UA stylesheet caps a dialog at calc(100% - 6px - 2em). */
+.ls-dialog { width: min(var(--dialog-md), calc(100vw - 2 * var(--overlay-margin))); max-width: none; max-height: calc(100dvh - 2 * var(--overlay-margin));
+  margin: auto; padding: 0; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overscroll-behavior: contain; }
+.ls-dialog[open] { display: flex; flex-direction: column; }
+.ls-dialog::backdrop { background: var(--backdrop); }
+.ls-dialog--sm { width: min(var(--dialog-sm), calc(100vw - 2 * var(--overlay-margin))); }
+.ls-dialog--lg { width: min(var(--dialog-lg), calc(100vw - 2 * var(--overlay-margin))); }
+.ls-dialog__header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); }
+.ls-dialog__title { flex: 1; min-width: 0; margin: 0; font: 600 17px/24px var(--font-sans); color: var(--ink); }
+.ls-dialog__close { flex: none; width: 36px; padding: 0; }
+.ls-dialog__close svg { width: 16px; height: 16px; }
+/* The body scrolls so the header and actions stay in view on long content. */
+.ls-dialog__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-5); }
+.ls-dialog__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--line); }
+/* The page behind a modal dialog keeps its scroll position and does not scroll under it. */
+html:has(.ls-dialog:modal) { overflow: hidden; }
+@media (max-width: 640px) {
+  .ls-dialog, .ls-dialog--sm, .ls-dialog--lg { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
+}
+
+/* ---------- Popover (Popover API: top layer, anchored to its trigger) ---------- */
+/* Fallback position comes from --ls-popover-x/y, which the app sets from the trigger's rect where anchor positioning is missing. */
+.ls-popover { position: fixed; inset: auto; top: var(--ls-popover-y, auto); left: var(--ls-popover-x, auto); margin: 0;
+  width: max-content; max-width: min(var(--popover-width), calc(100vw - 2 * var(--overlay-margin))); padding: var(--space-3) var(--space-4);
+  font: 400 13px/18px var(--font-sans); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+.ls-popover--tip { max-width: min(var(--tooltip-width), calc(100vw - 2 * var(--overlay-margin))); padding: var(--space-1) var(--space-2); }
+.ls-popover__title { margin: 0 0 var(--space-1); font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.ls-popover__meta { margin: 0; color: var(--ink-muted); }
+@supports (position-area: block-end) {
+  .ls-popover { top: auto; left: auto; margin: var(--popover-offset); position-area: block-end;
+    position-try-fallbacks: flip-block, block-end span-inline-end, block-end span-inline-start, block-start span-inline-end, block-start span-inline-start; }
+  .ls-popover--top { position-area: block-start; }
+}

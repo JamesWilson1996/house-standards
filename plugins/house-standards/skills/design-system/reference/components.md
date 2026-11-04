@@ -206,3 +206,108 @@ Example markup:
 ```html
 <nav class="ls-nav"><a class="ls-nav__item" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg>Dashboard</a><a class="ls-nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Orders</a><a class="ls-nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</a></nav>
 ```
+
+## Dialog
+
+A modal window over the current page. Record details (a bill, a transaction) and filtered lists opened from a summary ("3 bills due this week") open in a dialog, so closing it puts the user back where they were. A multi-step flow or a form longer than one screen gets its own route.
+
+`dialog.ls-dialog` opened with `showModal()`, holding `header.ls-dialog__header` (an `h2.ls-dialog__title` and a close button), `div.ls-dialog__body` and an optional `footer.ls-dialog__foot` for actions.
+
+- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen.
+- The body scrolls and the header and foot stay in view. The page behind does not scroll while the dialog is open.
+- Consumer provides: `aria-labelledby` pointing at the title, a close button with `aria-label="Close"` and a 16px Lucide `x` icon, and actions in the foot with the primary first, as in `ls-form__actions`. A form inside the body is an `ls-form`; its submit button sits in the foot with `form="<form id>"`.
+- Open state lives in the URL as a search param (`?bill=<id>`, Zod-validated), so a reload or a shared link reopens it. Opening pushes a history entry, and Back closes the dialog.
+- Escape, a click on the backdrop, the close button and Back all close it. The first three fire the dialog's `close` event, which removes the param from the URL. Set `closedby="any"` for the backdrop click. Where the browser lacks `closedby`, close the dialog when a click's target is the dialog element itself; the dialog has no padding, so that target is always the backdrop.
+- Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
+- One dialog at a time. A popover inside a dialog is fine.
+
+Example markup:
+
+```html
+<button class="ls-btn" type="button" onclick="document.getElementById('bill').showModal()">View council tax</button>
+<dialog class="ls-dialog" id="bill" aria-labelledby="bill-title" closedby="any">
+<header class="ls-dialog__header"><h2 class="ls-dialog__title" id="bill-title">Council tax</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
+<div class="ls-dialog__body"><p class="ls-card__meta">Due 1 December · Direct debit</p><p>£164.00 to Leeds City Council for December.</p></div>
+<footer class="ls-dialog__foot"><button class="ls-btn ls-btn--primary" type="button">Mark as paid</button><form method="dialog"><button class="ls-btn">Close</button></form></footer>
+</dialog>
+```
+
+URL-driven dialog with TanStack Router (the route's `validateSearch` adds `bill: z.string().optional()`):
+
+```tsx
+function BillDialog() {
+  const { bill } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const openedInApp = useRouterState({ select: (s) => s.location.state.openedInApp === true });
+  const ref = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = ref.current!;
+    if (bill && !dialog.open) dialog.showModal();
+    if (!bill && dialog.open) dialog.close(); // Back removed the param
+  }, [bill]);
+
+  const onClose = () => {
+    if (!bill) return; // the URL already changed
+    // Undo the entry the app pushed; a direct link has none, so drop the param in place.
+    if (openedInApp) history.back();
+    else navigate({ search: (s) => ({ ...s, bill: undefined }), replace: true });
+  };
+
+  return (
+    <dialog ref={ref} className="ls-dialog" aria-labelledby="bill-title" closedby="any" onClose={onClose}
+      onClick={(e) => e.target === e.currentTarget && e.currentTarget.close()}>
+      …
+    </dialog>
+  );
+}
+// Open it: <Link search={(s) => ({ ...s, bill: id })} state={{ openedInApp: true }}>View bill</Link>
+```
+
+`openedInApp` needs a `HistoryState` entry in the router's module augmentation.
+
+## Popover
+
+A small layer anchored to the element that opened it, built on the Popover API. Popovers render in the top layer, so no z-index or `overflow: hidden` ancestor can draw over or clip them. Two uses:
+
+- **Tooltip** (`ls-popover ls-popover--tip`, `popover="hint"`, `role="tooltip"`): one short phrase that names or explains its trigger. Text only, with no links or buttons. The trigger points at it with `aria-describedby`. Browsers without `hint` treat the value as `manual`, which behaves the same apart from light dismiss.
+- **Detail card** (`ls-popover`, `popover="auto"`): a few lines about an item, with an optional `h3.ls-popover__title` and `p.ls-popover__meta`, and at most two buttons. Anything longer, or a form, goes in a dialog.
+
+| Input | Tooltip | Detail card |
+| --- | --- | --- |
+| Pointer hover | Shows 300ms after the pointer enters the trigger; hides when it leaves | Does nothing |
+| Keyboard focus | Shows on focus; hides on blur | Enter or Space on the trigger toggles it |
+| Tap | A tap on the trigger shows it; a tap anywhere else hides it | A tap on the trigger toggles it; a tap outside closes it |
+| Escape | Hides it | Closes it and returns focus to the trigger |
+
+- The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`.
+- A tooltip never holds the only copy of information. An icon-only button keeps its own `aria-label`, and on touch the tooltip appears only when tapped.
+- Placement: below the trigger by default, `ls-popover--top` above. Where the browser supports CSS anchor positioning (`position-area`), the popover anchors to its trigger (the `popovertarget` button, or the `source` passed to `showPopover()`), flips above or below, and shifts sideways to stay `popover-offset` (8px) inside the viewport.
+- Fallback where `position-area` is missing: compute the position from the trigger and set `--ls-popover-x` and `--ls-popover-y`. Run it on the popover's `toggle` event when `newState` is `"open"`, and on scroll and resize while it is open.
+
+```ts
+// Runs only where CSS anchor positioning is missing; the stylesheet reads these two properties.
+export function placePopover(popover: HTMLElement, trigger: HTMLElement) {
+  if (CSS.supports("position-area: block-end")) return;
+  const css = getComputedStyle(popover);
+  const offset = parseFloat(css.getPropertyValue("--popover-offset"));
+  const t = trigger.getBoundingClientRect();
+  const p = popover.getBoundingClientRect();
+  const fitsBelow = t.bottom + offset + p.height <= innerHeight - offset;
+  const y = fitsBelow ? t.bottom + offset : Math.max(offset, t.top - offset - p.height);
+  const x = Math.min(Math.max(offset, t.left + t.width / 2 - p.width / 2), innerWidth - offset - p.width);
+  popover.style.setProperty("--ls-popover-x", `${x}px`);
+  popover.style.setProperty("--ls-popover-y", `${y}px`);
+}
+```
+
+Example markup:
+
+```html
+<div class="ls-row">
+<button class="ls-btn ls-btn--ghost" type="button" aria-label="Paid by direct debit" aria-describedby="dd-tip"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+<div class="ls-popover ls-popover--tip" id="dd-tip" popover="hint" role="tooltip">Paid by direct debit on the 1st</div>
+<button class="ls-btn" type="button" popovertarget="bill-card">Council tax</button>
+<div class="ls-popover" id="bill-card" popover><h3 class="ls-popover__title">Council tax</h3><p class="ls-popover__meta">£164.00 · Due 1 December</p></div>
+</div>
+```

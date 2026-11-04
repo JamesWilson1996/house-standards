@@ -22,6 +22,7 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - [ ] OpenTelemetry, health endpoints and structured logs wired
 - [ ] Playwright journeys and axe check passing in both light and dark themes
 - [ ] Each page with a form has the layout check from `frontend.md` in both themes
+- [ ] Each page that opens a dialog or popover has the overlay check from `frontend.md` in both themes and at 375px wide
 
 ## Open decisions (record outcomes here when made)
 
