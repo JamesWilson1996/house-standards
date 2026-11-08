@@ -35,6 +35,13 @@ jobs:
     uses: jameswilson1996/house-standards/.github/workflows/verify-consumer.yml@main
 ```
 
+It runs on `ubuntu-latest`. A private repo pays for those minutes, so if it has self-hosted runners, pass their labels as a JSON string (the runner needs `bash`, `grep` and `jq`):
+
+```yaml
+    with:
+      runs-on: '["self-hosted","hearth"]'
+```
+
 The plugin's hooks also use two tasks and one file when a repo has them. Add them when adopting; the hooks skip whatever is missing.
 
 | Task | `package.json` script | or `just` recipe | Hook |
