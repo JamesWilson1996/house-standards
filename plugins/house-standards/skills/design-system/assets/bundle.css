@@ -198,6 +198,17 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   :root:has(.ls-tabbar):has(.ls-toast) .ls-page-header__primary { translate: 0 calc(-1 * (var(--toast-min-height) + var(--space-2))); }
 }
 
+/* ---------- Quick add (one line that adds an item and clears, with suggestions under it) ---------- */
+.ls-quickadd { display: flex; flex-direction: column; gap: var(--space-3); margin: 0; }
+.ls-quickadd__row { display: flex; gap: var(--space-2); }
+.ls-quickadd__row > .ls-input { flex: 1; min-width: 0; }
+.ls-quickadd__row > .ls-btn { flex: none; }
+.ls-quickadd__suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
+.ls-quickadd__label { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+@media (max-width: 640px) {
+  .ls-quickadd__row > .ls-input, .ls-quickadd__row > .ls-btn { height: 44px; }
+}
+
 /* ---------- Filter bar and chips (one row above a list: scope, search, active filters, Filter, count) ---------- */
 .ls-filterbar { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
 /* Never wraps to a second row; it scrolls sideways instead. The padding keeps focus rings and chip hit areas inside the scroll box. */
