@@ -271,11 +271,38 @@ The app's primary sidebar. `nav.ls-nav > a.ls-nav__item`, an 18px Lucide icon th
 
 - Consumer provides: the links (TanStack Router `<Link>` sets `aria-current` via `activeProps`).
 - Five to seven items; group extras under Settings rather than growing the list.
+- At 640px and below, when the page also has an `ls-tabbar`, the sidebar is hidden and the tab bar takes over.
 
 Example markup:
 
 ```html
 <nav class="ls-nav"><a class="ls-nav__item" href="#" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/></svg>Dashboard</a><a class="ls-nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Orders</a><a class="ls-nav__item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg>Settings</a></nav>
+```
+
+## Tab bar
+
+The app's top-level navigation on a phone: a bar fixed along the bottom edge with up to 5 destinations, each an icon over a short label. The bundle shows it at 640px and below and hides it above, where `ls-nav` is the sidebar. Render both from the same list of routes.
+
+`nav.ls-tabbar[aria-label="Main"] > a.ls-tabbar__item`, each holding a 20px Lucide icon (`aria-hidden="true"`), `span.ls-tabbar__label` and an optional `span.ls-tabbar__badge` count. The current place has `aria-current="page"`.
+
+- 5 items at most, in the same order as the sidebar. The member's name, Settings and Sign out are not tabs: they go in the account menu opened from the page header's account button (see Page header).
+- Labels: one word where possible ("Today", "Budget", "Shopping"). A label that doesn't fit is cut with an ellipsis, so keep them short rather than relying on it.
+- Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
+- Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
+- While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
+- Switching tabs is instant (brand book Motion pattern 4): no slide or fade between top-level places. Each tab keeps its own scroll position and state where the router allows.
+- Consumer provides: the links (TanStack Router `<Link>` with `activeProps={{ "aria-current": "page" }}`) and the counts from the API.
+
+Example markup:
+
+```html
+<nav class="ls-tabbar" aria-label="Main">
+<a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M6.3 17.7l-1.4 1.4M19.1 4.9l-1.4 1.4"/></svg><span class="ls-tabbar__label">Today</span></a>
+<a class="ls-tabbar__item" href="#" aria-current="page"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span class="ls-tabbar__label">Budget</span></a>
+<a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg><span class="ls-tabbar__label">Meals</span></a>
+<a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h3l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg><span class="ls-tabbar__label">Shopping</span><span class="ls-tabbar__badge">7<span class="ls-sr-only"> items</span></span></a>
+<a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span class="ls-tabbar__label">Projects</span></a>
+</nav>
 ```
 
 ## Dialog
@@ -284,14 +311,15 @@ A modal window over the current page. Record details (a bill, a transaction) and
 
 `dialog.ls-dialog` opened with `showModal()`, holding `header.ls-dialog__header` (an `h2.ls-dialog__title` and a close button), `div.ls-dialog__body` and an optional `footer.ls-dialog__foot` for actions.
 
-- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen.
+- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet.
+- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
 - The body scrolls and the header and foot stay in view. The page behind does not scroll while the dialog is open.
 - Consumer provides: `aria-labelledby` pointing at the title, a close button with `aria-label="Close"` and a 16px Lucide `x` icon, and actions in the foot with the primary first, as in `ls-form__actions`. A form inside the body is an `ls-form`; its submit button sits in the foot with `form="<form id>"`.
 - Open state lives in the URL as a search param (`?bill=<id>`, Zod-validated), so a reload or a shared link reopens it. Opening pushes a history entry, and Back closes the dialog.
 - Escape, a click on the backdrop, the close button and Back all close it. The first three fire the dialog's `close` event. If the app opened the dialog by pushing a history entry (marked in history state), the `close` handler calls `history.back()` to pop that entry. Only when the dialog opened from a deep link or a reload, with no such state, does the handler replace the URL without the param. Either way history ends as it was before the dialog opened; pushing or replacing a URL after an in-app open leaves a duplicate entry, so Back returns to the same page. Set `closedby="any"` for the backdrop click. Where the browser lacks `closedby`, close the dialog when a click's target is the dialog element itself; the dialog has no padding, so that target is always the backdrop.
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
-- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it rises from the bottom edge over `motion-travel`. Closing is instant, as the native `<dialog>` leaves the top layer at once.
+- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is instant, as the native `<dialog>` leaves the top layer at once.
 
 Example markup:
 
@@ -337,6 +365,56 @@ function BillDialog() {
 ```
 
 `openedInApp` needs a `HistoryState` entry in the router's module augmentation.
+
+### Sheet
+
+`ls-dialog--sheet` on the same `dialog.ls-dialog`, with `div.ls-dialog__handle` (`aria-hidden="true"`) as its first child. Everything else is the dialog's: URL param, history, focus, Escape, backdrop click, close button and foot.
+
+- On a phone it is as tall as its content, up to 90% of the screen (`90dvh`), and the body scrolls past that. Its top corners are `radius-lg`; the foot, or the body when there is no foot, clears the home indicator with `env(safe-area-inset-bottom)`.
+- The handle is a 24px strip at the top with a 36px bar. Dragging it down moves the sheet with the finger, with no easing; let go past a quarter of the sheet's height and it closes, otherwise it settles back over `motion-base`. A tap on the page above it (the backdrop) also closes it. Keyboard and screen reader users close it with Escape or the close button, so the handle is hidden from them.
+- Keep the close button: not everyone knows to swipe.
+- Add `interactive-widget=resizes-content` to the page's viewport meta, so on Android the on-screen keyboard pushes the sheet up instead of covering its fields. iOS scrolls the focused field into view itself.
+
+```ts
+// Drags a sheet down by its handle; past a quarter of its height it closes, otherwise it settles back.
+export function dragToClose(dialog: HTMLDialogElement, handle: HTMLElement) {
+  handle.addEventListener("pointerdown", (down) => {
+    const startY = down.clientY;
+    let dy = 0;
+    handle.setPointerCapture(down.pointerId);
+    const move = (e: PointerEvent) => {
+      dy = Math.max(0, e.clientY - startY);
+      dialog.style.translate = `0 ${dy}px`;
+    };
+    const release = () => {
+      handle.removeEventListener("pointermove", move);
+      dialog.style.translate = "";
+      if (dy > dialog.offsetHeight / 4) return dialog.close();
+      const css = getComputedStyle(dialog);
+      const duration = parseFloat(css.getPropertyValue("--motion-base"));
+      if (duration) dialog.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration, easing: css.getPropertyValue("--ease-enter") });
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", release, { once: true });
+    handle.addEventListener("pointercancel", release, { once: true });
+  });
+}
+```
+
+Example markup (Change income, two fields):
+
+```html
+<button class="ls-btn" type="button" onclick="document.getElementById('income').showModal()">Change income</button>
+<dialog class="ls-dialog ls-dialog--sm ls-dialog--sheet" id="income" aria-labelledby="income-title" closedby="any">
+<div class="ls-dialog__handle" aria-hidden="true"></div>
+<header class="ls-dialog__header"><h2 class="ls-dialog__title" id="income-title">Income</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
+<div class="ls-dialog__body"><form class="ls-form" id="income-form">
+<div class="ls-field"><label class="ls-label" for="inc-you">You, paid the last Friday</label><input class="ls-input" id="inc-you" inputmode="decimal" value="2,100.00" autofocus></div>
+<div class="ls-field"><label class="ls-label" for="inc-partner">Partner, paid on the 28th</label><input class="ls-input" id="inc-partner" inputmode="decimal" value="1,450.00"></div>
+</form></div>
+<footer class="ls-dialog__foot"><button class="ls-btn ls-btn--primary" type="submit" form="income-form">Save income</button><form method="dialog"><button class="ls-btn">Cancel</button></form></footer>
+</dialog>
+```
 
 ## Popover
 
