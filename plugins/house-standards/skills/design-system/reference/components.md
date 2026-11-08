@@ -305,6 +305,29 @@ Example markup:
 </nav>
 ```
 
+## Stepper
+
+Moves a list through time one period at a time: Budget's month, Meals' week. Previous, the current period, Next, and a way back to now when you have stepped away.
+
+`div.ls-stepper[role=group]` with an `aria-label` naming the period ("Month"), holding `button.ls-stepper__step` (Previous), `span.ls-stepper__label`, `button.ls-stepper__step` (Next) and, only when away from the current period, `button.ls-stepper__now`.
+
+- Step buttons hold a 16px Lucide `chevron-left` or `chevron-right` and an `aria-label` with the unit: "Previous month", "Next week". Disable one at the end of the data (no months before the household started).
+- Label: `span.ls-stepper__long` ("November 2026", "Week of 9 November") and `span.ls-stepper__short` (`aria-hidden="true"`; "Nov 2026", "9 Nov"). On a phone the short one shows and the long one is read by screen readers, so the stepper leaves room in a filter bar. The label has `aria-live="polite"` so a step is announced.
+- Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
+- The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
+- Changing period swaps the list in place: no slide or fade (brand book Motion pattern 4 treats it like switching tabs).
+- In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
+- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
+
+Example markup:
+
+```html
+<div class="ls-row">
+<div class="ls-stepper" role="group" aria-label="Month"><button class="ls-stepper__step" type="button" aria-label="Previous month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">November 2026</span><span class="ls-stepper__short" aria-hidden="true">Nov 2026</span></span><button class="ls-stepper__step" type="button" aria-label="Next month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></div>
+<div class="ls-stepper" role="group" aria-label="Week"><button class="ls-stepper__step" type="button" aria-label="Previous week"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">Week of 23 November</span><span class="ls-stepper__short" aria-hidden="true">23 Nov</span></span><button class="ls-stepper__step" type="button" aria-label="Next week"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button class="ls-stepper__now" type="button">This week</button></div>
+</div>
+```
+
 ## Dialog
 
 A modal window over the current page. Record details (a bill, a transaction) and filtered lists opened from a summary ("3 bills due this week") open in a dialog, so closing it puts the user back where they were. A multi-step flow or a form longer than one screen gets its own route.
