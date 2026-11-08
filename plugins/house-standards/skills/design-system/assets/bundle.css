@@ -129,6 +129,43 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-avatar { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-pill); font: 600 13px/1 var(--font-sans);
   background: var(--sage); color: var(--on-sage); }
 
+/* ---------- List (rows that act in place: lead, title and meta, value and actions) ---------- */
+.ls-list { margin: 0; padding: 0; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.ls-list__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-4);
+  border-bottom: 1px solid var(--line); }
+.ls-list__row:last-child { border-bottom: 0; }
+.ls-list__row:not(:has(> .ls-list__lead)) { grid-template-columns: minmax(0, 1fr) auto; }
+.ls-list__lead { display: flex; align-items: center; }
+/* A checkbox in the lead gets a 44px target around its 18px box. */
+.ls-list__lead > .ls-check { justify-content: center; min-width: 44px; min-height: 44px; margin: calc(var(--space-2) * -1) 0 calc(var(--space-2) * -1) calc(var(--space-3) * -1); }
+.ls-list__lead > .ls-drag-handle { width: 44px; height: 44px; margin-left: calc(var(--space-3) * -1); }
+.ls-list__main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.ls-list__title { margin: 0; padding: 0; border: 0; background: none; font: 600 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; }
+:is(a, button).ls-list__title:hover { text-decoration: underline; text-underline-offset: 2px; }
+.ls-list__meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.ls-list__end { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); }
+.ls-list__value { font: 500 15px/22px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.ls-list__end .ls-btn { position: relative; }
+/* Ticked: marked at once, then the app folds the row away after 400ms. */
+.ls-list__row--done .ls-list__title { color: var(--ink-muted); font-weight: 400; text-decoration: line-through; }
+.ls-list__row--leaving { overflow: hidden; animation: ls-fold var(--motion-base) var(--ease-exit) forwards; }
+@media (max-width: 640px) {
+  .ls-list__row { padding: var(--space-2) var(--space-3); }
+  .ls-list__end { flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  /* 36px buttons with a 44px hit area, so a row stays compact. */
+  .ls-list__end .ls-btn { height: 36px; }
+  .ls-list__end .ls-btn::after { content: ""; position: absolute; inset: -4px 0; }
+  .ls-list__lead > .ls-check { margin-left: calc(var(--space-2) * -1); }
+  .ls-list__lead > .ls-drag-handle { margin-left: calc(var(--space-2) * -1); }
+}
+
+/* ---------- Date chip (a day in a list row) ---------- */
+.ls-date { display: inline-flex; align-items: center; justify-content: center; min-width: 56px; height: 28px; padding: 0 var(--space-2); border-radius: var(--radius-sm);
+  font: 600 13px/16px var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; background: var(--surface-sunken); color: var(--ink); }
+.ls-date--success { background: var(--success-soft); color: var(--success-ink); }
+.ls-date--warning { background: var(--warning-soft); color: var(--warning-ink); }
+.ls-date--danger { background: var(--danger-soft); color: var(--danger-ink); }
+
 /* ---------- Tabs ---------- */
 .ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
@@ -235,6 +272,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   .ls-filterbar { flex-wrap: wrap; }
   .ls-filterbar__search { width: 140px; }
   .ls-filterbar__count { flex-basis: 100%; margin-left: 0; }
+}
 
 /* ---------- Stepper (previous, the period, next, back to now) ---------- */
 .ls-stepper { display: inline-flex; align-items: center; height: 36px; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); }
@@ -342,6 +380,8 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-fade { from { opacity: 0; } }
 @keyframes ls-rise { from { opacity: 0; translate: 0 8px; } }
 @keyframes ls-rise-full { from { translate: 0 100%; } }
+/* The app sets the row's height in px first, so it folds from its real height in every browser. */
+@keyframes ls-fold { to { height: 0; min-height: 0; padding-block: 0; border-bottom-width: 0; opacity: 0; } }
 @keyframes ls-leave { to { opacity: 0; translate: 0 8px; } }
 /* No end keyframe, so the row fades back to its own background. */
 @keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
