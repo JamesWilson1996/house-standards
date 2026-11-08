@@ -29,6 +29,8 @@ A labelled text input with optional help or error text. Wrap in `div.ls-field`; 
 - Consumer provides: the label (always visible, including when the field has a placeholder), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
 - Errors: set `data-invalid` on the field and `aria-invalid="true"` on the input; the help line turns `danger-ink`. Error text comes from the backend's validation response (problem+json `errors[]`), mapped by field name — don't duplicate business rules in the client.
 - Inputs are 36px tall to align with buttons. On a phone or touch screen inputs and selects are 44px with 16px text, so iOS doesn't zoom the page when one takes focus.
+- Required and optional (decided 8 November, #52): most fields are needed, so only the optional ones are marked, with `span.ls-label__optional` inside the label: `<label class="ls-label" for="note">Note <span class="ls-label__optional">(optional)</span></label>`. Required fields carry no mark and no asterisk; set `required` on the input so the browser and screen readers know.
+- A select's open list (decided 8 November, #52): in Chrome and Edge 135+, Chrome on Android included, it opens as a card like a menu, with radius, border, shadow, the 8px rise, options highlighted in `accent-soft` and a tick on the current choice. On a phone or touch screen its rows are 44px with 16px text. Firefox and Safari, and so every iPhone browser, keep their own list. Nothing to add in the markup: plain `option`s in an `ls-select`.
 - Fields side by side go in `div.ls-row.ls-row--top` so every field starts on the same line. A plain `ls-row` centres its items, which moves a field without help text down.
 - A button that acts on one field (Test, Copy, Generate) goes inside that field, in `div.ls-field__row` with the input. The button lines up with the input and the help text sits below the row. A button in an `ls-row` beside the field centres on the label, input and help together.
 - A button with help text and no input (Export data) goes in an `ls-field` with the help after it. It keeps its own width.
@@ -84,6 +86,7 @@ Example markup:
 - Children: `ls-field`s, or `section.ls-form__section`s that each start with `h3.ls-form__title`, then `div.ls-form__actions` last.
 - A card holds one form. Split a long form into sub-sections inside the card; don't nest cards.
 - The primary button comes first in `ls-form__actions`. Disable it only while the form can't be submitted, and say why in help text.
+- Submitting: the primary gets `aria-busy="true"` (see Loading and errors) and further submits are ignored until the command settles. Fields stay editable and nothing is disabled, so a slow answer never locks the form. On success the form's dialog closes or the toast confirms; on failure the alert or field errors appear and focus moves to the first one.
 
 Example markup (a settings card with sub-sections, an inline action, a file picker and a disabled primary):
 
@@ -149,11 +152,100 @@ Example markup:
 
 - Consumer provides: the native input and its visible label text.
 - Don't use a switch inside a form that has a Save button — use a checkbox.
+- `ls-check` also holds a radio (`input[type=radio]`, drawn round with a dot), for a list of choices that each need a line of help. Group them in a `fieldset` with a `legend.ls-label`. For short choices use `ls-segmented`; see Choosing one option.
 
 Example markup:
 
 ```html
 <div class="ls-row ls-row--loose"><label class="ls-check"><input type="checkbox" checked> Email me a weekly summary</label><label class="ls-check"><input type="checkbox"> Include archived</label><label class="ls-switch"><input type="checkbox" role="switch" checked> Notifications</label><label class="ls-switch"><input type="checkbox" role="switch"> Beta features</label></div>
+```
+
+## Choosing one option
+
+Which control, by the number and length of the options (decided 8 November, #52):
+
+| Options | Control |
+| --- | --- |
+| 2 to 4, each a word or two ("Alex", "Sam", "Split") | `ls-segmented` |
+| 5 or more, a known short list (how often a bill repeats) | `ls-select` |
+| Each needs a line of help to choose well | `ls-check` radios in a `fieldset` |
+| Long, growing or searched (meals, payees) | A picker: see below |
+
+### Segmented control
+
+`div.ls-segmented` with `role="radiogroup"` and `aria-labelledby` pointing at the field's label, holding one `label.ls-segmented__option` per choice, each wrapping a real `input[type=radio]` (same `name`) and its text. The inputs are invisible and cover their option, so the browser gives the arrow keys, the form value and the group's name.
+
+- The chosen option fills with `accent-soft` and `on-accent-soft`. Focus shows the ring on the option.
+- 36px tall with a pointer. On a phone or touch screen it is 44px and fills the field's width.
+- It submits with the form like any radio. For a setting that applies at once (Appearance), send the command on `change`.
+
+```html
+<div class="ls-field"><span class="ls-label" id="paid-label">Paid by</span>
+<div class="ls-segmented" role="radiogroup" aria-labelledby="paid-label"><label class="ls-segmented__option"><input type="radio" name="paidBy" value="alex" checked>Alex</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="sam">Sam</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="split">Split</label></div></div>
+```
+
+### Picker
+
+For a long or growing list, a button in the field shows the current value ("Chilli" or "Choose a meal") and opens an `ls-dialog` (an `ls-dialog--sheet` on a phone) with the open state in the URL. The dialog holds an `ls-input` search at the top, then an `ls-list` of options, recent ones first. Typing filters the list; picking one closes the dialog, fills the field and returns focus to its button. When nothing matches, the list's place shows "No meals match "chill"" and, where the user may add one, an Add button for what they typed. No new classes: it is built from Field, Dialog, Sheet and List.
+
+## Appearance
+
+Each device can follow the OS theme or keep its own (decided 8 November, #50). The setting is an `ls-segmented` with three options, Match device, Light and Dark, with "Saved on this device only." as its help. It applies at once, with no Save.
+
+- The choice lives in `localStorage` on the device, never on the server. Match device stores nothing.
+- The inline script in `<head>` reads it before first paint, so the page never flashes the wrong theme. Match device follows the OS live, while the page is open.
+
+```html
+<script>
+  // Before first paint: this device's choice, else the OS. The key matches APPEARANCE_KEY in appearance.ts.
+  (() => {
+    let pick = null;
+    try { pick = localStorage.getItem("ls-appearance"); } catch { /* storage blocked: follow the OS */ }
+    const dark = pick ? pick === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+  })();
+</script>
+```
+
+```ts
+export const APPEARANCE_KEY = "ls-appearance";
+export const APPEARANCES = ["match", "light", "dark"] as const;
+export type Appearance = (typeof APPEARANCES)[number];
+
+const osDark = matchMedia("(prefers-color-scheme: dark)");
+
+export function readAppearance(): Appearance {
+  try {
+    const stored = localStorage.getItem(APPEARANCE_KEY);
+    return stored === "light" || stored === "dark" ? stored : "match";
+  } catch {
+    return "match";
+  }
+}
+
+export function applyAppearance(choice: Appearance = readAppearance()) {
+  const dark = choice === "match" ? osDark.matches : choice === "dark";
+  document.documentElement.dataset.theme = dark ? "dark" : "light";
+}
+
+export function setAppearance(choice: Appearance) {
+  try {
+    if (choice === "match") localStorage.removeItem(APPEARANCE_KEY);
+    else localStorage.setItem(APPEARANCE_KEY, choice);
+  } catch {
+    // Storage blocked: the choice lasts until the page closes.
+  }
+  applyAppearance(choice);
+}
+
+// Match device follows the OS while the page is open.
+osDark.addEventListener("change", () => applyAppearance());
+```
+
+```html
+<div class="ls-field"><span class="ls-label" id="appearance-label">Appearance</span>
+<div class="ls-segmented" role="radiogroup" aria-labelledby="appearance-label" aria-describedby="appearance-help"><label class="ls-segmented__option"><input type="radio" name="appearance" value="match" checked>Match device</label><label class="ls-segmented__option"><input type="radio" name="appearance" value="light">Light</label><label class="ls-segmented__option"><input type="radio" name="appearance" value="dark">Dark</label></div>
+<p class="ls-help" id="appearance-help">Saved on this device only.</p></div>
 ```
 
 ## Badge

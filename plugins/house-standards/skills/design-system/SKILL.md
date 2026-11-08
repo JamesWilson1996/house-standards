@@ -20,7 +20,7 @@ Hard rules:
 - Status is never colour alone: pair it with a word or a Lucide icon.
 - Keep the 2px `focus-ring` outline on every interactive element.
 - Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
-- Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
+- Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields. One of 2 to 4 short options is an `ls-segmented`, 5 or more an `ls-select`, a long or searched list a picker dialog. Mark optional fields with "(optional)"; required ones carry no mark.
 - Stages of work are an `ls-board` of `ls-column`s side by side on desktop; on a phone one column shows at a time, picked from the page header's tab row.
 - Adding items in a burst uses `ls-quickadd`: the field clears on submit, before the server answers, and gets the text back only if the command fails.
 - Rows you act on are an `ls-list`: each row shows its one main action as a visible control, and the rest go in the row's dialog or a More menu. No swipe actions.
