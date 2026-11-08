@@ -21,7 +21,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Button ---------- */
 .ls-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-4);
   font: 600 13px/16px var(--font-sans); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
-  background: var(--surface); color: var(--ink); border-color: var(--line-strong); transition: background-color .12s ease, border-color .12s ease; }
+  background: var(--surface); color: var(--ink); border-color: var(--line-strong); transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
 .ls-btn:hover { background: var(--surface-sunken); }
 .ls-btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .ls-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -61,7 +61,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- File picker (native input, themed picker button) ---------- */
 .ls-file { min-height: 36px; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); cursor: pointer; }
 .ls-file::file-selector-button { height: 36px; margin-right: var(--space-3); padding: 0 var(--space-4); font: 600 13px/16px var(--font-sans); color: var(--ink);
-  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); cursor: pointer; transition: background-color .12s ease; }
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); cursor: pointer; transition: background-color var(--motion-quick) ease; }
 .ls-file:hover::file-selector-button { background: var(--surface-sunken); }
 .ls-file:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-md); }
 .ls-file:disabled { cursor: not-allowed; }
@@ -81,8 +81,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-check input:checked { background: var(--accent); border-color: var(--accent); }
 .ls-check input:checked::after { content: ""; width: 10px; height: 6px; border-left: 2px solid var(--on-accent); border-bottom: 2px solid var(--on-accent); transform: rotate(-45deg) translate(1px, -1px); }
 .ls-switch { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 15px; cursor: pointer; }
-.ls-switch input { appearance: none; width: 36px; height: 20px; margin: 0; border-radius: var(--radius-pill); background: var(--surface-sunken); border: 1.5px solid var(--line-strong); position: relative; cursor: pointer; transition: background-color .15s ease; }
-.ls-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: var(--radius-pill); background: var(--line-strong); transition: transform .15s ease; }
+.ls-switch input { appearance: none; width: 36px; height: 20px; margin: 0; border-radius: var(--radius-pill); background: var(--surface-sunken); border: 1.5px solid var(--line-strong); position: relative; cursor: pointer; transition: background-color var(--motion-base) ease; }
+.ls-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: var(--radius-pill); background: var(--line-strong); transition: transform var(--motion-base) var(--ease-enter); }
 .ls-switch input:checked { background: var(--accent); border-color: var(--accent); }
 .ls-switch input:checked::after { transform: translateX(16px); background: var(--on-accent); }
 
@@ -141,8 +141,9 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* Sizes are set here because the UA stylesheet caps a dialog at calc(100% - 6px - 2em). */
 .ls-dialog { width: min(var(--dialog-md), calc(100vw - 2 * var(--overlay-margin))); max-width: none; max-height: calc(100dvh - 2 * var(--overlay-margin));
   margin: auto; padding: 0; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); overscroll-behavior: contain; }
-.ls-dialog[open] { display: flex; flex-direction: column; }
+.ls-dialog[open] { display: flex; flex-direction: column; animation: ls-rise var(--motion-base) var(--ease-enter); }
 .ls-dialog::backdrop { background: var(--backdrop); }
+.ls-dialog[open]::backdrop { animation: ls-fade var(--motion-base) var(--ease-enter); }
 .ls-dialog--sm { width: min(var(--dialog-sm), calc(100vw - 2 * var(--overlay-margin))); }
 .ls-dialog--lg { width: min(var(--dialog-lg), calc(100vw - 2 * var(--overlay-margin))); }
 .ls-dialog__header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5); border-bottom: 1px solid var(--line); }
@@ -156,6 +157,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 html:has(.ls-dialog:modal) { overflow: hidden; }
 @media (max-width: 640px) {
   .ls-dialog, .ls-dialog--sm, .ls-dialog--lg { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
+  /* Full screen on a phone, so it travels up from the bottom edge. */
+  .ls-dialog[open] { animation: ls-rise-full var(--motion-travel) var(--ease-enter); }
 }
 
 /* ---------- Popover (Popover API: top layer, anchored to its trigger) ---------- */
@@ -166,8 +169,33 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-popover--tip { max-width: min(var(--tooltip-width), calc(100vw - 2 * var(--overlay-margin))); padding: var(--space-1) var(--space-2); }
 .ls-popover__title { margin: 0 0 var(--space-1); font: 600 13px/18px var(--font-sans); color: var(--ink); }
 .ls-popover__meta { margin: 0; color: var(--ink-muted); }
+.ls-popover:popover-open { animation: ls-fade var(--motion-quick) var(--ease-enter); }
 @supports (position-area: block-end) {
   .ls-popover { top: auto; left: auto; margin: var(--popover-offset); position-area: block-end;
     position-try-fallbacks: flip-block, block-end span-inline-end, block-end span-inline-start, block-start span-inline-end, block-start span-inline-start; }
   .ls-popover--top { position-area: block-start; }
 }
+
+/* ---------- Motion (durations come from the motion tokens, which drop to 0ms under prefers-reduced-motion) ---------- */
+@keyframes ls-fade { from { opacity: 0; } }
+@keyframes ls-rise { from { opacity: 0; translate: 0 8px; } }
+@keyframes ls-rise-full { from { translate: 0 100%; } }
+/* No end keyframe, so the row fades back to its own background. */
+@keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
+
+/* A new row or item appearing in place. */
+.ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }
+
+/* The row a link pointed at: lilac that fades over 1.2s. Re-add the class to flash it again. */
+.ls-flash { animation: ls-flash var(--motion-flash) ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .ls-flash { animation-timing-function: step-end; } /* holds the mark, then clears it without fading */
+}
+
+/* Drag and drop. The app sets left, top and width on the held item from its rect, then translate as the pointer moves. */
+.ls-lifted { position: fixed; z-index: 40; margin: 0; pointer-events: none; scale: 1.02; box-shadow: var(--shadow-md); border-color: var(--accent);
+  transition: scale var(--motion-quick) var(--ease-enter), box-shadow var(--motion-quick) var(--ease-enter); }
+.ls-lifted--tilt { rotate: 1.5deg; } /* board cards; list rows stay level */
+.ls-drop-slot { list-style: none; box-sizing: border-box; border: 2px dashed var(--accent); border-radius: var(--radius-md); background: var(--accent-soft); }
+.ls-dragging { cursor: grabbing; -webkit-user-select: none; user-select: none; }
+.ls-drag-handle { cursor: grab; touch-action: none; } /* a finger on the handle drags instead of scrolling */

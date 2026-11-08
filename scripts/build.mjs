@@ -20,7 +20,10 @@ const isThemed = (token) => typeof token.value !== "string";
 const declare = (list, theme) => list.map((t) => `  --${t.name}: ${resolve(t.value, theme)};`).join("\n");
 
 const themedFamilies = [...tokens.color.tokens, ...(tokens.shadow?.tokens ?? [])];
-const staticFamilies = [...tokens.spacing.tokens, ...tokens.radius.tokens, ...(tokens.size?.tokens ?? [])];
+const motionTokens = tokens.motion?.tokens ?? [];
+const staticFamilies = [...tokens.spacing.tokens, ...tokens.radius.tokens, ...(tokens.size?.tokens ?? []), ...motionTokens];
+// Durations people can switch off: the OS reduced-motion setting replaces them with their reducedMotion value.
+const reducedMotion = motionTokens.filter((t) => t.reducedMotion !== undefined);
 const fontVars = Object.entries(tokens.type.families).map(([key, stack]) => `  --font-${key}: ${stack};`);
 const typeClasses = tokens.type.groups.flatMap((group) =>
   group.styles.map((style) => {
@@ -41,6 +44,9 @@ const css = [
   `:root, [data-theme="${primaryTheme}"] {\n${declare(themedFamilies, primaryTheme)}\n}`,
   ...otherThemes.map((theme) => `[data-theme="${theme}"] {\n${declare(themedFamilies.filter(isThemed), theme)}\n}`),
   `:root {\n${declare(staticFamilies, primaryTheme)}\n${fontVars.join("\n")}\n}`,
+  ...(reducedMotion.length
+    ? [`@media (prefers-reduced-motion: reduce) {\n  :root {\n${reducedMotion.map((t) => `    --${t.name}: ${t.reducedMotion};`).join("\n")}\n  }\n}`]
+    : []),
   typeClasses.join("\n"),
   "",
 ].join("\n\n");

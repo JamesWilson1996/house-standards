@@ -144,8 +144,22 @@
   --tooltip-width: 240px;
   --overlay-margin: var(--space-4);
   --popover-offset: var(--space-2);
+  --motion-quick: 120ms;
+  --motion-base: 150ms;
+  --motion-travel: 200ms;
+  --motion-flash: 1200ms;
+  --ease-enter: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --font-sans: Figtree, ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-quick: 0ms;
+    --motion-base: 0ms;
+    --motion-travel: 0ms;
+  }
 }
 
 .display { font-family: var(--font-sans); font-size: 40px; line-height: 44px; font-weight: 700; letter-spacing: -0.02em; }
