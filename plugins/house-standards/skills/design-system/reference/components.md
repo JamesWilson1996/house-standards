@@ -301,6 +301,26 @@ Example markup:
 </tbody></table></div>
 ```
 
+## Progress
+
+How far through something is: spent of budget, cards done of a project. `div.ls-progress` holds `div.ls-progress__head` (`span.ls-progress__label` and `span.ls-progress__value`) and a native `progress.ls-progress__bar` with `value`, `max` and `aria-labelledby` pointing at the label.
+
+- The value says it in words beside the bar: "£2,140 of £3,200", "5 of 8 done". The bar never carries the number alone.
+- Fill: `accent` by default. `ls-progress--done` (`success-ink`) when the work is complete; `ls-progress--over` (`danger`) past a limit, with the value saying so ("£120 over"). The tone follows the API's state, never a threshold the client works out.
+- Over the limit, set `value` to `max` so the bar is full; the words carry the overspend.
+- The bar is 8px with `radius-pill`, on a `surface-sunken` track. Changes are instant: no animated fill and no counting up.
+- An indeterminate wait (no `value`) is not this component; under 400ms show nothing.
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<div class="ls-progress"><div class="ls-progress__head"><span class="ls-progress__label" id="p1">Spent this month</span><span class="ls-progress__value">£2,140 of £3,200</span></div><progress class="ls-progress__bar" value="2140" max="3200" aria-labelledby="p1">67%</progress></div>
+<div class="ls-progress ls-progress--done"><div class="ls-progress__head"><span class="ls-progress__label" id="p2">Kitchen snagging</span><span class="ls-progress__value">8 of 8 done</span></div><progress class="ls-progress__bar" value="8" max="8" aria-labelledby="p2">100%</progress></div>
+<div class="ls-progress ls-progress--over"><div class="ls-progress__head"><span class="ls-progress__label" id="p3">Eating out</span><span class="ls-progress__value">£320 of £200 · £120 over</span></div><progress class="ls-progress__bar" value="200" max="200" aria-labelledby="p3">Over</progress></div>
+</div>
+```
+
 ## Tabs
 
 Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-tab[role=tab]`; the active tab has `aria-selected="true"`.

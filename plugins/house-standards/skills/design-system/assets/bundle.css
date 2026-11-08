@@ -166,6 +166,21 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-date--warning { background: var(--warning-soft); color: var(--warning-ink); }
 .ls-date--danger { background: var(--danger-soft); color: var(--danger-ink); }
 
+/* ---------- Progress (a native <progress> with its value in words) ---------- */
+.ls-progress { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.ls-progress__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--space-1) var(--space-3); }
+.ls-progress__label { font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.ls-progress__value { font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+/* The fill reads 3:1 or more against the track in both themes. */
+.ls-progress__bar { --ls-progress-fill: var(--accent); appearance: none; display: block; width: 100%; height: 8px; border: 0; border-radius: var(--radius-pill); overflow: hidden;
+  background: var(--surface-sunken); color: var(--ls-progress-fill); }
+.ls-progress__bar::-webkit-progress-bar { background: var(--surface-sunken); border-radius: var(--radius-pill); }
+.ls-progress__bar::-webkit-progress-value { background: var(--ls-progress-fill); border-radius: var(--radius-pill); }
+.ls-progress__bar::-moz-progress-bar { background: var(--ls-progress-fill); border-radius: var(--radius-pill); }
+.ls-progress--done .ls-progress__bar { --ls-progress-fill: var(--success-ink); }
+.ls-progress--over .ls-progress__bar { --ls-progress-fill: var(--danger); }
+.ls-progress--over .ls-progress__value { color: var(--danger-ink); }
+
 /* ---------- Tabs ---------- */
 .ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
