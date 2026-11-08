@@ -221,6 +221,20 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 @media (hover: hover) { .ls-table tbody tr:hover td { background: var(--bg); } }
 .ls-table tr[aria-selected="true"] td { background: var(--accent-soft); }
 .ls-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* A sortable column: a button in the th, which carries aria-sort. The sorted column's header reads in ink, the others stay muted. */
+.ls-table__sort { display: inline-flex; align-items: center; gap: var(--space-1); margin: calc(var(--space-1) * -1) calc(var(--space-2) * -1); padding: var(--space-1) var(--space-2);
+  border: 0; border-radius: var(--radius-sm); background: none; font: inherit; color: inherit; text-align: inherit; cursor: pointer;
+  transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
+.ls-table__sort svg { flex: none; width: 14px; height: 14px; }
+.ls-table th:is([aria-sort="ascending"], [aria-sort="descending"]) { color: var(--ink); }
+@media (hover: hover) { .ls-table__sort:hover { background: var(--surface); color: var(--ink); } }
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-table__sort { min-height: 44px; }
+}
+
+/* ---------- More (the next page of a long list) ---------- */
+.ls-more { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); padding-block: var(--space-4); }
+.ls-more__count { margin: 0; font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 
 /* ---------- Avatar ---------- */
 .ls-avatar { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-pill); font: 600 13px/1 var(--font-sans);
