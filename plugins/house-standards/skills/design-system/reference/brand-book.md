@@ -60,7 +60,7 @@ Motion shows what you are holding, what changed, what arrived, where you went, o
 
 ## Iconography
 
-- **Lucide** icons (outline, 2px stroke, round caps), drawn with `currentColor` so they take the text colour. 18px in nav, 20px in alerts, 16px inside buttons.
+- **Lucide** icons (outline, 2px stroke, round caps), drawn with `currentColor` so they take the text colour. 18px in nav, 20px in the tab bar and alerts, 16px inside buttons.
 - No logo is defined yet: each app sets its name in `h3` weight in `ink`. Add marks under `assets/Logos/` when they exist.
 
 ## Data & state in the UI
