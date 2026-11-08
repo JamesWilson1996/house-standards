@@ -31,6 +31,7 @@ Hard rules:
 - Loading, busy buttons, failed loads, failed commands and edit conflicts follow Loading and errors in `reference/components.md`: `ls-loading` placeholders, `aria-busy` on the button, `ls-empty` for a page that couldn't load, an alert in forms and a Try again toast for one-tap actions.
 - Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away. On a phone, pickers, filters and forms of up to 4 fields use `ls-dialog--sheet`, and longer forms stay full screen; tooltips and small detail cards use `ls-popover`.
 - A long list or table shows its first page and an `ls-more` ("Showing 20 of 48", Show 20 more) under it; sortable columns use `ls-table__sort` with `aria-sort`. Dates and times use the helpers in Dates and times ("8 Nov", "in 3 days", "2 minutes ago").
+- A calendar day is picked with the Date picker: a typed `ls-input` read by `parseDay` and a calendar button opening an `ls-calendar` (a popover on desktop, a sheet on a phone). Never `type="date"`.
 - Charts are inline SVG with `ls-chart` and the `chart-*` tokens in order: a legend or direct labels, a tooltip in `ls-popover`, and a table view. One figure is an `ls-stat`, not a chart.
 - Motion uses only the `--motion-*` and `--ease-*` tokens and the patterns in the brand book's Motion section, so reduced motion works everywhere. Drags use `ls-lifted`, `ls-drop-slot` and `ls-drag-handle`.
 - A genuinely new component is added to this system first (PR to house-standards), then used from apps.

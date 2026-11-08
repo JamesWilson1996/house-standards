@@ -598,6 +598,30 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 /* Placed by coordinates the app sets, for an anchor that can't be a popover source (a point in an SVG chart). */
 .ls-popover.ls-popover--at { top: var(--ls-popover-y, 0); left: var(--ls-popover-x, 0); margin: 0; position-area: none; position-try-fallbacks: none; }
 
+/* ---------- Calendar (the date picker's month: in an ls-popover on desktop, an ls-dialog--sheet on a phone) ---------- */
+.ls-popover--calendar { max-width: none; padding: var(--space-3); }
+.ls-calendar { display: flex; flex-direction: column; gap: var(--space-2); }
+.ls-calendar__head { display: flex; align-items: center; gap: var(--space-1); }
+.ls-calendar__title { flex: 1; margin: 0; text-align: center; font: 600 15px/22px var(--font-sans); color: var(--ink); }
+.ls-calendar__step { flex: none; width: 36px; padding: 0; }
+.ls-calendar__step svg { width: 16px; height: 16px; }
+.ls-calendar__grid { border-collapse: separate; border-spacing: 2px; margin: -2px; font-variant-numeric: tabular-nums; }
+.ls-calendar__grid th { height: 28px; padding: 0; font: 600 12px/16px var(--font-sans); color: var(--ink-muted); text-align: center; }
+/* Each day is a grid cell that takes focus itself (the WAI-ARIA date picker pattern); the app moves tabindex="0" with the arrow keys. */
+.ls-calendar__day { width: 36px; height: 36px; padding: 0; border-radius: var(--radius-pill); font: 500 15px/1 var(--font-sans); color: var(--ink); text-align: center; vertical-align: middle; cursor: pointer;
+  transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
+.ls-calendar__day:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 0; }
+.ls-calendar__day[aria-current="date"] { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ls-calendar__day[aria-selected="true"] { background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.ls-calendar__day[aria-disabled="true"] { color: var(--on-disabled); cursor: not-allowed; }
+@media (hover: hover) { .ls-calendar__day:not([aria-selected="true"], [aria-disabled="true"]):hover { background: var(--surface-sunken); } }
+/* Touch: 44px days, and in a sheet the month fills the width. */
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-calendar__day { width: 44px; height: 44px; font-size: 16px; }
+  .ls-calendar__step { width: 44px; }
+  .ls-dialog .ls-calendar__grid { width: calc(100% + 4px); }
+}
+
 /* ---------- Empty state (what appears here, and one way to start) ---------- */
 .ls-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-7) var(--space-4); text-align: center;
   border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
