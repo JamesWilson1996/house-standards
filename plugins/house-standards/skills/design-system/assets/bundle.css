@@ -125,6 +125,10 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-table tr[aria-selected="true"] td { background: var(--accent-soft); }
 .ls-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
+/* ---------- Avatar ---------- */
+.ls-avatar { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-pill); font: 600 13px/1 var(--font-sans);
+  background: var(--sage); color: var(--on-sage); }
+
 /* ---------- Tabs ---------- */
 .ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
@@ -160,6 +164,39 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* The count sits on the icon's corner. Solid, so it stands out on the current tab's soft fill too. */
 .ls-tabbar__badge { position: absolute; top: var(--space-1); left: calc(50% + 4px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
   font: 600 11px/18px var(--font-sans); font-variant-numeric: tabular-nums; text-align: center; background: var(--accent); color: var(--on-accent); }
+
+/* ---------- Page header (area, title, state, actions, then tabs) ---------- */
+.ls-page-header { display: flex; flex-direction: column; gap: var(--space-4); margin-bottom: var(--space-5); }
+.ls-page-header__main { display: flex; align-items: flex-start; gap: var(--space-4); }
+.ls-page-header__heading { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.ls-page-header__area { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; font: 500 13px/18px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
+a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
+.ls-page-header__area svg { width: 16px; height: 16px; }
+.ls-page-header__title { margin: 0; font: 700 30px/36px var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
+.ls-page-header__state { margin: 0; font: 400 15px/22px var(--font-sans); color: var(--ink-muted); }
+.ls-page-header__state strong { font-weight: 600; color: var(--ink); }
+.ls-page-header__actions { flex: none; display: flex; align-items: center; gap: var(--space-2); }
+.ls-page-header__account { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin: -4px 0; padding: 0; border: 0; border-radius: var(--radius-pill); background: transparent; cursor: pointer; }
+.ls-page-header__tabs { overflow-x: auto; scrollbar-width: none; }
+/* Where the sidebar shows, it holds the account, so the header button is only for phones. */
+@media (min-width: 641px) {
+  :root:has(.ls-nav) .ls-page-header__account { display: none; }
+}
+@media (max-width: 640px) {
+  .ls-page-header__title { font-size: 22px; line-height: 28px; }
+  .ls-page-header__state { font-size: 13px; line-height: 18px; }
+  .ls-page-header__actions .ls-btn { height: 44px; min-width: 44px; }
+  a.ls-page-header__area { min-height: 44px; margin: -13px 0; }
+  /* Only the tab row sticks. A sticky element can't leave its parent, so the header box steps aside and the row sticks within the page. */
+  .ls-page-header:has(> .ls-page-header__tabs) { display: contents; }
+  .ls-page-header:has(> .ls-page-header__tabs) > .ls-page-header__main { margin-bottom: var(--space-3); }
+  .ls-page-header__tabs { position: sticky; top: 0; z-index: 10; margin-bottom: var(--space-4); background: var(--bg); }
+  .ls-page-header__tabs .ls-tab { flex: none; min-height: 44px; }
+  /* With a tab bar, the primary action floats above it in thumb reach, and moves up while a toast shows. */
+  :root:has(.ls-tabbar) .ls-page-header__primary { position: fixed; z-index: 20; right: var(--space-4); bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-4));
+    height: 48px; padding: 0 var(--space-5); border-radius: var(--radius-pill); box-shadow: var(--shadow-md); transition: translate var(--motion-base) var(--ease-enter); }
+  :root:has(.ls-tabbar):has(.ls-toast) .ls-page-header__primary { translate: 0 calc(-1 * (var(--toast-min-height) + var(--space-2))); }
+}
 
 /* ---------- Dialog (native <dialog> opened with showModal()) ---------- */
 /* Sizes are set here because the UA stylesheet caps a dialog at calc(100% - 6px - 2em). */
@@ -204,6 +241,19 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-popover--tip { max-width: min(var(--tooltip-width), calc(100vw - 2 * var(--overlay-margin))); padding: var(--space-1) var(--space-2); }
 .ls-popover__title { margin: 0 0 var(--space-1); font: 600 13px/18px var(--font-sans); color: var(--ink); }
 .ls-popover__meta { margin: 0; color: var(--ink-muted); }
+/* A menu in a popover: the page header's More and account menus. Plain links and buttons, reached with Tab. */
+.ls-popover--menu { min-width: 200px; padding: var(--space-1); }
+.ls-menu__label { margin: 0; padding: var(--space-2) var(--space-3) var(--space-1); font: 600 13px/18px var(--font-sans); color: var(--ink); }
+.ls-menu__meta { margin: 0; padding: 0 var(--space-3) var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+.ls-menu__item { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-sm);
+  background: transparent; font: 500 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer; }
+.ls-menu__item:hover { background: var(--surface-sunken); }
+.ls-menu__item svg { flex: none; width: 16px; height: 16px; }
+.ls-menu__item--danger { color: var(--danger-ink); }
+.ls-menu__sep { height: 1px; margin: var(--space-1) 0; border: 0; background: var(--line); }
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-menu__item { min-height: 44px; }
+}
 .ls-popover:popover-open { animation: ls-fade var(--motion-quick) var(--ease-enter); }
 @supports (position-area: block-end) {
   .ls-popover { top: auto; left: auto; margin: var(--popover-offset); position-area: block-end;
@@ -214,7 +264,7 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 /* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
 .ls-toasts { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); display: flex; justify-content: center;
   padding: 0 var(--overlay-margin); pointer-events: none; }
-.ls-toast { pointer-events: auto; display: flex; align-items: center; gap: var(--space-2); width: max-content; max-width: min(var(--toast-width), 100%); min-height: 52px;
+.ls-toast { pointer-events: auto; display: flex; align-items: center; gap: var(--space-2); width: max-content; max-width: min(var(--toast-width), 100%); min-height: var(--toast-min-height);
   padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4); font: 400 15px/22px var(--font-sans); color: var(--on-toast); background: var(--toast);
   border-radius: var(--radius-md); box-shadow: var(--shadow-md); animation: ls-rise var(--motion-base) var(--ease-enter); }
 .ls-toast:not(:has(.ls-toast__action)) { padding-right: var(--space-4); }

@@ -462,6 +462,57 @@ Example markup:
 </div>
 ```
 
+## Page header
+
+The top of every page, laid out the same everywhere: the area name or a back link, the `h1`, one line of current state, the actions on the right, and the page's tabs below. One component, so the main button never moves between pages and no page lacks a heading.
+
+`header.ls-page-header` holds `div.ls-page-header__main` (with `div.ls-page-header__heading` and `div.ls-page-header__actions`) and optional tabs, `div.ls-tabs.ls-page-header__tabs`.
+
+- Area: `span.ls-page-header__area` with the top-level place ("Budget"), or `a.ls-page-header__area` with a 16px Lucide `chevron-left` and the parent's name ("Projects") on a page one level down.
+- Title: `h1.ls-page-header__title`, the page's own name ("Bills", "Kitchen snagging"). One per page. On a phone it drops to 22px.
+- State: `p.ls-page-header__state`, one line of what is true now, from the API ("£924.50 still to pay in November · 1 overdue"). Status words follow the badge rules: a word, never colour alone. Leave it out if there is nothing to say.
+- Actions: at most one primary (`ls-btn--primary ls-page-header__primary`), and everything else under a More button (`ls-btn` with a Lucide `ellipsis` icon and `aria-label="More actions"`) that opens an `ls-popover--menu`. The primary is the last action, followed only by the account button.
+- Account: `button.ls-page-header__account` holding an `ls-avatar` with the member's initial, opening an `ls-popover--menu` with their name, Settings and Sign out. It shows on a phone; where the page has an `ls-nav` sidebar, the sidebar holds the account and the button hides above 640px.
+- Tabs: an `ls-tabs` row of the page's views (Overview, Bills, Yearly costs), each a route. The row scrolls sideways if the tabs don't fit.
+- Desktop shows everything in this order with nothing sticky.
+- Phone (640px and below): only the tab row is sticky, 44px tall, at the top of the screen; the area, title, state and actions scroll away once read. A page without tabs has no sticky row. With an `ls-tabbar`, the primary action floats above the bar at the bottom right as a 48px pill, in thumb reach, and moves up while a toast shows. Header buttons are 44px.
+- The sticky row needs the header's parent to be the scrolling page content, with no `overflow` set on the elements between them.
+
+Menus (`ls-popover ls-popover--menu`, `popover="auto"`, opened by a `popovertarget` button) hold `p.ls-menu__label` and `p.ls-menu__meta` for a heading, `a.ls-menu__item` or `button.ls-menu__item` rows (44px on a phone or touch screen), `hr.ls-menu__sep` between groups, and `ls-menu__item--danger` for Sign out or Delete. They are plain links and buttons reached with Tab, so they take no `role="menu"`. The popover rules apply: Escape and a click outside close it and focus returns to the button.
+
+Example markup:
+
+```html
+<header class="ls-page-header">
+<div class="ls-page-header__main">
+<div class="ls-page-header__heading"><span class="ls-page-header__area">Budget</span><h1 class="ls-page-header__title">Bills</h1><p class="ls-page-header__state"><strong>£924.50</strong> still to pay in November · 1 overdue</p></div>
+<div class="ls-page-header__actions">
+<button class="ls-btn" type="button" aria-label="More actions" popovertarget="bills-more"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button>
+<button class="ls-btn ls-btn--primary ls-page-header__primary" type="button">Add bill</button>
+<button class="ls-page-header__account" type="button" aria-label="Account: Alex" popovertarget="account"><span class="ls-avatar" aria-hidden="true">A</span></button>
+</div>
+</div>
+<div class="ls-tabs ls-page-header__tabs" role="tablist" aria-label="Budget"><button class="ls-tab" role="tab">Overview</button><button class="ls-tab" role="tab" aria-selected="true">Bills</button><button class="ls-tab" role="tab">Yearly costs</button></div>
+</header>
+<div class="ls-popover ls-popover--menu" id="bills-more" popover><button class="ls-menu__item" type="button">Import statement</button><button class="ls-menu__item" type="button">Export CSV</button></div>
+<div class="ls-popover ls-popover--menu" id="account" popover><p class="ls-menu__label">Alex Morgan</p><p class="ls-menu__meta">Wilson house</p><hr class="ls-menu__sep"><a class="ls-menu__item" href="#">Settings</a><button class="ls-menu__item ls-menu__item--danger" type="button">Sign out</button></div>
+```
+
+A page one level down, with no tabs:
+
+```html
+<header class="ls-page-header">
+<div class="ls-page-header__main">
+<div class="ls-page-header__heading"><a class="ls-page-header__area" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Projects</a><h1 class="ls-page-header__title">Kitchen snagging</h1><p class="ls-page-header__state">3 to do · 1 in progress</p></div>
+<div class="ls-page-header__actions"><button class="ls-btn ls-btn--primary ls-page-header__primary" type="button">Add card</button></div>
+</div>
+</header>
+```
+
+## Avatar
+
+`span.ls-avatar`: a 32px circle in `sage` with the member's initial in `on-sage`. Decorative next to a visible name, so `aria-hidden="true"`; a button that holds only an avatar has its own `aria-label` ("Account: Alex").
+
 ## Visually hidden text
 
 `ls-sr-only` hides text on screen and keeps it for screen readers: a table heading for an actions column, "(opens in a dialog)" after a link, a count's unit beside a bare number.

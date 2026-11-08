@@ -151,6 +151,7 @@
   --overlay-margin: var(--space-4);
   --popover-offset: var(--space-2);
   --toast-width: 440px;
+  --toast-min-height: 52px;
   --tabbar-height: 64px;
   --motion-quick: 120ms;
   --motion-base: 150ms;
