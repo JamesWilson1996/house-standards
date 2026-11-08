@@ -175,10 +175,10 @@ Tabular records. `div.ls-table-wrap > table.ls-table`. Right-align numbers with 
 Example markup:
 
 ```html
-<div class="ls-table-wrap"><table class="ls-table"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th class="num">Total</th></tr></thead><tbody>
-<tr><td><code>ORD-1042</code></td><td>Harlow &amp; Co</td><td><span class="ls-badge ls-badge--success">Paid</span></td><td class="num">£1,240.00</td></tr>
-<tr aria-selected="true"><td><code>ORD-1041</code></td><td>Pennine Bakery</td><td><span class="ls-badge ls-badge--warning">Pending</span></td><td class="num">£86.50</td></tr>
-<tr><td><code>ORD-1040</code></td><td>Mossgate Ltd</td><td><span class="ls-badge ls-badge--danger">Refunded</span></td><td class="num">£312.00</td></tr>
+<div class="ls-table-wrap"><table class="ls-table"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th class="num">Total</th><th><span class="ls-sr-only">Actions</span></th></tr></thead><tbody>
+<tr><td><code>ORD-1042</code></td><td>Harlow &amp; Co</td><td><span class="ls-badge ls-badge--success">Paid</span></td><td class="num">£1,240.00</td><td><button class="ls-btn ls-btn--ghost ls-btn--sm">Refund</button></td></tr>
+<tr aria-selected="true"><td><code>ORD-1041</code></td><td>Pennine Bakery</td><td><span class="ls-badge ls-badge--warning">Pending</span></td><td class="num">£86.50</td><td><button class="ls-btn ls-btn--ghost ls-btn--sm">Refund</button></td></tr>
+<tr><td><code>ORD-1040</code></td><td>Mossgate Ltd</td><td><span class="ls-badge ls-badge--danger">Refunded</span></td><td class="num">£312.00</td><td></td></tr>
 </tbody></table></div>
 ```
 
@@ -311,6 +311,20 @@ Example markup:
 <button class="ls-btn" type="button" popovertarget="bill-card">Council tax</button>
 <div class="ls-popover" id="bill-card" popover><h3 class="ls-popover__title">Council tax</h3><p class="ls-popover__meta">£164.00 · Due 1 December</p></div>
 </div>
+```
+
+## Visually hidden text
+
+`ls-sr-only` hides text on screen and keeps it for screen readers: a table heading for an actions column, "(opens in a dialog)" after a link, a count's unit beside a bare number.
+
+- It clips the element to 1px with `clip-path: inset(50%)` and `white-space: nowrap`, and positions it absolutely, so it takes no space. Put it inside a positioned container (`ls-table-wrap` is one) so it cannot widen the page.
+- An icon-only button uses `aria-label` instead.
+- Don't hide focusable elements with it; a skip link that appears on focus needs its own style.
+
+Example markup:
+
+```html
+<a href="#">Council tax<span class="ls-sr-only"> (opens in a dialog)</span></a>
 ```
 
 ## Motion utilities

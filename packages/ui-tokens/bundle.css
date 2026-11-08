@@ -16,6 +16,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-row--loose { gap: var(--space-5); }
 .ls-stack { display: flex; flex-direction: column; gap: var(--space-3); }
 .ls-pad { padding: var(--space-4); }
+/* Visually hidden, still read by screen readers. Clipped to 1px, so it never widens its container. */
+.ls-sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .ls-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--space-5); }
 
 /* ---------- Button ---------- */
@@ -113,7 +115,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-card__foot { display: flex; gap: var(--space-2); margin-top: var(--space-4); padding-top: var(--space-3); border-top: 1px solid var(--line); }
 
 /* ---------- Table ---------- */
-.ls-table-wrap { border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: auto; background: var(--surface); }
+/* relative, so an absolutely positioned child (a visually hidden header) is placed inside the scroll box, not against the page */
+.ls-table-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: auto; background: var(--surface); }
 .ls-table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 18px; }
 .ls-table th { text-align: left; font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .ls-table td { padding: var(--space-3); border-bottom: 1px solid var(--line); color: var(--ink); }
