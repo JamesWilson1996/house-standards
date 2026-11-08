@@ -23,7 +23,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Button ---------- */
 .ls-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-4);
   font: 600 13px/16px var(--font-sans); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
-  background: var(--surface); color: var(--ink); border-color: var(--line-strong); transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
+  background: var(--surface); color: var(--ink); border-color: var(--line-strong);
+  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, color var(--motion-quick) ease; }
 .ls-btn:hover { background: var(--surface-sunken); }
 .ls-btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .ls-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -148,7 +149,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-table-wrap { position: relative; border: 1px solid var(--line); border-radius: var(--radius-lg); overflow: auto; background: var(--surface); }
 .ls-table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 18px; }
 .ls-table th { text-align: left; font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
-.ls-table td { padding: var(--space-3); border-bottom: 1px solid var(--line); color: var(--ink); }
+.ls-table td { padding: var(--space-3); border-bottom: 1px solid var(--line); color: var(--ink); transition: background-color var(--motion-quick) ease; }
 .ls-table tr:last-child td { border-bottom: 0; }
 .ls-table tbody tr:hover td { background: var(--bg); }
 .ls-table tr[aria-selected="true"] td { background: var(--accent-soft); }
@@ -213,7 +214,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Tabs ---------- */
 .ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
-  color: var(--ink-muted); border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+  color: var(--ink-muted); border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
+  transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
 .ls-tab:hover { color: var(--ink); background: var(--surface-sunken); }
 .ls-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .ls-tab__count { margin-left: var(--space-1); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
@@ -223,7 +225,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Nav (app sidebar) ---------- */
 .ls-nav { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--surface-sunken); border-radius: var(--radius-lg); width: 220px; }
 .ls-nav__item { display: flex; align-items: center; gap: var(--space-2); height: 34px; padding: 0 var(--space-3); border-radius: var(--radius-md);
-  font: 500 15px/22px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
+  font: 500 15px/22px var(--font-sans); color: var(--ink-muted); text-decoration: none; transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
 .ls-nav__item:hover { background: var(--surface); color: var(--ink); }
 .ls-nav__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); font-weight: 600; }
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
@@ -352,7 +354,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-column__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
 .ls-column__title { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--ink); }
 .ls-column__toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding: 0 var(--space-2) 0 var(--space-1); border: 0; border-radius: var(--radius-sm);
-  background: none; font: inherit; color: inherit; cursor: pointer; }
+  background: none; font: inherit; color: inherit; cursor: pointer; transition: background-color var(--motion-quick) ease; }
 .ls-column__toggle:hover { background: var(--surface); }
 .ls-column__toggle svg { width: 16px; height: 16px; transition: rotate var(--motion-quick) var(--ease-enter); }
 .ls-column__toggle[aria-expanded="false"] svg { rotate: -90deg; }
@@ -455,7 +457,8 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-menu__label { margin: 0; padding: var(--space-2) var(--space-3) var(--space-1); font: 600 13px/18px var(--font-sans); color: var(--ink); }
 .ls-menu__meta { margin: 0; padding: 0 var(--space-3) var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
 .ls-menu__item { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-sm);
-  background: transparent; font: 500 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer; }
+  background: transparent; font: 500 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color var(--motion-quick) ease; }
 .ls-menu__item:hover { background: var(--surface-sunken); }
 .ls-menu__item svg { flex: none; width: 16px; height: 16px; }
 .ls-menu__item--danger { color: var(--danger-ink); }
@@ -463,7 +466,9 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @media (max-width: 640px), (pointer: coarse) {
   .ls-menu__item { min-height: 44px; }
 }
-.ls-popover:popover-open { animation: ls-fade var(--motion-quick) var(--ease-enter); }
+/* Detail cards, menus and the filter panel rise 8px and fade in, as a dialog does. Tooltips and a chart's point card follow the pointer, so they only fade. */
+.ls-popover:popover-open { animation: ls-rise var(--motion-base) var(--ease-enter); }
+.ls-popover:is(.ls-popover--tip, .ls-popover--at):popover-open { animation: ls-fade var(--motion-quick) var(--ease-enter); }
 @supports (position-area: block-end) {
   .ls-popover { top: auto; left: auto; margin: var(--popover-offset); position-area: block-end;
     position-try-fallbacks: flip-block, block-end span-inline-end, block-end span-inline-start, block-start span-inline-end, block-start span-inline-start; }
@@ -547,6 +552,40 @@ html:active-view-transition-type(ls-switch)::view-transition-old(root) { animati
 html:active-view-transition-type(ls-switch)::view-transition-new(root) { animation: ls-fade var(--motion-quick) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
 /* The group ends with the fade, so the page takes the next tap after 120ms rather than the browser's 250ms. */
 html:active-view-transition-type(ls-switch)::view-transition-group(root) { animation-duration: var(--motion-quick); }
+
+/* The sidebar, tab bar and toasts are captured on their own, so they stay still while the page moves under them. */
+.ls-nav { view-transition-name: ls-nav; }
+.ls-tabbar { view-transition-name: ls-tabbar; }
+.ls-toasts { view-transition-name: ls-toasts; }
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-nav),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-tabbar),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-toasts) { animation-duration: var(--motion-quick); }
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-nav),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-nav),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-tabbar),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-tabbar),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-toasts),
+html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
+
+/* Opening something one level down (ls-drill) and Back (ls-back). On wider screens the content moves 8px, the same distance a dialog rises:
+   drilling in, the new view fades in from 8px right; Back, the old view fades out 8px to the right as the parent fades in. */
+@keyframes ls-nudge-in { from { opacity: 0; translate: 8px 0; } }
+@keyframes ls-nudge-out { to { opacity: 0; translate: 8px 0; } }
+@keyframes ls-slide-in { from { translate: 100% 0; } }
+@keyframes ls-slide-out { to { translate: 100% 0; } }
+html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
+html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-nudge-in var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
+html:active-view-transition-type(ls-back)::view-transition-old(root) { animation: ls-nudge-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
+html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: ls-fade var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
+html:active-view-transition-type(ls-drill, ls-back)::view-transition-group(root) { animation-duration: var(--motion-base); }
+/* On a phone the new screen slides over the old one from the right edge, and Back slides it off again to show the parent underneath. */
+@media (max-width: 640px) {
+  html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
+  html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-slide-in var(--motion-travel) var(--ease-enter) both; mix-blend-mode: normal; }
+  html:active-view-transition-type(ls-drill)::view-transition-group(root) { animation-duration: var(--motion-travel); }
+  html:active-view-transition-type(ls-back)::view-transition-old(root) { z-index: 1; animation: ls-slide-out var(--motion-base) var(--ease-exit) both; mix-blend-mode: normal; }
+  html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+}
 
 /* A new row or item appearing in place. */
 .ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }
