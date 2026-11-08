@@ -176,10 +176,29 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
   .ls-popover--top { position-area: block-start; }
 }
 
+/* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
+.ls-toasts { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); display: flex; justify-content: center;
+  padding: 0 var(--overlay-margin); pointer-events: none; }
+.ls-toast { pointer-events: auto; display: flex; align-items: center; gap: var(--space-2); width: max-content; max-width: min(var(--toast-width), 100%); min-height: 52px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4); font: 400 15px/22px var(--font-sans); color: var(--on-toast); background: var(--toast);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md); animation: ls-rise var(--motion-base) var(--ease-enter); }
+.ls-toast:not(:has(.ls-toast__action)) { padding-right: var(--space-4); }
+.ls-toast__text { flex: 1; min-width: 0; margin: var(--space-2) 0; }
+/* 44px square at least, so Undo is easy to hit on a phone. */
+.ls-toast__action { flex: none; min-width: 44px; height: 44px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent;
+  font: 600 15px/22px var(--font-sans); color: var(--toast-action); cursor: pointer; }
+.ls-toast__action:hover { text-decoration: underline; text-underline-offset: 2px; }
+.ls-toast--leaving { animation: ls-leave var(--motion-quick) var(--ease-exit) forwards; }
+/* On a phone with a bottom tab bar, the toast sits just above the bar. */
+@media (max-width: 640px) {
+  :root:has(.ls-tabbar) .ls-toasts { bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2)); }
+}
+
 /* ---------- Motion (durations come from the motion tokens, which drop to 0ms under prefers-reduced-motion) ---------- */
 @keyframes ls-fade { from { opacity: 0; } }
 @keyframes ls-rise { from { opacity: 0; translate: 0 8px; } }
 @keyframes ls-rise-full { from { translate: 0 100%; } }
+@keyframes ls-leave { to { opacity: 0; translate: 0 8px; } }
 /* No end keyframe, so the row fades back to its own background. */
 @keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
 

@@ -20,6 +20,7 @@ Hard rules:
 - Status is never colour alone: pair it with a word or a Lucide icon.
 - Keep the 2px `focus-ring` outline on every interactive element.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
+- A command's result is confirmed in an `ls-toast` (one at a time, at most one action such as Undo, 6 seconds); persistent conditions use `ls-alert`.
 - Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away; tooltips and small detail cards use `ls-popover`.
 - Motion uses only the `--motion-*` and `--ease-*` tokens and the patterns in the brand book's Motion section, so reduced motion works everywhere. Drags use `ls-lifted`, `ls-drop-slot` and `ls-drag-handle`.
 - A genuinely new component is added to this system first (PR to house-standards), then used from apps.
