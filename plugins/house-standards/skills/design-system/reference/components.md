@@ -506,6 +506,32 @@ Example markup (the tab row shows on a phone only):
 </div>
 ```
 
+## Week
+
+A week of days with a slot per meal (or per anything that happens once a day): Meals' plan. `ol.ls-week` with an `aria-label` ("Week of 23 November"), holding seven `li.ls-week__day`.
+
+- Day: `h3.ls-week__date` with the short day name and `span.ls-week__dnum`, then `div.ls-week__slots`. Monday first.
+- Slot: `button.ls-week__slot` (or a link) with `span.ls-week__kind` ("Dinner") when a day has more than one slot, `span.ls-week__meal` and an optional `span.ls-week__note`. An empty slot is `ls-week__slot--empty`: dashed, with a 16px Lucide `plus` and "Add dinner", and an `aria-label` naming the day ("Add dinner on Wednesday").
+- Today: `ls-week__day--today` gives the day an `accent-soft` fill, and the date says so in words with `span.ls-badge.ls-badge--accent` "Today". Past days get `ls-week__day--past`: their dates and meals turn `ink-muted` and regular weight, and stay tappable.
+- Layout: day rows (date on the left, slots on the right) below 1100px; seven equal columns at 1100px and wider.
+- A slot opens its picker (recent meals, then search) in an `ls-dialog--sheet` on a phone and an `ls-dialog` elsewhere, with the open state in the URL (`?slot=2026-11-25.dinner`). Picking fills the slot in place with no animation; a toast with Undo confirms.
+- The week shown comes from an `ls-stepper` above it, and lives in the URL. Days are plain calendar dates with no time zone; "today" comes from the app's `Clock` in the household's zone.
+- Slots are 44px tall at least.
+
+Example markup:
+
+```html
+<ol class="ls-week" aria-label="Week of 23 November">
+<li class="ls-week__day ls-week__day--past"><h3 class="ls-week__date"><span>Mon</span><span class="ls-week__dnum">23</span></h3><div class="ls-week__slots"><button class="ls-week__slot" type="button"><span class="ls-week__kind">Dinner</span><span class="ls-week__meal">Chilli</span><span class="ls-week__note">Leftovers for Tuesday lunch</span></button></div></li>
+<li class="ls-week__day ls-week__day--today"><h3 class="ls-week__date"><span>Tue</span><span class="ls-week__dnum">24</span><span class="ls-badge ls-badge--accent">Today</span></h3><div class="ls-week__slots"><button class="ls-week__slot" type="button"><span class="ls-week__kind">Dinner</span><span class="ls-week__meal">Fish pie</span></button></div></li>
+<li class="ls-week__day"><h3 class="ls-week__date"><span>Wed</span><span class="ls-week__dnum">25</span></h3><div class="ls-week__slots"><button class="ls-week__slot ls-week__slot--empty" type="button" aria-label="Add dinner on Wednesday"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add dinner</button></div></li>
+<li class="ls-week__day"><h3 class="ls-week__date"><span>Thu</span><span class="ls-week__dnum">26</span></h3><div class="ls-week__slots"><button class="ls-week__slot" type="button"><span class="ls-week__kind">Dinner</span><span class="ls-week__meal">Roast chicken</span></button></div></li>
+<li class="ls-week__day"><h3 class="ls-week__date"><span>Fri</span><span class="ls-week__dnum">27</span></h3><div class="ls-week__slots"><button class="ls-week__slot ls-week__slot--empty" type="button" aria-label="Add dinner on Friday"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add dinner</button></div></li>
+<li class="ls-week__day"><h3 class="ls-week__date"><span>Sat</span><span class="ls-week__dnum">28</span></h3><div class="ls-week__slots"><button class="ls-week__slot" type="button"><span class="ls-week__kind">Dinner</span><span class="ls-week__meal">Pizza night</span><span class="ls-week__note">Alex cooking</span></button></div></li>
+<li class="ls-week__day"><h3 class="ls-week__date"><span>Sun</span><span class="ls-week__dnum">29</span></h3><div class="ls-week__slots"><button class="ls-week__slot ls-week__slot--empty" type="button" aria-label="Add dinner on Sunday"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Add dinner</button></div></li>
+</ol>
+```
+
 ## Dialog
 
 A modal window over the current page. Record details (a bill, a transaction) and filtered lists opened from a summary ("3 bills due this week") open in a dialog, so closing it puts the user back where they were. A multi-step flow or a form longer than one screen gets its own route.
