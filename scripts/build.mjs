@@ -66,7 +66,8 @@ assertBalancedBraces("bundle.css");
 mkdirSync(PACKAGE_DIR, { recursive: true });
 writeFileSync(join(SOURCE_DIR, "tokens.css"), css);
 writeFileSync(join(PACKAGE_DIR, "tokens.css"), css);
-for (const file of ["tokens.json", "bundle.css"]) {
+// The drag helpers ship as-is; their tests stay beside the source.
+for (const file of ["tokens.json", "bundle.css", "motion.js", "motion.d.ts"]) {
   writeFileSync(join(PACKAGE_DIR, file), readFileSync(join(SOURCE_DIR, file)));
 }
-console.log(`built tokens.css (${themedFamilies.length} themed, ${staticFamilies.length} static tokens) and synced packages/ui-tokens`);
+console.log(`built tokens.css (${themedFamilies.length} themed, ${staticFamilies.length} static tokens) and synced packages/ui-tokens (with motion.js)`);

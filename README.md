@@ -34,6 +34,7 @@ house-standards (this repo, the only copy)
 | Engineering detail | `plugins/house-standards/skills/engineering-standards/reference/*.md` | merge |
 | Colours, type, spacing | `plugins/house-standards/skills/design-system/assets/tokens.json` | `node scripts/build.mjs`, commit, tag `ui-tokens-vX.Y.Z` |
 | Component styles | `plugins/house-standards/skills/design-system/assets/bundle.css` | same as above |
+| Drag helpers | `plugins/house-standards/skills/design-system/assets/motion.js` (+ `motion.d.ts`, tests in `motion.test.mjs`) | same as above |
 | Brand and component rules | `plugins/house-standards/skills/design-system/reference/*.md` | merge |
 
 Never edit `packages/ui-tokens/*` or any `tokens.css` by hand; `scripts/build.mjs` generates them and CI fails if they're stale.
