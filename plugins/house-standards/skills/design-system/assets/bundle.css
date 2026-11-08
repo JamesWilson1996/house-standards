@@ -140,6 +140,27 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-nav__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); font-weight: 600; }
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
 
+/* ---------- Tab bar (phone navigation along the bottom edge) ---------- */
+/* Shown at 640px and below only; wider screens use ls-nav. Switching tabs is instant, so nothing here transitions. */
+.ls-tabbar { display: none; }
+@media (max-width: 640px) {
+  .ls-tabbar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; gap: var(--space-1); height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+    padding: var(--space-1) var(--space-1) calc(var(--space-1) + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
+  /* The page's last line scrolls clear of the bar, and the sidebar gives way to it. */
+  :root:has(.ls-tabbar) body { padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom)); }
+  :root:has(.ls-tabbar) .ls-nav { display: none; }
+}
+.ls-tabbar__item { position: relative; flex: 1 1 0; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 0 var(--space-1); border-radius: var(--radius-md); font: 600 12px/16px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
+.ls-tabbar__item svg { flex: none; width: 20px; height: 20px; }
+.ls-tabbar__label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ls-tabbar__item:hover { color: var(--ink); }
+.ls-tabbar__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); }
+.ls-tabbar__item:focus-visible { outline-offset: -2px; } /* inside the item, so the screen edge never clips it */
+/* The count sits on the icon's corner. Solid, so it stands out on the current tab's soft fill too. */
+.ls-tabbar__badge { position: absolute; top: var(--space-1); left: calc(50% + 4px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
+  font: 600 11px/18px var(--font-sans); font-variant-numeric: tabular-nums; text-align: center; background: var(--accent); color: var(--on-accent); }
+
 /* ---------- Dialog (native <dialog> opened with showModal()) ---------- */
 /* Sizes are set here because the UA stylesheet caps a dialog at calc(100% - 6px - 2em). */
 .ls-dialog { width: min(var(--dialog-md), calc(100vw - 2 * var(--overlay-margin))); max-width: none; max-height: calc(100dvh - 2 * var(--overlay-margin));
