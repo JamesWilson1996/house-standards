@@ -36,6 +36,7 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 - Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
 - Touch: at 640px and below and on touch screens, every target is at least 44px. Buttons, inputs, selects and money fields are 44px tall, small buttons keep a 44px hit area, checkbox and switch rows are 44px, and field text is 16px so iOS doesn't zoom the page on focus. The bundle does this; apps don't set their own control heights.
 - Hover styles are for pointers only: the bundle puts them under `@media (hover: hover)`, so a tap on a phone never leaves a hover fill behind. App CSS does the same.
+- Forced colours (Windows High Contrast, #55): the browser replaces every colour with the user's palette and drops fills and shadows. The bundle redraws each state that relied on a fill with system colours: chosen and current items in `SelectedItem`, the selected row, today and drop targets with a `Highlight` ring, switch, radio and progress marks, placeholders in `GrayText`, and badges and chips outlined. A new component that shows a state with a fill or shadow alone adds its own rule to that block, and is checked with Playwright's `emulateMedia({ forcedColors: "active" })` in a dark and a light palette.
 - Focus: a 2px solid `focus-ring` outline offset 2px on every interactive element (`:focus-visible`). Never remove it.
 
 ## Motion

@@ -742,3 +742,40 @@ html:active-view-transition-type(ls-drill, ls-back)::view-transition-group(root)
 .ls-drop-slot { list-style: none; box-sizing: border-box; border: 2px dashed var(--accent); border-radius: var(--radius-md); background: var(--accent-soft); }
 .ls-dragging { cursor: grabbing; -webkit-user-select: none; user-select: none; }
 .ls-drag-handle { cursor: grab; touch-action: none; } /* a finger on the handle drags instead of scrolling */
+
+/* ---------- Forced colours (Windows High Contrast and other forced palettes) ---------- */
+/* The browser swaps every colour for the user's palette and drops backgrounds and shadows, so states drawn with a fill vanish.
+   Each such state is redrawn here with system colours: SelectedItem for what is chosen or current, Highlight for a fill or ring,
+   CanvasText for marks. forced-color-adjust: none keeps these exact colours, on elements whose children carry no colour of their own. */
+@media (forced-colors: active) {
+  /* Chosen and current: segmented option, sidebar and tab bar place, pressed chip, chosen calendar day. */
+  .ls-segmented__option:has(input:checked), .ls-nav__item[aria-current="page"], .ls-tabbar__item[aria-current="page"],
+  .ls-chip:is([aria-pressed="true"], .ls-chip--active), .ls-calendar__day[aria-selected="true"] {
+    forced-color-adjust: none; background: SelectedItem; color: SelectedItemText; border-color: SelectedItem; }
+  /* A row or day that holds other content keeps the palette and gets a ring instead. */
+  .ls-table tr[aria-selected="true"] td { outline: 2px solid Highlight; outline-offset: -2px; }
+  .ls-week__day--today { outline: 2px solid Highlight; outline-offset: -2px; }
+  .ls-calendar__day[aria-current="date"] { outline: 2px solid CanvasText; outline-offset: -2px; }
+  .ls-calendar__day[aria-disabled="true"] { forced-color-adjust: none; color: GrayText; }
+  .ls-column--drop, .ls-tab--drop { outline: 2px dashed Highlight; outline-offset: -2px; }
+  /* Only the selected tab is underlined; the others' transparent border would otherwise show. */
+  .ls-tab { border-bottom-color: transparent; }
+  .ls-tab:not([aria-selected="true"]) { border-bottom-style: hidden; }
+  .ls-tab[aria-selected="true"] { border-bottom-color: Highlight; }
+  /* Radio dot, switch knob and track. */
+  .ls-check input[type="radio"]:checked::after { forced-color-adjust: none; background: CanvasText; }
+  .ls-switch input { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
+  .ls-switch input::after { background: CanvasText; }
+  .ls-switch input:checked { background: Highlight; border-color: Highlight; }
+  .ls-switch input:checked::after { background: HighlightText; }
+  /* Progress: an outlined track with a Highlight fill. */
+  .ls-progress__bar { forced-color-adjust: none; border: 1px solid CanvasText; }
+  .ls-progress__bar::-webkit-progress-bar { background: Canvas; }
+  .ls-progress__bar::-webkit-progress-value { background: Highlight; }
+  .ls-progress__bar::-moz-progress-bar { background: Highlight; }
+  /* Placeholders and the busy spinner. */
+  .ls-placeholder { forced-color-adjust: none; background: GrayText; }
+  .ls-btn[aria-busy="true"]::before { border-color: ButtonText; border-right-color: transparent; }
+  /* Badges, date chips and counts keep their shape with an outline, since their fill is gone; the word carries the meaning. */
+  .ls-badge, .ls-date, .ls-tabbar__badge, .ls-chip__count, .ls-tab__count { border: 1px solid CanvasText; }
+}
