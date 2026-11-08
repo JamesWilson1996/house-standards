@@ -353,6 +353,44 @@ Example markup:
 </nav>
 ```
 
+## Quick add
+
+Adds items one after another without leaving the keyboard: the shopping list, a board column's new card. An input and an Add button in one row, and optional suggestion chips under it.
+
+`form.ls-quickadd` holds `div.ls-quickadd__row` (an `input.ls-input` with an `aria-label` and `enterkeyhint="done"`, then a `button.ls-btn.ls-btn--primary[type=submit]` "Add") and, optionally, `div.ls-quickadd__suggestions` with `span.ls-quickadd__label` ("Bought before") and `button.ls-chip` per suggestion.
+
+- Enter or Add submits. The field clears at once and keeps focus, before the server answers, so the next item can be typed straight away. If the command fails, the text comes back into the field with the error in a help line. Never disable the field while a command is in flight: text typed during the wait belongs to the next item.
+- Each submit is its own command with its own client-made id and `Idempotency-Key`, so items typed quickly arrive as separate items and a retry is safe.
+- The new item appears in the list in place with `ls-enter`. No toast when the new row is on screen; a toast with Undo when it lands somewhere out of view.
+- Suggestions: at most 8 chips with a 16px Lucide `plus`, from the API (items bought before, most frequent first). Tapping one adds it at once and the chip goes. They wrap onto as many lines as they need; this is not a filter bar.
+- Empty input: Add does nothing and the field keeps focus. Don't disable the button, so it stays findable.
+- 36px controls on desktop, 44px on a phone.
+
+```ts
+// Clears at once so typing can continue; puts the text back only if the command fails.
+export async function submitQuickAdd(input: HTMLInputElement, add: (name: string) => Promise<void>) {
+  const name = input.value.trim();
+  if (!name) return;
+  input.value = "";
+  input.focus();
+  try {
+    await add(name);
+  } catch (error) {
+    if (!input.value) input.value = name;
+    throw error;
+  }
+}
+```
+
+Example markup:
+
+```html
+<form class="ls-quickadd">
+<div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" placeholder="Add an item" enterkeyhint="done" autocomplete="off"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
+<div class="ls-quickadd__suggestions"><span class="ls-quickadd__label">Bought before</span><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Milk</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bread</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bananas</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Washing-up liquid</button></div>
+</form>
+```
+
 ## Filter bar and chips
 
 The one row of controls above a list, on every screen size: the scope (which month, which week), search, the filters in use as removable chips, a Filter chip that holds every other filter, and the result count. It replaces rows of selects and checkboxes, which push the first result below the first screen on a phone.
