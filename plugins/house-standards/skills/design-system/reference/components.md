@@ -135,7 +135,7 @@ Example markup:
 An inline message about the current page. `div.ls-alert.ls-alert--{info|success|warning|danger}` with an icon and text; `role="status"` for info/success, `role="alert"` for warning/danger.
 
 - Consumer provides: the icon (Lucide, 20px, `currentColor`), a bold lead phrase, and one sentence.
-- Use for persistent conditions ("This workspace is read-only"). Transient confirmations go in a toast.
+- Use for persistent conditions ("This workspace is read-only"). Transient confirmations go in an `ls-toast`.
 
 Example markup:
 
@@ -146,6 +146,77 @@ Example markup:
 <div class="ls-alert ls-alert--warning" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg><div><strong>Plan limit close.</strong> 92 of 100 seats used.</div></div>
 <div class="ls-alert ls-alert--danger" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg><div><strong>Sync failed.</strong> The billing service didn't respond. Try again in a minute.</div></div>
 </div>
+```
+
+## Toast
+
+Confirms that a command worked, with at most one action, usually Undo: "Netflix marked paid · Undo". It sits at the bottom centre of the window and leaves after 6 seconds. Every module uses this one pattern; don't build inline notices for confirmations.
+
+`div.ls-toasts` is the live region, `role="status"`, rendered once at the app root and empty until a toast arrives. Each toast is `div.ls-toast` holding `p.ls-toast__text` and an optional `button.ls-toast__action`.
+
+- One toast at a time. A new toast replaces the current one at once, without the leaving animation.
+- Text: what changed, past tense, naming the item ("Council tax marked paid", "3 items moved to Bought"). One line where it fits; it wraps on a phone.
+- Action: one verb ("Undo", "View"). Undo sends the inverse command to the backend; the UI never restores state by itself. Never put a destructive action in a toast.
+- Timing: 6 seconds, paused while the pointer is over the toast or focus is inside it, so it can be read and reached. Escape dismisses it when focus is inside. Errors that need action are an `ls-alert` or a field error, not a toast.
+- Position: `space-5` above the bottom edge plus the safe area. At 640px and below, when the page has an `ls-tabbar`, it sits above the bar. It is `toast-width` (440px) at most and the viewport width less `overlay-margin` on each side.
+- Colours: `toast` with `on-toast` text and `toast-action` for the button. The fill is darker than the page in light and lighter in dark, so it stands out over any surface.
+- A dialog is in the top layer and covers the toast. If a command in a dialog closes it, show the toast after the dialog closes.
+- Motion is built in: the toast rises 8px and fades in over `motion-base`. To dismiss, add `ls-toast--leaving`: it fades and drops 8px over `motion-quick` with `ease-exit`; remove the element on `animationend`. Under reduced motion both run in 0ms and `animationend` still fires.
+
+```ts
+const TOAST_MS = 6000;
+
+// Shows one toast, replacing any current one. Returns a function that dismisses it.
+export function showToast(region: HTMLElement, text: string, action?: { label: string; run: () => void }) {
+  region.replaceChildren();
+  const toast = document.createElement("div");
+  toast.className = "ls-toast";
+  const p = document.createElement("p");
+  p.className = "ls-toast__text";
+  p.textContent = text;
+  toast.append(p);
+  const dismiss = () => {
+    clearTimeout(timer);
+    toast.classList.add("ls-toast--leaving");
+    toast.addEventListener("animationend", () => toast.remove(), { once: true });
+  };
+  if (action) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "ls-toast__action";
+    button.textContent = action.label;
+    button.addEventListener("click", () => { action.run(); dismiss(); });
+    toast.append(button);
+  }
+  let timer = setTimeout(dismiss, TOAST_MS);
+  const pause = () => clearTimeout(timer);
+  const resume = () => { if (!toast.matches(":hover, :focus-within")) timer = setTimeout(dismiss, TOAST_MS); };
+  toast.addEventListener("pointerenter", pause);
+  toast.addEventListener("focusin", pause);
+  toast.addEventListener("pointerleave", resume);
+  toast.addEventListener("focusout", resume);
+  toast.addEventListener("keydown", (e) => e.key === "Escape" && dismiss());
+  region.append(toast);
+  return dismiss;
+}
+```
+
+In React, keep the current toast in one context at the app root and render the region there; modules call `useToast()` after a mutation succeeds.
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<div class="ls-toast"><p class="ls-toast__text">Netflix marked paid</p><button class="ls-toast__action" type="button">Undo</button></div>
+<div class="ls-toast"><p class="ls-toast__text">3 items moved to Bought</p><button class="ls-toast__action" type="button">Undo</button></div>
+<div class="ls-toast"><p class="ls-toast__text">Settings saved</p></div>
+</div>
+```
+
+At the app root (empty until a toast arrives):
+
+```html
+<div class="ls-toasts" role="status"></div>
 ```
 
 ## Card
