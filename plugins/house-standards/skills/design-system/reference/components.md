@@ -419,7 +419,7 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
 - Switching tabs crossfades (brand book Motion pattern 4): the old view fades out as the new one fades in over `motion-quick`, with no slide. The same goes for the sidebar, a page's `ls-tabs`, the board's column tabs and a stepper's period. Each tab keeps its own scroll position and state where the router allows.
-- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms.
+- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
 
 ```ts
 // Crossfades to the next tab; update swaps the content. Falls back to an instant swap.
@@ -560,6 +560,7 @@ Columns of numbered cards that move between stages: a project's To do, In progre
 - Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit.
 - Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
 - Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls. The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
+- On desktop, when the columns don't fit, holding a card within 48px of the board's left or right edge scrolls the board that way, faster the nearer the edge (`scrollNearEdge`). Call it on every animation frame while a card is lifted, with the pointer's last position, so the board keeps scrolling while the pointer rests; when it scrolls, place the slot again for the column now under the pointer. It runs under reduced motion too, because the user is moving it.
 - Without dragging: the card's dialog has Move to, which opens an `ls-dialog--sheet` on a phone listing the columns. This is the keyboard and screen reader route.
 - After a move, the API's new order is the truth; a toast with Undo confirms it.
 
@@ -581,6 +582,19 @@ export function pressToLift(card: HTMLElement, lift: (e: PointerEvent) => void) 
     card.addEventListener("pointerup", cancel, { once: true });
     card.addEventListener("pointercancel", cancel, { once: true });
   });
+}
+
+const EDGE_ZONE_PX = 48;
+const MAX_SCROLL_STEP_PX = 16;
+
+// Scrolls the board sideways while a held card is near its left or right edge; returns whether it scrolled.
+export function scrollNearEdge(board: HTMLElement, pointerX: number) {
+  const { left, right } = board.getBoundingClientRect();
+  const depth = pointerX < left + EDGE_ZONE_PX ? pointerX - (left + EDGE_ZONE_PX) : pointerX > right - EDGE_ZONE_PX ? pointerX - (right - EDGE_ZONE_PX) : 0;
+  if (!depth) return false;
+  const before = board.scrollLeft;
+  board.scrollLeft += Math.max(-1, Math.min(1, depth / EDGE_ZONE_PX)) * MAX_SCROLL_STEP_PX;
+  return board.scrollLeft !== before;
 }
 ```
 
@@ -747,6 +761,7 @@ A small layer anchored to the element that opened it, built on the Popover API. 
 | Escape | Hides it | Closes it and returns focus to the trigger |
 
 - The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`.
+- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing is instant.
 - A tooltip never holds the only copy of information. An icon-only button keeps its own `aria-label`, and on touch the tooltip appears only when tapped.
 - Placement: below the trigger by default, `ls-popover--top` above. Where the browser supports CSS anchor positioning (`position-area`), the popover anchors to its trigger (the `popovertarget` button, or the `source` passed to `showPopover()`), flips above or below, and shifts sideways to stay `popover-offset` (8px) inside the viewport.
 - Fallback where `position-area` is missing: compute the position from the trigger and set `--ls-popover-x` and `--ls-popover-y`. Run it on the popover's `toggle` event when `newState` is `"open"`, and on scroll and resize while it is open.
@@ -785,6 +800,16 @@ The top of every page, laid out the same everywhere: the area name or a back lin
 `header.ls-page-header` holds `div.ls-page-header__main` (with `div.ls-page-header__heading` and `div.ls-page-header__actions`) and optional tabs, `div.ls-tabs.ls-page-header__tabs`.
 
 - Area: `span.ls-page-header__area` with the top-level place ("Budget"), or `a.ls-page-header__area` with a 16px Lucide `chevron-left` and the parent's name ("Projects") on a page one level down.
+- Going one level down and back (brand book Motion pattern 4): mark the link into the page with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. On a phone the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base`; on wider screens the new page fades in from 8px right over `motion-base` and Back fades it out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still. With TanStack Router, pass `viewTransition={{ types: ["ls-drill"] }}` on the link in and `["ls-back"]` on the back link. Without a router, use `drillView`.
+
+```ts
+// Moves to a page one level down ("in") or back to its parent ("back"); update swaps the content. Falls back to an instant swap.
+export function drillView(direction: "in" | "back", update: () => void) {
+  if (!document.startViewTransition) return update();
+  document.startViewTransition({ update, types: [direction === "in" ? "ls-drill" : "ls-back"] });
+}
+```
+
 - Title: `h1.ls-page-header__title`, the page's own name ("Bills", "Kitchen snagging"). One per page. On a phone it drops to 22px.
 - State: `p.ls-page-header__state`, one line of what is true now, from the API ("£924.50 still to pay in November · 1 overdue"). Status words follow the badge rules: a word, never colour alone. Leave it out if there is nothing to say.
 - Actions: at most one primary (`ls-btn--primary ls-page-header__primary`), and everything else under a More button (`ls-btn` with a Lucide `ellipsis` icon and `aria-label="More actions"`) that opens an `ls-popover--menu`. The primary is the last action, followed only by the account button.
