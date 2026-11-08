@@ -33,6 +33,8 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 - Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus and popovers; `shadow-lg` for dialogs, over a `backdrop` scrim.
 - Overlays: dialogs are `dialog-sm` 400, `dialog-md` 560 or `dialog-lg` 800 wide and fill the screen at 640px and below, except a sheet (`ls-dialog--sheet`): it rises from the bottom as tall as its content, up to 90% of the screen, for pickers, filters and forms of up to 4 fields. Longer forms stay full screen. Popovers grow to `popover-width` 320 (tooltips `tooltip-width` 240), and sit `popover-offset` 8 from their trigger and the viewport edge. Dialogs keep `overlay-margin` 16 from the viewport edge.
 - Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
+- Touch: at 640px and below and on touch screens, every target is at least 44px. Buttons, inputs, selects and money fields are 44px tall, small buttons keep a 44px hit area, checkbox and switch rows are 44px, and field text is 16px so iOS doesn't zoom the page on focus. The bundle does this; apps don't set their own control heights.
+- Hover styles are for pointers only: the bundle puts them under `@media (hover: hover)`, so a tap on a phone never leaves a hover fill behind. App CSS does the same.
 - Focus: a 2px solid `focus-ring` outline offset 2px on every interactive element (`:focus-visible`). Never remove it.
 
 ## Motion

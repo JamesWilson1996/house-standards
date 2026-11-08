@@ -7,7 +7,7 @@ All components are plain CSS classes from `assets/bundle.css` (prefix `ls-`). Wr
 Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once per view, for the thing the screen is for; **Secondary** (`--secondary`, sage) for the supporting action; default (outlined) for everything else; **Ghost** for toolbars and table rows; **Danger** only for irreversible destructive actions, and always behind a confirm.
 
 - Consumer provides: a `<button>` (or `<a>` for navigation) with class `ls-btn` plus one variant, and a verb-first label in sentence case ("Save changes", not "SAVE" or "Submit").
-- Sizes: default 36px, `ls-btn--sm` 28px for dense tables.
+- Sizes: default 36px, `ls-btn--sm` 28px for dense tables. On a phone or touch screen the default is 44px and a small button keeps its 28px look with a 44px hit area (brand book, Touch).
 - Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
 - Pending server actions: keep the button enabled-looking and show a spinner — the action is owned by the backend and may still succeed.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
@@ -28,7 +28,7 @@ A labelled text input with optional help or error text. Wrap in `div.ls-field`; 
 
 - Consumer provides: the label (always visible, including when the field has a placeholder), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
 - Errors: set `data-invalid` on the field and `aria-invalid="true"` on the input; the help line turns `danger-ink`. Error text comes from the backend's validation response (problem+json `errors[]`), mapped by field name — don't duplicate business rules in the client.
-- Inputs are 36px tall to align with buttons.
+- Inputs are 36px tall to align with buttons. On a phone or touch screen inputs and selects are 44px with 16px text, so iOS doesn't zoom the page when one takes focus.
 - Fields side by side go in `div.ls-row.ls-row--top` so every field starts on the same line. A plain `ls-row` centres its items, which moves a field without help text down.
 - A button that acts on one field (Test, Copy, Generate) goes inside that field, in `div.ls-field__row` with the input. The button lines up with the input and the help text sits below the row. A button in an `ls-row` beside the field centres on the label, input and help together.
 - A button with help text and no input (Export data) goes in an `ls-field` with the help after it. It keeps its own width.
@@ -109,7 +109,7 @@ Example markup (a settings card with sub-sections, an inline action, a file pick
 Amounts of money, typed and shown. Money is stored and sent as integer minor units with a currency (`amount_minor: 164000, currency: "GBP"`); these classes only display it.
 
 - Input: `div.ls-money` in place of the `ls-input`, holding `span.ls-money__currency` (`aria-hidden="true"`, the symbol "£") and `input.ls-money__input` with `inputmode="decimal"`, `autocomplete="off"` and the field's `id`. The label says the currency when it matters ("Amount (£)"); the symbol is decoration. Digits are tabular and left-aligned, as typed.
-- The wrapper is the visible box: it takes the focus ring, `data-invalid` and disabled styles like an `ls-input`, and fits in an `ls-field__row`. 36px tall, 44px on a phone.
+- The wrapper is the visible box: it takes the focus ring, `data-invalid` and disabled styles like an `ls-input`, and fits in an `ls-field__row`. 36px tall; 44px with 16px text on a phone or touch screen.
 - Accept what people type: "1,234.5", "£12", " 12.00 ". Parse to minor units on submit and send that; the API's problem+json decides what is valid and its error goes in the help line.
 - Text: `span.ls-amount` for any amount outside a table (`td.num` already does this in a table): tabular numerals, never wrapped. Format with `Intl.NumberFormat` and the household's currency, never by hand. A negative amount has `ls-amount--negative` (`danger-ink`), keeps its minus sign, and says what it means in words beside it ("−£695 short"). Colour is never the only sign.
 - Amounts change in place: no counting up.
