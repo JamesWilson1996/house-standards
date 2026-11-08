@@ -258,6 +258,26 @@ At the app root (empty until a toast arrives):
 <div class="ls-toasts" role="status"></div>
 ```
 
+## Stat
+
+One figure that answers a question at a glance: "Left this month", "Due this week". `dl.ls-stats` holds one or more `div.ls-stat`, each with `dt.ls-stat__label`, `dd.ls-stat__value` and an optional `dd.ls-stat__sub`.
+
+- Label: what the figure is, in a few words. Value: the figure itself, tabular, formatted with `Intl.NumberFormat` (30px; 24px on a phone). Sub-line: what it is made of ("Income £3,200 · Bills £3,895") or when it was true.
+- Status: an `ls-badge` inside the value, after the figure ("Short", "On track"), mapped 1:1 from the API's state. The figure stays `ink`; the badge carries the tone and the word.
+- A row of stats wraps: as many 160px columns as fit (140px on a phone). Put stats in an `ls-card` when they sit among other content.
+- A stat beats a chart when one number answers the question. Use a chart for a trend over time, and a stat for where things stand now.
+- Figures change in place: no counting up.
+
+Example markup:
+
+```html
+<dl class="ls-stats">
+<div class="ls-stat"><dt class="ls-stat__label">Left this month</dt><dd class="ls-stat__value">−£695<span class="ls-badge ls-badge--danger">Short</span></dd><dd class="ls-stat__sub">Income £3,200 · Bills £3,895</dd></div>
+<div class="ls-stat"><dt class="ls-stat__label">Due this week</dt><dd class="ls-stat__value">3 bills</dd><dd class="ls-stat__sub">£218.00 in total</dd></div>
+<div class="ls-stat"><dt class="ls-stat__label">Spent so far</dt><dd class="ls-stat__value">£2,140<span class="ls-badge ls-badge--success">On track</span></dd></div>
+</dl>
+```
+
 ## Card
 
 A bounded group of related content. `div.ls-card` (border only) or add `ls-card--raised` to lift with `shadow-sm`. Optional `h3.ls-card__title`, `p.ls-card__meta`, `div.ls-card__foot`.
