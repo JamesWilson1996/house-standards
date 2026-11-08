@@ -376,6 +376,50 @@ Example markup:
 </div>
 ```
 
+## Board
+
+Columns of numbered cards that move between stages: a project's To do, In progress and Done. `div.ls-board` holds one `section.ls-column` per stage.
+
+- Column: `div.ls-column__head` with `h2.ls-column__title` wrapping a `button.ls-column__toggle` (`aria-expanded`, `aria-controls` on the cards, a 16px Lucide `chevron-down` that turns when folded) and `span.ls-column__count`; then `ol.ls-column__cards`. A folded column gets `ls-column--folded` and shows only its head. Fold state is per device (local storage), not on the server.
+- Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL. Cards hold no other buttons.
+- Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit.
+- Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
+- Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls. The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
+- Without dragging: the card's dialog has Move to, which opens an `ls-dialog--sheet` on a phone listing the columns. This is the keyboard and screen reader route.
+- After a move, the API's new order is the truth; a toast with Undo confirms it.
+
+```ts
+const LIFT_DELAY_MS = 350;
+const MOVE_TOLERANCE_PX = 8;
+
+// On touch, lifts a card after a press; moving first means the finger is scrolling, so nothing lifts.
+export function pressToLift(card: HTMLElement, lift: (e: PointerEvent) => void) {
+  card.addEventListener("pointerdown", (down) => {
+    if (down.pointerType === "mouse") return lift(down);
+    const timer = setTimeout(() => {
+      navigator.vibrate?.(15);
+      lift(down);
+    }, LIFT_DELAY_MS);
+    const cancel = () => clearTimeout(timer);
+    const move = (e: PointerEvent) => Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) > MOVE_TOLERANCE_PX && cancel();
+    card.addEventListener("pointermove", move);
+    card.addEventListener("pointerup", cancel, { once: true });
+    card.addEventListener("pointercancel", cancel, { once: true });
+  });
+}
+```
+
+Example markup (the tab row shows on a phone only):
+
+```html
+<div class="ls-tabs ls-board__tabs" role="tablist" aria-label="Columns"><button class="ls-tab" role="tab" aria-selected="true">To do<span class="ls-tab__count">3</span></button><button class="ls-tab ls-tab--drop" role="tab">In progress<span class="ls-tab__count">1</span></button><button class="ls-tab" role="tab">Done<span class="ls-tab__count">0</span></button></div>
+<div class="ls-board">
+<section class="ls-column ls-column--current" aria-labelledby="todo-title"><div class="ls-column__head"><h2 class="ls-column__title" id="todo-title"><button class="ls-column__toggle" type="button" aria-expanded="true" aria-controls="todo-cards"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>To do</button></h2><span class="ls-column__count">3<span class="ls-sr-only"> cards</span></span></div><ol class="ls-column__cards" id="todo-cards"><li><article class="ls-board__card"><div class="ls-board__top"><span class="ls-board__number">#1</span><span class="ls-badge ls-badge--warning">High priority</span></div><button class="ls-board__title" type="button">Loose socket by the hob</button><p class="ls-board__meta">Electrics · Alex</p></article></li><li><article class="ls-board__card"><div class="ls-board__top"><span class="ls-board__number">#3</span></div><button class="ls-board__title" type="button">Sealant round the sink</button><p class="ls-board__meta">Plumbing</p></article></li><li><article class="ls-board__card"><div class="ls-board__top"><span class="ls-board__number">#4</span></div><button class="ls-board__title" type="button">Extractor fan noisy</button></article></li></ol></section>
+<section class="ls-column ls-column--drop" aria-labelledby="doing-title"><div class="ls-column__head"><h2 class="ls-column__title" id="doing-title"><button class="ls-column__toggle" type="button" aria-expanded="true" aria-controls="doing-cards"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>In progress</button></h2><span class="ls-column__count">1<span class="ls-sr-only"> cards</span></span></div><ol class="ls-column__cards" id="doing-cards"><li><article class="ls-board__card"><div class="ls-board__top"><span class="ls-board__number">#2</span></div><button class="ls-board__title" type="button">Cupboard door hinge</button><p class="ls-board__meta">Carpentry · Sam</p></article></li></ol></section>
+<section class="ls-column ls-column--folded" aria-labelledby="done-title"><div class="ls-column__head"><h2 class="ls-column__title" id="done-title"><button class="ls-column__toggle" type="button" aria-expanded="false" aria-controls="done-cards"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Done</button></h2><span class="ls-column__count">0<span class="ls-sr-only"> cards</span></span></div><ol class="ls-column__cards" id="done-cards"></ol></section>
+</div>
+```
+
 ## Dialog
 
 A modal window over the current page. Record details (a bill, a transaction) and filtered lists opened from a summary ("3 bills due this week") open in a dialog, so closing it puts the user back where they were. A multi-step flow or a form longer than one screen gets its own route.
