@@ -170,6 +170,9 @@
   --toast-min-height: 52px;
   --tabbar-height: 64px;
   --board-column-width: 280px;
+  --nav-width: 220px;
+  --content-width: 1040px;
+  --page-gutter: var(--space-4);
   --motion-quick: 120ms;
   --motion-base: 150ms;
   --motion-travel: 200ms;
