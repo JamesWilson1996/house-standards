@@ -385,6 +385,7 @@ Example markup:
 Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-tab[role=tab]`; the active tab has `aria-selected="true"`.
 
 - Consumer provides: tab labels and the panels. Each tab is a route segment or search param (TanStack Router) so it survives reload and can be linked.
+- Switching tabs crossfades over `motion-quick` (see Tab bar), never slides.
 
 Example markup:
 
@@ -417,7 +418,16 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs is instant (brand book Motion pattern 4): no slide or fade between top-level places. Each tab keeps its own scroll position and state where the router allows.
+- Switching tabs crossfades (brand book Motion pattern 4): the old view fades out as the new one fades in over `motion-quick`, with no slide. The same goes for the sidebar, a page's `ls-tabs`, the board's column tabs and a stepper's period. Each tab keeps its own scroll position and state where the router allows.
+- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms.
+
+```ts
+// Crossfades to the next tab; update swaps the content. Falls back to an instant swap.
+export function switchView(update: () => void) {
+  if (!document.startViewTransition) return update();
+  document.startViewTransition({ update, types: ["ls-switch"] });
+}
+```
 - Consumer provides: the links (TanStack Router `<Link>` with `activeProps={{ "aria-current": "page" }}`) and the counts from the API.
 
 Example markup:
@@ -528,7 +538,7 @@ Moves a list through time one period at a time: Budget's month, Meals' week. Pre
 - Label: `span.ls-stepper__long` ("November 2026", "Week of 9 November") and `span.ls-stepper__short` (`aria-hidden="true"`; "Nov 2026", "9 Nov"). On a phone the short one shows and the long one is read by screen readers, so the stepper leaves room in a filter bar. The label has `aria-live="polite"` so a step is announced.
 - Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
 - The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
-- Changing period swaps the list in place: no slide or fade (brand book Motion pattern 4 treats it like switching tabs).
+- Changing period crossfades the list like switching tabs (`ls-switch`, see Tab bar), with no slide.
 - In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
 - 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
 

@@ -229,7 +229,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
 
 /* ---------- Tab bar (phone navigation along the bottom edge) ---------- */
-/* Shown at 640px and below only; wider screens use ls-nav. Switching tabs is instant, so nothing here transitions. */
+/* Shown at 640px and below only; wider screens use ls-nav. A tab switch crossfades the page (ls-switch below); the bar itself doesn't animate. */
 .ls-tabbar { display: none; }
 @media (max-width: 640px) {
   .ls-tabbar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; gap: var(--space-1); height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
@@ -539,6 +539,14 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-leave { to { opacity: 0; translate: 0 8px; } }
 /* No end keyframe, so the row fades back to its own background. */
 @keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
+
+/* Switching tabs, top-level places or a stepper's period: the old view fades out as the new one fades in over motion-quick, with no movement.
+   Only navigations started with the ls-switch view transition type use it; other view transitions keep their own animation. */
+@keyframes ls-fade-out { to { opacity: 0; } }
+html:active-view-transition-type(ls-switch)::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
+html:active-view-transition-type(ls-switch)::view-transition-new(root) { animation: ls-fade var(--motion-quick) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
+/* The group ends with the fade, so the page takes the next tap after 120ms rather than the browser's 250ms. */
+html:active-view-transition-type(ls-switch)::view-transition-group(root) { animation-duration: var(--motion-quick); }
 
 /* A new row or item appearing in place. */
 .ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }
