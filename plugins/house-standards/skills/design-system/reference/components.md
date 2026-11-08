@@ -7,9 +7,9 @@ All components are plain CSS classes from `assets/bundle.css` (prefix `ls-`). Wr
 Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once per view, for the thing the screen is for; **Secondary** (`--secondary`, sage) for the supporting action; default (outlined) for everything else; **Ghost** for toolbars and table rows; **Danger** only for irreversible destructive actions, and always behind a confirm.
 
 - Consumer provides: a `<button>` (or `<a>` for navigation) with class `ls-btn` plus one variant, and a verb-first label in sentence case ("Save changes", not "SAVE" or "Submit").
-- Sizes: default 36px, `ls-btn--sm` 28px for dense tables.
+- Sizes: default 36px, `ls-btn--sm` 28px for dense tables. On a phone or touch screen the default is 44px and a small button keeps its 28px look with a 44px hit area (brand book, Touch).
 - Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
-- Pending server actions: keep the button enabled-looking and show a spinner — the action is owned by the backend and may still succeed.
+- Busy: while its command is on the way, set `aria-busy="true"` on the button and leave it enabled-looking, since the backend owns the action and it may still succeed. After `motion-wait` (400ms) the bundle shows a spinner before the label, and the button keeps its width. Ignore further clicks while it is busy, and remove the attribute when the command settles. See Loading and errors.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
 
 Example markup:
@@ -28,7 +28,7 @@ A labelled text input with optional help or error text. Wrap in `div.ls-field`; 
 
 - Consumer provides: the label (always visible, including when the field has a placeholder), `id`/`for` wiring, and `aria-describedby` pointing at the help text.
 - Errors: set `data-invalid` on the field and `aria-invalid="true"` on the input; the help line turns `danger-ink`. Error text comes from the backend's validation response (problem+json `errors[]`), mapped by field name — don't duplicate business rules in the client.
-- Inputs are 36px tall to align with buttons.
+- Inputs are 36px tall to align with buttons. On a phone or touch screen inputs and selects are 44px with 16px text, so iOS doesn't zoom the page when one takes focus.
 - Fields side by side go in `div.ls-row.ls-row--top` so every field starts on the same line. A plain `ls-row` centres its items, which moves a field without help text down.
 - A button that acts on one field (Test, Copy, Generate) goes inside that field, in `div.ls-field__row` with the input. The button lines up with the input and the help text sits below the row. A button in an `ls-row` beside the field centres on the label, input and help together.
 - A button with help text and no input (Export data) goes in an `ls-field` with the help after it. It keeps its own width.
@@ -109,7 +109,7 @@ Example markup (a settings card with sub-sections, an inline action, a file pick
 Amounts of money, typed and shown. Money is stored and sent as integer minor units with a currency (`amount_minor: 164000, currency: "GBP"`); these classes only display it.
 
 - Input: `div.ls-money` in place of the `ls-input`, holding `span.ls-money__currency` (`aria-hidden="true"`, the symbol "£") and `input.ls-money__input` with `inputmode="decimal"`, `autocomplete="off"` and the field's `id`. The label says the currency when it matters ("Amount (£)"); the symbol is decoration. Digits are tabular and left-aligned, as typed.
-- The wrapper is the visible box: it takes the focus ring, `data-invalid` and disabled styles like an `ls-input`, and fits in an `ls-field__row`. 36px tall, 44px on a phone.
+- The wrapper is the visible box: it takes the focus ring, `data-invalid` and disabled styles like an `ls-input`, and fits in an `ls-field__row`. 36px tall; 44px with 16px text on a phone or touch screen.
 - Accept what people type: "1,234.5", "£12", " 12.00 ". Parse to minor units on submit and send that; the API's problem+json decides what is valid and its error goes in the help line.
 - Text: `span.ls-amount` for any amount outside a table (`td.num` already does this in a table): tabular numerals, never wrapped. Format with `Intl.NumberFormat` and the household's currency, never by hand. A negative amount has `ls-amount--negative` (`danger-ink`), keeps its minus sign, and says what it means in words beside it ("−£695 short"). Colour is never the only sign.
 - Amounts change in place: no counting up.
@@ -196,7 +196,7 @@ Confirms that a command worked, with at most one action, usually Undo: "Netflix 
 - One toast at a time. A new toast replaces the current one at once, without the leaving animation.
 - Text: what changed, past tense, naming the item ("Council tax marked paid", "3 items moved to Bought"). One line where it fits; it wraps on a phone.
 - Action: one verb ("Undo", "View"). Undo sends the inverse command to the backend; the UI never restores state by itself. Never put a destructive action in a toast.
-- Timing: 6 seconds, paused while the pointer is over the toast or focus is inside it, so it can be read and reached. Escape dismisses it when focus is inside. Errors that need action are an `ls-alert` or a field error, not a toast.
+- Timing: 6 seconds, paused while the pointer is over the toast or focus is inside it, so it can be read and reached. Escape dismisses it when focus is inside. Errors from a form are an `ls-alert` or a field error, not a toast; a one-tap action that failed gets a toast with Try again in place of its success toast (see Loading and errors).
 - Position: `space-5` above the bottom edge plus the safe area. At 640px and below, when the page has an `ls-tabbar`, it sits above the bar. It is `toast-width` (440px) at most and the viewport width less `overlay-margin` on each side.
 - Colours: `toast` with `on-toast` text and `toast-action` for the button. The fill is darker than the page in light and lighter in dark, so it stands out over any surface.
 - A dialog is in the top layer and covers the toast. If a command in a dialog closes it, show the toast after the dialog closes.
@@ -871,6 +871,79 @@ Example markup:
 <div class="ls-empty"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p class="ls-empty__text">Bills you add appear here, with what is due this month at the top.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Add bill</button><a href="#">Import a statement</a></div></div>
 <div class="ls-empty"><p class="ls-empty__text">No bills match these filters.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Clear filters</button></div></div>
 </div>
+```
+
+## Loading and errors
+
+Every app shows waiting and failing the same way (decided 8 November, #48). Nothing appears for the first `motion-wait` (400ms), so a fast answer never flashes a loading state.
+
+### Loading
+
+`div.ls-loading` holds placeholders inside the real component: an `ls-list` of rows, a card, a stat. The bundle keeps it hidden for `motion-wait`, then shows it. Each `span.ls-placeholder` is a bar that pulses between full strength and 45% every `motion-pulse` (1.6s); under reduced motion it stays still.
+
+- Shape: the same component as the content, so the content lands where the placeholders were and nothing jumps. Bars: `ls-placeholder--title`, `--meta` and `--value` in a list row; plain `ls-placeholder` for a line of text. Show as many rows as fill the first screen, up to 5.
+- Screen readers: `role="status"` on `ls-loading` with `ls-sr-only` text naming what is loading ("Loading bills"); the placeholders are `aria-hidden="true"`.
+- With TanStack Query: render it while the query `isPending`. A refetch keeps the current content on screen; it never shows placeholders again.
+- No shimmer and no spinner for a page or section; the brand book's Never list still applies.
+
+```html
+<div class="ls-loading" role="status"><span class="ls-sr-only">Loading bills</span>
+<ul class="ls-list" aria-hidden="true">
+<li class="ls-list__row"><div class="ls-list__main"><span class="ls-placeholder ls-placeholder--title"></span><span class="ls-placeholder ls-placeholder--meta"></span></div><div class="ls-list__end"><span class="ls-placeholder ls-placeholder--value"></span></div></li>
+<li class="ls-list__row"><div class="ls-list__main"><span class="ls-placeholder ls-placeholder--title"></span><span class="ls-placeholder ls-placeholder--meta"></span></div><div class="ls-list__end"><span class="ls-placeholder ls-placeholder--value"></span></div></li>
+<li class="ls-list__row"><div class="ls-list__main"><span class="ls-placeholder ls-placeholder--title"></span><span class="ls-placeholder ls-placeholder--meta"></span></div><div class="ls-list__end"><span class="ls-placeholder ls-placeholder--value"></span></div></li>
+</ul></div>
+```
+
+### Busy button
+
+`aria-busy="true"` on an `ls-btn` (see Button). After `motion-wait` a spinner turns before the label once every `motion-spin` (800ms), three times slower under reduced motion. The side padding gives the spinner its room, so the button keeps its width.
+
+```html
+<div class="ls-row"><button class="ls-btn ls-btn--primary" type="submit" aria-busy="true">Save changes</button><button class="ls-btn" type="button">Cancel</button></div>
+```
+
+### Couldn't load
+
+A page or section whose query failed shows an `ls-empty` in place of the content, with one Try again button that refetches. A section fails on its own; the rest of the page keeps working. The same layout covers the other reasons a page has nothing to show:
+
+| Reason | Icon | Text | Action |
+| --- | --- | --- | --- |
+| The query failed (`5xx`, timeout) | `circle-alert` | "Bills didn't load. Try again in a minute." | Try again |
+| Offline (`navigator.onLine` is false, or the request never left) | `wifi-off` | "You're offline. Bills load when you're back online." | Try again |
+| Not found (`404`, or an unknown route) | `search-x` | "We can't find that bill. It may have been deleted." | A link back to Bills |
+| No access (`403`) | `lock` | "This board belongs to another household." | A link to Today |
+
+- With TanStack Router, the root route's `notFoundComponent` and each route's `errorComponent` render these, so a bad link never shows the router's default.
+- Text says what didn't happen and what to do, in the brand book's voice, and names the thing ("Bills", "that bill"). The problem+json `title` may replace the first sentence when it is written for people.
+
+```html
+<div class="ls-empty"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><p class="ls-empty__text">Bills didn't load. Try again in a minute.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Try again</button></div></div>
+```
+
+### A command failed
+
+When the API names a field, the error goes on that field (see Field). Otherwise:
+
+- From a form or dialog: an `ls-alert ls-alert--danger` (`role="alert"`) at the top of the form, above the fields, keeping what was typed: "**That didn't save.** The budget service didn't answer. Try again in a minute." Focus moves to the alert, and it clears on the next submit.
+- From a one-tap action (Mark paid, a tick, a drag): an `ls-toast` in place of the success toast, with Try again as its action: "Couldn't mark Council tax paid · Try again". The row goes back to how it was before the tap.
+
+```html
+<div class="ls-alert ls-alert--danger" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg><div><strong>That didn't save.</strong> The budget service didn't answer. Try again in a minute.</div></div>
+<div class="ls-toast"><p class="ls-toast__text">Couldn't mark Council tax paid</p><button class="ls-toast__action" type="button">Try again</button></div>
+```
+
+### Someone else changed it
+
+A command sent with `If-Match` comes back `409` when someone saved the same thing first. Refetch it, then:
+
+- Reload the form with the saved values, and keep what the user typed in memory.
+- An `ls-alert ls-alert--warning` at the top names who changed it and what the user had: "**Sam changed this bill.** Their amount is shown; yours was £175.00. Save again to use yours."
+- Each field that changed gets `data-invalid` and help text saying when: "Changed by Sam at 14:02". One Save then sends the user's values with the new version.
+
+```html
+<div class="ls-alert ls-alert--warning" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg><div><strong>Sam changed this bill.</strong> Their amount is shown; yours was £175.00. Save again to use yours.</div></div>
+<div class="ls-field" data-invalid><label class="ls-label" for="amt-c">Amount</label><div class="ls-money"><span class="ls-money__currency" aria-hidden="true">£</span><input class="ls-money__input" id="amt-c" value="189.00" inputmode="decimal" aria-invalid="true" aria-describedby="amt-ch"></div><p class="ls-help" id="amt-ch">Changed by Sam at 14:02</p></div>
 ```
 
 ## Visually hidden text

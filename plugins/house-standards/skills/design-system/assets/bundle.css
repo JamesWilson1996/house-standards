@@ -25,14 +25,14 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   font: 600 13px/16px var(--font-sans); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
   background: var(--surface); color: var(--ink); border-color: var(--line-strong);
   transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, color var(--motion-quick) ease; }
-.ls-btn:hover { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-btn:hover { background: var(--surface-sunken); } }
 .ls-btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.ls-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+@media (hover: hover) { .ls-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); } }
 .ls-btn--secondary { background: var(--sage); color: var(--on-sage); border-color: var(--sage); }
-.ls-btn--secondary:hover { background: var(--sage-hover); border-color: var(--sage-hover); }
+@media (hover: hover) { .ls-btn--secondary:hover { background: var(--sage-hover); border-color: var(--sage-hover); } }
 .ls-btn--soft { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent-soft); }
 .ls-btn--ghost { background: transparent; border-color: transparent; color: var(--ink); }
-.ls-btn--ghost:hover { background: var(--accent-soft); color: var(--on-accent-soft); }
+@media (hover: hover) { .ls-btn--ghost:hover { background: var(--accent-soft); color: var(--on-accent-soft); } }
 .ls-btn--danger { background: var(--danger); color: var(--on-danger); border-color: var(--danger); }
 .ls-btn--sm { height: 28px; padding: 0 var(--space-3); }
 /* Each variant has its own disabled pair; opacity over a dark-theme fill reads as a muddy block. */
@@ -42,6 +42,20 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-btn--soft:is(:disabled, [aria-disabled="true"]) { border-color: var(--disabled-fill); }
 .ls-btn--ghost:is(:disabled, [aria-disabled="true"]) { background: transparent; border-color: transparent; }
 .ls-btn--danger:is(:disabled, [aria-disabled="true"]) { background: var(--danger-disabled); color: var(--on-danger-disabled); border-color: var(--danger-disabled); }
+/* Busy: aria-busy="true" while its command is on the way. After motion-wait a spinner shows before the label.
+   The side padding gives the spinner its room (14px and an 8px gap, 11px from each side), so the button keeps its width and nothing beside it moves. */
+.ls-btn[aria-busy="true"] { position: relative; cursor: progress; animation: ls-busy-room 0s var(--motion-wait) forwards; }
+.ls-btn[aria-busy="true"]::before { content: ""; position: absolute; top: calc(50% - 7px); left: calc(var(--space-4) - 11px); width: 14px; height: 14px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: var(--radius-pill); opacity: 0;
+  animation: ls-appear 0s var(--motion-wait) forwards, ls-spin var(--motion-spin) linear infinite; }
+.ls-btn--sm[aria-busy="true"] { animation-name: ls-busy-room-sm; }
+.ls-btn--sm[aria-busy="true"]::before { top: calc(50% - 6px); left: calc(var(--space-3) - 9px); width: 12px; height: 12px; }
+@keyframes ls-busy-room { to { padding-left: calc(var(--space-4) + 11px); padding-right: calc(var(--space-4) - 11px); } }
+@keyframes ls-busy-room-sm { to { padding-left: calc(var(--space-3) + 9px); padding-right: calc(var(--space-3) - 9px); } }
+/* A still spinner reads as stuck, so reduced motion slows it rather than stopping it. */
+@media (prefers-reduced-motion: reduce) {
+  .ls-btn[aria-busy="true"]::before { animation-duration: 0s, calc(var(--motion-spin) * 3); }
+}
 
 /* ---------- Field (label + input + help/error) ---------- */
 .ls-field { display: flex; flex-direction: column; gap: var(--form-help-gap); min-width: 220px; }
@@ -65,7 +79,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-file { min-height: 36px; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); cursor: pointer; }
 .ls-file::file-selector-button { height: 36px; margin-right: var(--space-3); padding: 0 var(--space-4); font: 600 13px/16px var(--font-sans); color: var(--ink);
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); cursor: pointer; transition: background-color var(--motion-quick) ease; }
-.ls-file:hover::file-selector-button { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-file:hover::file-selector-button { background: var(--surface-sunken); } }
 .ls-file:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-md); }
 .ls-file:disabled { cursor: not-allowed; }
 .ls-file:disabled::file-selector-button { background: var(--disabled-fill); color: var(--on-disabled); border-color: var(--disabled-line); cursor: not-allowed; }
@@ -92,8 +106,16 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-field__row > .ls-money { flex: 1; min-width: 0; }
 .ls-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .ls-amount--negative { color: var(--danger-ink); }
-@media (max-width: 640px) {
-  .ls-money { height: 44px; }
+
+/* ---------- Touch (phones and touch screens: 44px targets, and 16px field text so iOS doesn't zoom on focus) ---------- */
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-btn:not(.ls-btn--sm), .ls-input, .ls-select, .ls-money { height: 44px; }
+  .ls-input, .ls-select, .ls-textarea, .ls-money__input, .ls-money__currency { font-size: 16px; }
+  .ls-file, .ls-file::file-selector-button { min-height: 44px; }
+  /* A small button stays 28px to the eye, with a 44px hit area. */
+  .ls-btn--sm { position: relative; }
+  .ls-btn--sm::after { content: ""; position: absolute; inset: -8px 0; }
+  .ls-check, .ls-switch { min-height: 44px; }
 }
 
 /* ---------- Checkbox & Switch ---------- */
@@ -151,7 +173,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-table th { text-align: left; font-weight: 600; color: var(--ink-muted); background: var(--surface-sunken); padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--line); white-space: nowrap; }
 .ls-table td { padding: var(--space-3); border-bottom: 1px solid var(--line); color: var(--ink); transition: background-color var(--motion-quick) ease; }
 .ls-table tr:last-child td { border-bottom: 0; }
-.ls-table tbody tr:hover td { background: var(--bg); }
+@media (hover: hover) { .ls-table tbody tr:hover td { background: var(--bg); } }
 .ls-table tr[aria-selected="true"] td { background: var(--accent-soft); }
 .ls-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 
@@ -171,7 +193,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-list__lead > .ls-drag-handle { width: 44px; height: 44px; margin-left: calc(var(--space-3) * -1); }
 .ls-list__main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .ls-list__title { margin: 0; padding: 0; border: 0; background: none; font: 600 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; }
-:is(a, button).ls-list__title:hover { text-decoration: underline; text-underline-offset: 2px; }
+@media (hover: hover) { :is(a, button).ls-list__title:hover { text-decoration: underline; text-underline-offset: 2px; } }
 .ls-list__meta { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-2); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
 .ls-list__end { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-2); }
 .ls-list__value { font: 500 15px/22px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
@@ -216,7 +238,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
   color: var(--ink-muted); border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
   transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
-.ls-tab:hover { color: var(--ink); background: var(--surface-sunken); }
+@media (hover: hover) { .ls-tab:hover { color: var(--ink); background: var(--surface-sunken); } }
 .ls-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 .ls-tab__count { margin-left: var(--space-1); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 /* A board column's tab while a card is dragged over it on a phone. */
@@ -226,7 +248,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-nav { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--surface-sunken); border-radius: var(--radius-lg); width: 220px; }
 .ls-nav__item { display: flex; align-items: center; gap: var(--space-2); height: 34px; padding: 0 var(--space-3); border-radius: var(--radius-md);
   font: 500 15px/22px var(--font-sans); color: var(--ink-muted); text-decoration: none; transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
-.ls-nav__item:hover { background: var(--surface); color: var(--ink); }
+@media (hover: hover) { .ls-nav__item:hover { background: var(--surface); color: var(--ink); } }
 .ls-nav__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); font-weight: 600; }
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
 
@@ -244,7 +266,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   padding: 0 var(--space-1); border-radius: var(--radius-md); font: 600 12px/16px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
 .ls-tabbar__item svg { flex: none; width: 20px; height: 20px; }
 .ls-tabbar__label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ls-tabbar__item:hover { color: var(--ink); }
+@media (hover: hover) { .ls-tabbar__item:hover { color: var(--ink); } }
 .ls-tabbar__item[aria-current="page"] { background: var(--accent-soft); color: var(--on-accent-soft); }
 .ls-tabbar__item:focus-visible { outline-offset: -2px; } /* inside the item, so the screen edge never clips it */
 /* The count sits on the icon's corner. Solid, so it stands out on the current tab's soft fill too. */
@@ -256,7 +278,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-page-header__main { display: flex; align-items: flex-start; gap: var(--space-4); }
 .ls-page-header__heading { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .ls-page-header__area { align-self: flex-start; display: inline-flex; align-items: center; gap: var(--space-1); margin: 0; font: 500 13px/18px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
-a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
+@media (hover: hover) { a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; } }
 .ls-page-header__area svg { width: 16px; height: 16px; }
 .ls-page-header__title { margin: 0; font: 700 30px/36px var(--font-sans); color: var(--ink); overflow-wrap: anywhere; }
 .ls-page-header__state { margin: 0; font: 400 15px/22px var(--font-sans); color: var(--ink-muted); }
@@ -271,7 +293,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 @media (max-width: 640px) {
   .ls-page-header__title { font-size: 22px; line-height: 28px; }
   .ls-page-header__state { font-size: 13px; line-height: 18px; }
-  .ls-page-header__actions .ls-btn { height: 44px; min-width: 44px; }
+  .ls-page-header__actions .ls-btn { min-width: 44px; } /* square for the icon-only More button; the height comes from Touch */
   a.ls-page-header__area { min-height: 44px; margin: -13px 0; }
   /* Only the tab row sticks. A sticky element can't leave its parent, so the header box steps aside and the row sticks within the page. */
   .ls-page-header:has(> .ls-page-header__tabs) { display: contents; }
@@ -291,9 +313,6 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-quickadd__row > .ls-btn { flex: none; }
 .ls-quickadd__suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ls-quickadd__label { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
-@media (max-width: 640px) {
-  .ls-quickadd__row > .ls-input, .ls-quickadd__row > .ls-btn { height: 44px; }
-}
 
 /* ---------- Filter bar and chips (one row above a list: scope, search, active filters, Filter, count) ---------- */
 .ls-filterbar { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
@@ -309,10 +328,10 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
 /* 44px tall to a finger, 32px to the eye. */
 .ls-chip::after { content: ""; position: absolute; inset: -6px 0; }
-.ls-chip:hover { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-chip:hover { background: var(--surface-sunken); } }
 .ls-chip svg { flex: none; width: 16px; height: 16px; }
 .ls-chip:is([aria-pressed="true"], .ls-chip--active) { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent-soft); }
-.ls-chip:is([aria-pressed="true"], .ls-chip--active):hover { border-color: var(--accent); }
+@media (hover: hover) { .ls-chip:is([aria-pressed="true"], .ls-chip--active):hover { border-color: var(--accent); } }
 .ls-chip__count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill); font: 600 11px/18px var(--font-sans); font-variant-numeric: tabular-nums;
   text-align: center; background: var(--accent); color: var(--on-accent); }
 /* The extra filters behind the Filter chip, on desktop. On a phone the same form goes in an ls-dialog--sheet. */
@@ -330,7 +349,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-stepper__step { width: 30px; }
 .ls-stepper__step svg { width: 16px; height: 16px; }
 .ls-stepper__now { margin-left: var(--space-1); padding: 0 var(--space-2); font: 600 13px/16px var(--font-sans); color: var(--link); }
-.ls-stepper__step:hover, .ls-stepper__now:hover { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-stepper__step:hover, .ls-stepper__now:hover { background: var(--surface-sunken); } }
 .ls-stepper__step:disabled { color: var(--on-disabled); background: transparent; cursor: not-allowed; }
 .ls-stepper__label { min-width: 12ch; padding: 0 var(--space-1); font: 600 13px/16px var(--font-sans); font-variant-numeric: tabular-nums; text-align: center; white-space: nowrap; color: var(--ink); }
 .ls-stepper__short { display: none; }
@@ -355,7 +374,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-column__title { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--ink); }
 .ls-column__toggle { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; padding: 0 var(--space-2) 0 var(--space-1); border: 0; border-radius: var(--radius-sm);
   background: none; font: inherit; color: inherit; cursor: pointer; transition: background-color var(--motion-quick) ease; }
-.ls-column__toggle:hover { background: var(--surface); }
+@media (hover: hover) { .ls-column__toggle:hover { background: var(--surface); } }
 .ls-column__toggle svg { width: 16px; height: 16px; transition: rotate var(--motion-quick) var(--ease-enter); }
 .ls-column__toggle[aria-expanded="false"] svg { rotate: -90deg; }
 .ls-column__count { font: 600 13px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
@@ -363,7 +382,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-column__cards { display: flex; flex-direction: column; gap: var(--space-2); min-height: 44px; margin: 0; padding: 0; list-style: none; }
 .ls-board__card { position: relative; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); background: var(--surface); border: 1px solid var(--line);
   border-radius: var(--radius-md); -webkit-touch-callout: none; transition: border-color var(--motion-quick) ease; }
-.ls-board__card:hover { border-color: var(--line-strong); }
+@media (hover: hover) { .ls-board__card:hover { border-color: var(--line-strong); } }
 .ls-board__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
 .ls-board__number { font: 500 12px/16px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .ls-board__title { margin: 0; padding: 0; border: 0; background: none; font: 600 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; }
@@ -395,7 +414,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
 .ls-week__slot { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); border: 1px solid var(--line);
   border-radius: var(--radius-md); background: var(--surface); font: 400 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer;
   transition: background-color var(--motion-quick) ease; }
-.ls-week__slot:hover { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-week__slot:hover { background: var(--surface-sunken); } }
 .ls-week__slot--empty { flex-direction: row; align-items: center; gap: var(--space-2); border: 1px dashed var(--line-strong); color: var(--ink-muted); }
 .ls-week__slot--empty svg { flex: none; width: 16px; height: 16px; }
 .ls-week__kind { font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
@@ -459,7 +478,7 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-menu__item { display: flex; align-items: center; gap: var(--space-2); width: 100%; min-height: 36px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-sm);
   background: transparent; font: 500 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer;
   transition: background-color var(--motion-quick) ease; }
-.ls-menu__item:hover { background: var(--surface-sunken); }
+@media (hover: hover) { .ls-menu__item:hover { background: var(--surface-sunken); } }
 .ls-menu__item svg { flex: none; width: 16px; height: 16px; }
 .ls-menu__item--danger { color: var(--danger-ink); }
 .ls-menu__sep { height: 1px; margin: var(--space-1) 0; border: 0; background: var(--line); }
@@ -485,7 +504,20 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-empty__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2) var(--space-4); }
 @media (max-width: 640px) {
   .ls-empty { padding: var(--space-6) var(--space-4); }
-  .ls-empty__actions .ls-btn { height: 44px; }
+}
+
+/* ---------- Loading (placeholders where the content will be) ---------- */
+/* Hidden for motion-wait, so a fast load never flashes them. The placeholders sit in the real component, so content lands where they were. */
+.ls-loading { animation: ls-wait var(--motion-wait) step-end; }
+.ls-placeholder { display: block; width: 100%; height: 10px; border-radius: var(--radius-pill); background: var(--surface-sunken); animation: ls-pulse var(--motion-pulse) ease-in-out infinite; }
+.ls-placeholder--title { width: 60%; height: 14px; margin-block: 4px; }
+.ls-placeholder--meta { width: 35%; margin-block: 4px; }
+.ls-placeholder--value { width: 56px; }
+/* Rows vary a little, so a column of placeholders reads as a list rather than a pattern. */
+.ls-list__row:nth-child(3n + 2) .ls-placeholder--title { width: 45%; }
+.ls-list__row:nth-child(3n) .ls-placeholder--title { width: 52%; }
+@media (prefers-reduced-motion: reduce) {
+  .ls-placeholder { animation: none; }
 }
 
 /* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
@@ -499,7 +531,7 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 /* 44px square at least, so Undo is easy to hit on a phone. */
 .ls-toast__action { flex: none; min-width: 44px; height: 44px; padding: 0 var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent;
   font: 600 15px/22px var(--font-sans); color: var(--toast-action); cursor: pointer; }
-.ls-toast__action:hover { text-decoration: underline; text-underline-offset: 2px; }
+@media (hover: hover) { .ls-toast__action:hover { text-decoration: underline; text-underline-offset: 2px; } }
 .ls-toast--leaving { animation: ls-leave var(--motion-quick) var(--ease-exit) forwards; }
 /* On a phone with a bottom tab bar, the toast sits just above the bar. */
 @media (max-width: 640px) {
@@ -544,6 +576,11 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-leave { to { opacity: 0; translate: 0 8px; } }
 /* No end keyframe, so the row fades back to its own background. */
 @keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
+/* Loading: hidden until motion-wait has passed, a placeholder's breath, a busy spinner's turn. */
+@keyframes ls-wait { from, to { visibility: hidden; } }
+@keyframes ls-appear { to { opacity: 1; } }
+@keyframes ls-pulse { 50% { opacity: 0.45; } }
+@keyframes ls-spin { to { rotate: 1turn; } }
 
 /* Switching tabs, top-level places or a stepper's period: the old view fades out as the new one fades in over motion-quick, with no movement.
    Only navigations started with the ls-switch view transition type use it; other view transitions keep their own animation. */

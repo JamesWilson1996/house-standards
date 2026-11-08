@@ -33,28 +33,32 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 - Depth: borders first. `shadow-sm` only to lift a card; `shadow-md` for menus and popovers; `shadow-lg` for dialogs, over a `backdrop` scrim.
 - Overlays: dialogs are `dialog-sm` 400, `dialog-md` 560 or `dialog-lg` 800 wide and fill the screen at 640px and below, except a sheet (`ls-dialog--sheet`): it rises from the bottom as tall as its content, up to 90% of the screen, for pickers, filters and forms of up to 4 fields. Longer forms stay full screen. Popovers grow to `popover-width` 320 (tooltips `tooltip-width` 240), and sit `popover-offset` 8 from their trigger and the viewport edge. Dialogs keep `overlay-margin` 16 from the viewport edge.
 - Controls are 36px tall (28px small) so buttons, inputs and selects align on one line.
+- Touch: at 640px and below and on touch screens, every target is at least 44px. Buttons, inputs, selects and money fields are 44px tall, small buttons keep a 44px hit area, checkbox and switch rows are 44px, and field text is 16px so iOS doesn't zoom the page on focus. The bundle does this; apps don't set their own control heights.
+- Hover styles are for pointers only: the bundle puts them under `@media (hover: hover)`, so a tap on a phone never leaves a hover fill behind. App CSS does the same.
 - Focus: a 2px solid `focus-ring` outline offset 2px on every interactive element (`:focus-visible`). Never remove it.
 
 ## Motion
 
 Motion shows what you are holding, what changed, what arrived, where you went, or what a link points at. It never decorates.
 
-- Durations come only from tokens: `motion-quick` 120ms (colour, press states, chevrons, switching tabs, anything leaving), `motion-base` 150ms (dialogs, popovers and toasts arriving, rows sliding aside, a drop settling, a row folding away), `motion-travel` 200ms (movement across most of the screen: a full-screen dialog or sheet on a phone, drilling into a screen on a phone). `motion-flash` 1200ms is how long `ls-flash` marks a row.
+- Durations come only from tokens: `motion-quick` 120ms (colour, press states, chevrons, switching tabs, anything leaving), `motion-base` 150ms (dialogs, popovers and toasts arriving, rows sliding aside, a drop settling, a row folding away), `motion-travel` 200ms (movement across most of the screen: a full-screen dialog or sheet on a phone, drilling into a screen on a phone). `motion-flash` 1200ms is how long `ls-flash` marks a row. `motion-wait` 400ms is how long something may take before it shows it is working; `motion-pulse` 1600ms is one breath of a placeholder and `motion-spin` 800ms one turn of a busy spinner.
 - Easing: `ease-enter` for arriving and moving, `ease-exit` for leaving. Leaving is faster than arriving. No bounce or overshoot.
 - Animate only `opacity`, `translate`, `scale`, `rotate` and colour. Never animate layout on large content; a single row may fold.
-- Reduced motion: the three durations become 0ms under `prefers-reduced-motion: reduce`, so anything built on the tokens stops moving by itself. A dragged item still follows the pointer, because the user is moving it. `ls-flash` keeps its mark for 1.2s and clears it without fading.
-- The five patterns:
+- Reduced motion: the three durations become 0ms under `prefers-reduced-motion: reduce`, so anything built on the tokens stops moving by itself. A dragged item still follows the pointer, because the user is moving it. `ls-flash` keeps its mark for 1.2s and clears it without fading. Placeholders stop pulsing, and a busy spinner turns three times slower, since a still one reads as stuck.
+- The six patterns:
   1. Holding (drag): the item lifts in `motion-quick` (`ls-lifted`: shadow, accent border, 2% larger; board cards also tilt 1.5° with `ls-lifted--tilt`) and then follows the pointer exactly, with no easing. A dashed `ls-drop-slot` opens where it will land and the items around it slide aside in `motion-base`. On release it settles into the slot in `motion-base`. Rows drag by a handle at once; cards with no handle lift after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls. Arrow keys on the handle move it one place with the same slide. Holding an item near the edge of a scrolling board scrolls it, so every column can be reached on any screen.
   2. Changing a list: a ticked item is marked at once, then folds away after 400ms. A new item fades in at its place (`ls-enter`). Amounts change in place with no counting up. A toast with Undo confirms what changed.
   3. Arriving and leaving: dialogs, menus, detail cards and the filter panel rise 8px and fade in over `motion-base`; on a phone a full-screen dialog or a sheet rises from the bottom in `motion-travel` while the backdrop fades. Tooltips fade in over `motion-quick`, since they follow the pointer. Toasts rise from the bottom and leave in `motion-quick`. Hover colour changes fade over `motion-quick` on every control.
   4. Navigation: switching between top-level places (sidebar or bottom tab bar), between a page's tabs, or to another period crossfades over `motion-quick`: the old view fades out as the new one fades in, with no movement. Opening something one level down moves in from the right and Back moves out to the right. On a phone the new screen slides over the old one in `motion-travel` and Back slides it off in `motion-base`. On wider screens the new view fades in from 8px right over `motion-base`, and Back fades the old view out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still throughout.
   5. Pointing: a link to one row scrolls to it smoothly and marks it with `ls-flash`.
+  6. Waiting: nothing for `motion-wait`, then placeholders where the content will be (`ls-loading`), pulsing slowly, or a spinner before a busy button's label. The button keeps its width.
 - Never: page-load sequences or staggered entrances, sliding between tabs, numbers counting up, parallax, blur or zoom-in screens, skeleton shimmer, a spinner for anything under 400ms, celebrations, or motion that blocks the next tap. Every transition can be interrupted.
 
 ## Voice
 
 - Plain, warm, brief. Address the user as "you"; the product speaks as "we" only in empty states and errors.
 - Buttons are verbs: "Save changes", "Invite member". Errors say what happened and what to do: "Sync failed. The billing service didn't respond. Try again in a minute."
+- Errors name the thing and what didn't happen, then the next step: "Bills didn't load. Try again in a minute.", "That didn't save.", "Couldn't mark Council tax paid". Never "Something went wrong", "Oops" or an error code alone. Who changed something is named: "Sam changed this bill."
 - No emoji in UI, no exclamation marks, no ALL CAPS.
 - State facts. Empty states (`ls-empty`), tooltips and onboarding say what something is or does: "Projects you create appear here." Skip contrast framing ("Not just a list, a workspace"), marketing adjectives (seamless, powerful, effortless) and rhetorical questions.
 - Use real numbers and names: "3 of 10 seats used", "Last synced 2 minutes ago".
