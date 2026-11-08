@@ -22,7 +22,7 @@ Lilac & Sage is the shared look for every app we build: calm pastel lilac and sa
 
 - One family: **Figtree** (Google Fonts, weights 400–700) for all UI; **JetBrains Mono** for IDs, codes and keys.
 - Scale: `display` 40 · `h1` 30 · `h2` 22 · `h3` 17 · `body` 15 · `body-sm` 13 · `label` 13/600 · `caption` 12 · `code` 13.
-- Sentence case everywhere, including buttons and headings. Use tabular numerals (`font-variant-numeric: tabular-nums`) for money and counts.
+- Sentence case everywhere, including buttons and headings. Use tabular numerals (`font-variant-numeric: tabular-nums`) for money and counts. Money inputs are `ls-money` and amounts in text `ls-amount`, formatted with `Intl.NumberFormat`.
 
 ## Space, shape, depth
 

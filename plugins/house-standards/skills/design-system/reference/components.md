@@ -104,6 +104,45 @@ Example markup (a settings card with sub-sections, an inline action, a file pick
 </div>
 ```
 
+## Money
+
+Amounts of money, typed and shown. Money is stored and sent as integer minor units with a currency (`amount_minor: 164000, currency: "GBP"`); these classes only display it.
+
+- Input: `div.ls-money` in place of the `ls-input`, holding `span.ls-money__currency` (`aria-hidden="true"`, the symbol "£") and `input.ls-money__input` with `inputmode="decimal"`, `autocomplete="off"` and the field's `id`. The label says the currency when it matters ("Amount (£)"); the symbol is decoration. Digits are tabular and left-aligned, as typed.
+- The wrapper is the visible box: it takes the focus ring, `data-invalid` and disabled styles like an `ls-input`, and fits in an `ls-field__row`. 36px tall, 44px on a phone.
+- Accept what people type: "1,234.5", "£12", " 12.00 ". Parse to minor units on submit and send that; the API's problem+json decides what is valid and its error goes in the help line.
+- Text: `span.ls-amount` for any amount outside a table (`td.num` already does this in a table): tabular numerals, never wrapped. Format with `Intl.NumberFormat` and the household's currency, never by hand. A negative amount has `ls-amount--negative` (`danger-ink`), keeps its minus sign, and says what it means in words beside it ("−£695 short"). Colour is never the only sign.
+- Amounts change in place: no counting up.
+
+```ts
+const MINOR_PER_MAJOR = 100; // GBP, EUR and USD; other currencies read maximumFractionDigits from Intl.NumberFormat
+
+// "£1,234.5" -> 123450. Returns null for text that isn't an amount, so the field can say so before sending.
+export function parseMoney(text: string): number | null {
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(text.replace(/[^\d.-]/g, ""));
+  if (!match) return null;
+  const [, sign, whole, fraction = ""] = match;
+  const minor = Number(whole) * MINOR_PER_MAJOR + Number(fraction.padEnd(2, "0"));
+  return sign ? -minor : minor;
+}
+
+export const formatMoney = (minor: number, currency: string, locale = "en-GB") =>
+  new Intl.NumberFormat(locale, { style: "currency", currency }).format(minor / MINOR_PER_MAJOR);
+```
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<form class="ls-form">
+<div class="ls-field"><label class="ls-label" for="amt">Amount</label><div class="ls-money"><span class="ls-money__currency" aria-hidden="true">£</span><input class="ls-money__input" id="amt" inputmode="decimal" autocomplete="off" value="164.00"></div></div>
+<div class="ls-field" data-invalid><label class="ls-label" for="inc">Partner, paid on the 28th</label><div class="ls-money"><span class="ls-money__currency" aria-hidden="true">£</span><input class="ls-money__input" id="inc" inputmode="decimal" autocomplete="off" value="1,450.0.0" aria-invalid="true" aria-describedby="inch"></div><p class="ls-help" id="inch">Enter an amount such as 1,450.00.</p></div>
+<div class="ls-field"><label class="ls-label" for="dd">Paid so far</label><div class="ls-money"><span class="ls-money__currency" aria-hidden="true">£</span><input class="ls-money__input" id="dd" inputmode="decimal" value="85.00" disabled></div></div>
+</form>
+<p>Left this month: <span class="ls-amount ls-amount--negative">−£695.00</span> short. Council tax is <span class="ls-amount">£164.00</span>.</p>
+</div>
+```
+
 ## Checkbox and Switch
 
 `label.ls-check > input[type=checkbox] + text` for choices that are submitted with a form; `label.ls-switch > input[type=checkbox][role=switch] + text` for settings that apply immediately (the toggle dispatches a backend command at once).
