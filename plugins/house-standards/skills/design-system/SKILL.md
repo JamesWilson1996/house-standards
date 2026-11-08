@@ -19,6 +19,7 @@ Hard rules:
 - Every screen must work in both `data-theme="light"` and `data-theme="dark"`; text on a fill always uses its `on-*` token.
 - Status is never colour alone: pair it with a word or a Lucide icon.
 - Keep the 2px `focus-ring` outline on every interactive element.
+- Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
 - A command's result is confirmed in an `ls-toast` (one at a time, at most one action such as Undo, 6 seconds); persistent conditions use `ls-alert`.
 - Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away; tooltips and small detail cards use `ls-popover`.
