@@ -236,6 +236,54 @@ Example markup:
 </div>
 ```
 
+## List
+
+Rows of things you act on in place: bills due, shopping items, household members, today's meals. Use a list when each row has its own action; use an `ls-table` when people compare values across columns.
+
+`ul.ls-list > li.ls-list__row`, each with up to three parts:
+
+- `div.ls-list__lead` (optional): one of a checkbox (`label.ls-check` holding the input and `ls-sr-only` text such as "Bought Milk"), an `span.ls-date` chip ("4 Nov"), or an `ls-drag-handle` button.
+- `div.ls-list__main`: the title, then `p.ls-list__meta` with one line of detail (badges, who, when). The title is `button.ls-list__title` or `a.ls-list__title` when it opens the row's dialog, and `span.ls-list__title` when nothing opens.
+- `div.ls-list__end` (optional): `span.ls-list__value` (an amount or count, tabular numerals), then the row's actions.
+
+Actions (decided 8 November, #23): every row shows its one main action as a visible control, on touch and desktop alike. The main action is the lead checkbox or one `ls-btn ls-btn--sm` in the end ("Mark paid"). Everything else is in the row's dialog, or under an `ls-btn--ghost` More button with `aria-label="More for Council tax"` opening an `ls-popover--menu`. No swipe actions.
+
+- Rows are 56px tall at least. On a phone the end stacks the value over the action, and end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
+- Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
+- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities. A toast with Undo confirms the change.
+- Consumer provides: the rows from the API, each row's `allowedActions` deciding which main action shows.
+
+```ts
+const FOLD_DELAY_MS = 400;
+
+// Marks a ticked row at once, then folds it away; removeRow drops it from the list's state.
+export function foldRow(row: HTMLElement, removeRow: () => void) {
+  row.classList.add("ls-list__row--done");
+  setTimeout(() => {
+    row.style.height = `${row.offsetHeight}px`; // a px start height, so the fold animates in every browser
+    row.classList.add("ls-list__row--leaving");
+    row.addEventListener("animationend", removeRow, { once: true });
+  }, FOLD_DELAY_MS);
+}
+```
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<ul class="ls-list">
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--danger">4 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Window cleaner</button><p class="ls-list__meta"><span class="ls-badge ls-badge--danger">4 days overdue</span>Card</p></div><div class="ls-list__end"><span class="ls-list__value">£15.00</span><button class="ls-btn ls-btn--sm" type="button">Mark paid</button></div></li>
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--warning">10 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Council tax</button><p class="ls-list__meta"><span class="ls-badge ls-badge--warning">Due in 2 days</span>Direct debit</p></div><div class="ls-list__end"><span class="ls-list__value">£189.00</span></div></li>
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--success">6 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Mortgage</button><p class="ls-list__meta"><span class="ls-badge ls-badge--success">Paid</span>Direct debit</p></div><div class="ls-list__end"><span class="ls-list__value">£1,085.00</span></div></li>
+</ul>
+<ul class="ls-list">
+<li class="ls-list__row"><div class="ls-list__lead"><label class="ls-check"><input type="checkbox"><span class="ls-sr-only">Bought Milk</span></label></div><div class="ls-list__main"><span class="ls-list__title">Milk</span><p class="ls-list__meta">2 pints · added by Alex</p></div><div class="ls-list__end"><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button" aria-label="More for Milk"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div></li>
+<li class="ls-list__row ls-list__row--done"><div class="ls-list__lead"><label class="ls-check"><input type="checkbox" checked><span class="ls-sr-only">Bought Eggs</span></label></div><div class="ls-list__main"><span class="ls-list__title">Eggs</span></div></li>
+</ul>
+</div>
+```
+
 ## Table
 
 Tabular records. `div.ls-table-wrap > table.ls-table`. Right-align numbers with `td.num`; mark a selected row with `aria-selected="true"`.
@@ -303,6 +351,44 @@ Example markup:
 <a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2 2h3l2.7 12.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg><span class="ls-tabbar__label">Shopping</span><span class="ls-tabbar__badge">7<span class="ls-sr-only"> items</span></span></a>
 <a class="ls-tabbar__item" href="#"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg><span class="ls-tabbar__label">Projects</span></a>
 </nav>
+```
+
+## Quick add
+
+Adds items one after another without leaving the keyboard: the shopping list, a board column's new card. An input and an Add button in one row, and optional suggestion chips under it.
+
+`form.ls-quickadd` holds `div.ls-quickadd__row` (an `input.ls-input` with an `aria-label` and `enterkeyhint="done"`, then a `button.ls-btn.ls-btn--primary[type=submit]` "Add") and, optionally, `div.ls-quickadd__suggestions` with `span.ls-quickadd__label` ("Bought before") and `button.ls-chip` per suggestion.
+
+- Enter or Add submits. The field clears at once and keeps focus, before the server answers, so the next item can be typed straight away. If the command fails, the text comes back into the field with the error in a help line. Never disable the field while a command is in flight: text typed during the wait belongs to the next item.
+- Each submit is its own command with its own client-made id and `Idempotency-Key`, so items typed quickly arrive as separate items and a retry is safe.
+- The new item appears in the list in place with `ls-enter`. No toast when the new row is on screen; a toast with Undo when it lands somewhere out of view.
+- Suggestions: at most 8 chips with a 16px Lucide `plus`, from the API (items bought before, most frequent first). Tapping one adds it at once and the chip goes. They wrap onto as many lines as they need; this is not a filter bar.
+- Empty input: Add does nothing and the field keeps focus. Don't disable the button, so it stays findable.
+- 36px controls on desktop, 44px on a phone.
+
+```ts
+// Clears at once so typing can continue; puts the text back only if the command fails.
+export async function submitQuickAdd(input: HTMLInputElement, add: (name: string) => Promise<void>) {
+  const name = input.value.trim();
+  if (!name) return;
+  input.value = "";
+  input.focus();
+  try {
+    await add(name);
+  } catch (error) {
+    if (!input.value) input.value = name;
+    throw error;
+  }
+}
+```
+
+Example markup:
+
+```html
+<form class="ls-quickadd">
+<div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" placeholder="Add an item" enterkeyhint="done" autocomplete="off"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
+<div class="ls-quickadd__suggestions"><span class="ls-quickadd__label">Bought before</span><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Milk</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bread</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bananas</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Washing-up liquid</button></div>
+</form>
 ```
 
 ## Filter bar and chips
