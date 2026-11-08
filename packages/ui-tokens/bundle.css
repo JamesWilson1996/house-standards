@@ -179,10 +179,21 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-dialog__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--line); }
 /* The page behind a modal dialog keeps its scroll position and does not scroll under it. */
 html:has(.ls-dialog:modal) { overflow: hidden; }
+/* The sheet's grab handle: a 24px strip a finger can drag down, with a 36px bar drawn in it. Phones only. */
+.ls-dialog__handle { display: none; }
 @media (max-width: 640px) {
   .ls-dialog, .ls-dialog--sm, .ls-dialog--lg { width: 100%; height: 100%; max-height: none; border: 0; border-radius: 0; }
   /* Full screen on a phone, so it travels up from the bottom edge. */
   .ls-dialog[open] { animation: ls-rise-full var(--motion-travel) var(--ease-enter); }
+  .ls-dialog[open]::backdrop { animation-duration: var(--motion-travel); }
+  /* A sheet: as tall as its content up to 90% of the screen, on the bottom edge, with the page still in view above it. */
+  .ls-dialog--sheet { height: fit-content; max-height: 90dvh; margin: auto 0 0; border-top: 1px solid var(--line); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+  .ls-dialog--sheet .ls-dialog__handle { display: flex; flex: none; justify-content: center; height: var(--space-5); padding-top: var(--space-2); cursor: grab; touch-action: none; }
+  .ls-dialog--sheet .ls-dialog__handle::before { content: ""; width: 36px; height: 4px; border-radius: var(--radius-pill); background: var(--line-strong); }
+  .ls-dialog--sheet .ls-dialog__header { padding-top: 0; }
+  /* Clear of the home indicator. */
+  .ls-dialog--sheet > .ls-dialog__foot:last-child { padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom)); }
+  .ls-dialog--sheet > .ls-dialog__body:last-child { padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); }
 }
 
 /* ---------- Popover (Popover API: top layer, anchored to its trigger) ---------- */

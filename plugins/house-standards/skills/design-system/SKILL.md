@@ -22,6 +22,6 @@ Hard rules:
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
 - Top-level navigation is `ls-nav` (sidebar, 5 to 7 items) on wider screens and `ls-tabbar` (bottom bar, 5 items at most) at 640px and below. Account, Settings and Sign out live in the page header's account menu on a phone.
 - A command's result is confirmed in an `ls-toast` (one at a time, at most one action such as Undo, 6 seconds); persistent conditions use `ls-alert`.
-- Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away; tooltips and small detail cards use `ls-popover`.
+- Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away. On a phone, pickers, filters and forms of up to 4 fields use `ls-dialog--sheet`, and longer forms stay full screen; tooltips and small detail cards use `ls-popover`.
 - Motion uses only the `--motion-*` and `--ease-*` tokens and the patterns in the brand book's Motion section, so reduced motion works everywhere. Drags use `ls-lifted`, `ls-drop-slot` and `ls-drag-handle`.
 - A genuinely new component is added to this system first (PR to house-standards), then used from apps.
