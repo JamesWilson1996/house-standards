@@ -55,7 +55,7 @@ Motion shows what you are holding, what changed, what arrived, where you went, o
 - Plain, warm, brief. Address the user as "you"; the product speaks as "we" only in empty states and errors.
 - Buttons are verbs: "Save changes", "Invite member". Errors say what happened and what to do: "Sync failed. The billing service didn't respond. Try again in a minute."
 - No emoji in UI, no exclamation marks, no ALL CAPS.
-- State facts. Empty states, tooltips and onboarding say what something is or does: "Projects you create appear here." Skip contrast framing ("Not just a list, a workspace"), marketing adjectives (seamless, powerful, effortless) and rhetorical questions.
+- State facts. Empty states (`ls-empty`), tooltips and onboarding say what something is or does: "Projects you create appear here." Skip contrast framing ("Not just a list, a workspace"), marketing adjectives (seamless, powerful, effortless) and rhetorical questions.
 - Use real numbers and names: "3 of 10 seats used", "Last synced 2 minutes ago".
 
 ## Iconography

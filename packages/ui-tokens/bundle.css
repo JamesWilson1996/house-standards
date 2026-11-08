@@ -399,6 +399,17 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
   .ls-popover--top { position-area: block-start; }
 }
 
+/* ---------- Empty state (what appears here, and one way to start) ---------- */
+.ls-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-7) var(--space-4); text-align: center;
+  border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
+.ls-empty svg { width: 32px; height: 32px; color: var(--ink-muted); }
+.ls-empty__text { max-width: 40ch; margin: 0; font: 400 15px/22px var(--font-sans); color: var(--ink); }
+.ls-empty__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2) var(--space-4); }
+@media (max-width: 640px) {
+  .ls-empty { padding: var(--space-6) var(--space-4); }
+  .ls-empty__actions .ls-btn { height: 44px; }
+}
+
 /* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
 .ls-toasts { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); display: flex; justify-content: center;
   padding: 0 var(--overlay-margin); pointer-events: none; }
