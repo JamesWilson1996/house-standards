@@ -51,6 +51,18 @@ const css = [
   "",
 ].join("\n\n");
 
+// A lost closing brace nests every later rule inside the block above it, and browsers accept that silently.
+const assertBalancedBraces = (file) => {
+  const code = readFileSync(join(SOURCE_DIR, file), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/"(?:[^"\\]|\\.)*"/g, '""');
+  let depth = 0;
+  for (const [index, char] of [...code].entries()) {
+    depth += char === "{" ? 1 : char === "}" ? -1 : 0;
+    if (depth < 0) throw new Error(`${file}: unmatched } at line ${code.slice(0, index).split("\n").length}`);
+  }
+  if (depth !== 0) throw new Error(`${file}: ${depth} unclosed { block(s)`);
+};
+assertBalancedBraces("bundle.css");
+
 mkdirSync(PACKAGE_DIR, { recursive: true });
 writeFileSync(join(SOURCE_DIR, "tokens.css"), css);
 writeFileSync(join(PACKAGE_DIR, "tokens.css"), css);
