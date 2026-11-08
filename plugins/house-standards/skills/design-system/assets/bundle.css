@@ -77,6 +77,24 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-form__title { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--ink); }
 .ls-form__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin-top: calc(var(--form-actions-gap) - var(--form-field-gap)); }
 
+/* ---------- Money (an amount input with its currency, and amounts in text) ---------- */
+/* The box is the wrapper, so the currency sits inside the field and focus shows on the whole box. */
+.ls-money { display: flex; align-items: center; height: 36px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); color: var(--ink); }
+.ls-money:has(.ls-money__input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 1px; border-color: var(--accent); }
+.ls-money__currency { flex: none; padding-left: var(--space-3); font: 400 15px/22px var(--font-sans); color: var(--ink-muted); }
+.ls-money__input { flex: 1; min-width: 0; height: 100%; padding: 0 var(--space-3) 0 var(--space-1); border: 0; border-radius: inherit; background: transparent;
+  font: 400 15px/22px var(--font-sans); font-variant-numeric: tabular-nums; color: inherit; }
+.ls-money__input:focus-visible { outline: none; }
+.ls-money__input::placeholder { color: var(--ink-muted); }
+.ls-money:has(.ls-money__input:disabled) { background: var(--surface-sunken); color: var(--ink-muted); }
+.ls-field[data-invalid] .ls-money { border-color: var(--danger); }
+.ls-field__row > .ls-money { flex: 1; min-width: 0; }
+.ls-amount { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ls-amount--negative { color: var(--danger-ink); }
+@media (max-width: 640px) {
+  .ls-money { height: 44px; }
+}
+
 /* ---------- Checkbox & Switch ---------- */
 .ls-check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 15px; cursor: pointer; }
 .ls-check input { appearance: none; width: 18px; height: 18px; margin: 0; border: 1.5px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); display: grid; place-content: center; cursor: pointer; }
