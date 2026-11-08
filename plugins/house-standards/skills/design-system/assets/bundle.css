@@ -76,22 +76,25 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-field[data-invalid] .ls-help { color: var(--danger-ink); }
 /* "(optional)" after a label; required fields carry no mark. */
 .ls-label__optional { font-weight: 400; color: var(--ink-muted); }
-/* A select's open list matches menus and popovers where the browser lets it be styled (Chrome and Edge 135+).
-   Only with a mouse or trackpad: phones and tablets keep their own picker, which suits a finger better. */
+/* A select's open list matches menus and popovers wherever the browser lets it be styled: Chrome and Edge 135+, including Chrome on Android.
+   Firefox and Safari (so every iPhone browser) keep their own list. */
 @supports (appearance: base-select) {
-  @media (pointer: fine) {
-    .ls-select, .ls-select::picker(select) { appearance: base-select; }
-    .ls-select { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
-    .ls-select::picker-icon { color: var(--ink-muted); transition: rotate var(--motion-quick) var(--ease-enter); }
-    .ls-select:open::picker-icon { rotate: 180deg; }
-    .ls-select::picker(select) { margin-block: var(--space-1); padding: var(--space-1); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
-    .ls-select:open::picker(select) { animation: ls-rise var(--motion-base) var(--ease-enter); }
-    .ls-select option { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-sm); font: 500 15px/22px var(--font-sans); }
-    .ls-select option:checked { font-weight: 600; }
-    .ls-select option:is(:hover, :focus-visible) { background: var(--accent-soft); color: var(--on-accent-soft); outline: none; }
-    .ls-select option::checkmark { color: var(--accent); }
-    .ls-select option:disabled { color: var(--on-disabled); }
+  .ls-select, .ls-select::picker(select) { appearance: base-select; }
+  .ls-select { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+  .ls-select::picker-icon { color: var(--ink-muted); transition: rotate var(--motion-quick) var(--ease-enter); }
+  .ls-select:open::picker-icon { rotate: 180deg; }
+  .ls-select::picker(select) { margin-block: var(--space-1); padding: var(--space-1); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+  .ls-select:open::picker(select) { animation: ls-rise var(--motion-base) var(--ease-enter); }
+  .ls-select option { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-sm); font: 500 15px/22px var(--font-sans); }
+  .ls-select option:checked { font-weight: 600; }
+  .ls-select option:focus-visible { background: var(--accent-soft); color: var(--on-accent-soft); outline: none; }
+  @media (hover: hover) { .ls-select option:hover { background: var(--accent-soft); color: var(--on-accent-soft); } }
+  .ls-select option::checkmark { color: var(--accent); }
+  .ls-select option:disabled { color: var(--on-disabled); }
+  /* Touch: 44px rows with 16px text, like every other target on a phone. */
+  @media (max-width: 640px), (pointer: coarse) {
+    .ls-select option { min-height: 44px; font-size: 16px; }
   }
 }
 
