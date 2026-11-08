@@ -198,6 +198,33 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   :root:has(.ls-tabbar):has(.ls-toast) .ls-page-header__primary { translate: 0 calc(-1 * (var(--toast-min-height) + var(--space-2))); }
 }
 
+/* ---------- Filter bar and chips (one row above a list: scope, search, active filters, Filter, count) ---------- */
+.ls-filterbar { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
+/* Never wraps to a second row; it scrolls sideways instead. The padding keeps focus rings and chip hit areas inside the scroll box. */
+.ls-filterbar__row { flex: 1; min-width: 0; display: flex; align-items: center; gap: var(--space-2); margin: -6px -4px; padding: 6px 4px; overflow-x: auto; scrollbar-width: none; }
+.ls-filterbar__row > * { flex: none; }
+/* The Filter chip sits outside the scrolling row, so the way to every other filter never scrolls out of view. */
+.ls-filterbar__filter { flex: none; }
+.ls-filterbar__search { width: 200px; height: 32px; padding: 0 var(--space-3); border-radius: var(--radius-pill); font-size: 13px; }
+.ls-filterbar__count { flex: none; margin: 0 0 0 auto; font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.ls-chip { position: relative; display: inline-flex; align-items: center; gap: var(--space-1); height: 32px; padding: 0 var(--space-3); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill); background: var(--surface); font: 600 13px/16px var(--font-sans); color: var(--ink); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
+/* 44px tall to a finger, 32px to the eye. */
+.ls-chip::after { content: ""; position: absolute; inset: -6px 0; }
+.ls-chip:hover { background: var(--surface-sunken); }
+.ls-chip svg { flex: none; width: 16px; height: 16px; }
+.ls-chip:is([aria-pressed="true"], .ls-chip--active) { background: var(--accent-soft); color: var(--on-accent-soft); border-color: var(--accent-soft); }
+.ls-chip:is([aria-pressed="true"], .ls-chip--active):hover { border-color: var(--accent); }
+.ls-chip__count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill); font: 600 11px/18px var(--font-sans); font-variant-numeric: tabular-nums;
+  text-align: center; background: var(--accent); color: var(--on-accent); }
+/* The extra filters behind the Filter chip, on desktop. On a phone the same form goes in an ls-dialog--sheet. */
+.ls-popover--panel { width: var(--popover-width); padding: var(--space-4); }
+@media (max-width: 640px) {
+  .ls-filterbar { flex-wrap: wrap; }
+  .ls-filterbar__search { width: 140px; }
+  .ls-filterbar__count { flex-basis: 100%; margin-left: 0; }
+
 /* ---------- Stepper (previous, the period, next, back to now) ---------- */
 .ls-stepper { display: inline-flex; align-items: center; height: 36px; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); }
 .ls-stepper__step, .ls-stepper__now { display: inline-grid; place-items: center; height: 30px; padding: 0; border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ink); cursor: pointer;
