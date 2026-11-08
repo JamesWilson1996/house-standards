@@ -220,6 +220,7 @@ A modal window over the current page. Record details (a bill, a transaction) and
 - Escape, a click on the backdrop, the close button and Back all close it. The first three fire the dialog's `close` event. If the app opened the dialog by pushing a history entry (marked in history state), the `close` handler calls `history.back()` to pop that entry. Only when the dialog opened from a deep link or a reload, with no such state, does the handler replace the URL without the param. Either way history ends as it was before the dialog opened; pushing or replacing a URL after an in-app open leaves a duplicate entry, so Back returns to the same page. Set `closedby="any"` for the backdrop click. Where the browser lacks `closedby`, close the dialog when a click's target is the dialog element itself; the dialog has no padding, so that target is always the backdrop.
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
+- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it rises from the bottom edge over `motion-travel`. Closing is instant, as the native `<dialog>` leaves the top layer at once.
 
 Example markup:
 
@@ -309,5 +310,44 @@ Example markup:
 <div class="ls-popover ls-popover--tip" id="dd-tip" popover="hint" role="tooltip">Paid by direct debit on the 1st</div>
 <button class="ls-btn" type="button" popovertarget="bill-card">Council tax</button>
 <div class="ls-popover" id="bill-card" popover><h3 class="ls-popover__title">Council tax</h3><p class="ls-popover__meta">£164.00 · Due 1 December</p></div>
+</div>
+```
+
+## Motion utilities
+
+Classes for the patterns in the brand book's Motion section. Their durations come from the motion tokens, so they stop under `prefers-reduced-motion` with no extra code.
+
+- `ls-enter`: a new row or item fades in at its place over `motion-base`.
+- `ls-flash`: the row a link pointed at, marked in `accent-soft` and faded back over `motion-flash` (1.2s). Scroll it into view first (`scrollIntoView({ block: "center", behavior })`, with `behavior: "auto"` under reduced motion). To flash it again, remove the class, read `offsetWidth`, and add it back.
+- `ls-drag-handle`: the grip a row is dragged by. It sets `touch-action: none`, so a finger on it drags instead of scrolling. Give it an `aria-label` ("Move Milk") and handle Arrow Up and Arrow Down on it.
+- `ls-lifted`: the item being dragged. Add it on pick-up after setting `left`, `top` and `width` from the item's rect; the item becomes `position: fixed` above the page. Move it by setting `translate`, never `top`, so it follows the pointer without layout work. Add `ls-lifted--tilt` for board cards.
+- `ls-drop-slot`: the dashed placeholder where the item will land. Insert it in the item's place on pick-up, with the item's height, and move it as the pointer moves.
+- `ls-dragging`: on `body` while a drag is in progress, for the grabbing cursor and to stop text selection.
+
+When the slot moves, slide the items around it from their old position to their new one, and on release settle the item into the slot, both over `motion-base`:
+
+```ts
+// Moves the drop slot and slides every other item from where it was to where it is now.
+export function moveSlot(list: HTMLElement, held: HTMLElement, place: () => void) {
+  const items = [...list.children].filter((el): el is HTMLElement => el !== held);
+  const before = new Map(items.map((el) => [el, el.getBoundingClientRect().top]));
+  place();
+  const duration = parseFloat(getComputedStyle(list).getPropertyValue("--motion-base"));
+  if (!duration) return;
+  const easing = getComputedStyle(list).getPropertyValue("--ease-enter");
+  for (const el of items) {
+    const dy = (before.get(el) ?? 0) - el.getBoundingClientRect().top;
+    if (dy) el.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration, easing });
+  }
+}
+```
+
+Example markup, mid-drag:
+
+```html
+<div class="ls-stack">
+<div class="ls-drop-slot ls-pad"></div>
+<div class="ls-card ls-row"><button class="ls-btn ls-btn--ghost ls-drag-handle" type="button" aria-label="Move Eggs">⋮⋮</button>Eggs</div>
+<div class="ls-card ls-row ls-flash">Bananas</div>
 </div>
 ```
