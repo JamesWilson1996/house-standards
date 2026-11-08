@@ -819,6 +819,25 @@ A page one level down, with no tabs:
 
 `span.ls-avatar`: a 32px circle in `sage` with the member's initial in `on-sage`. Decorative next to a visible name, so `aria-hidden="true"`; a button that holds only an avatar has its own `aria-label` ("Account: Alex").
 
+## Empty state
+
+What a list or page shows when there is nothing in it yet. `div.ls-empty` holds an optional 32px Lucide icon (`aria-hidden="true"`), `p.ls-empty__text` and `div.ls-empty__actions`.
+
+- Text: one or two sentences that say what appears here or why it is empty: "Bills you add appear here." The product may speak as "we" ("We'll list next week's meals here once you plan them."). No exclamation marks, no "Nothing to see here", no illustrations.
+- One action, the way to start: an `ls-btn` with the same command as the page header's primary ("Add bill"). It stays a default button because the header already holds the page's one primary. An optional second step is a plain link ("Import a statement").
+- Filtered to nothing: say so and offer the way back: "No bills match these filters." with a "Clear filters" button. Don't show the first-use text, because the list isn't empty.
+- An empty section inside a card (no meals today) is one line of `ink-muted` text, not an `ls-empty`.
+- It sits where the list would be, inside the same width. Actions are 44px on a phone.
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<div class="ls-empty"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p class="ls-empty__text">Bills you add appear here, with what is due this month at the top.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Add bill</button><a href="#">Import a statement</a></div></div>
+<div class="ls-empty"><p class="ls-empty__text">No bills match these filters.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Clear filters</button></div></div>
+</div>
+```
+
 ## Visually hidden text
 
 `ls-sr-only` hides text on screen and keeps it for screen readers: a table heading for an actions column, "(opens in a dialog)" after a link, a count's unit beside a bare number.
