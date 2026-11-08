@@ -852,6 +852,99 @@ Example markup:
 <a href="#">Council tax<span class="ls-sr-only"> (opens in a dialog)</span></a>
 ```
 
+## Chart
+
+A chart shows a trend or a comparison that one number can't. Apps draw charts as inline SVG from their own scales, styled only with the `ls-chart` classes and the chart tokens. No chart library: libraries bring their own colours, DOM and motion, and Hearth's spend chart already works as inline SVG. Using one needs an ADR.
+
+### Pick the form
+
+- One figure that answers the question ("£695 short"): an `ls-stat`, not a chart.
+- Change over time (spending through the month): a line. A running total is a line from zero.
+- Amounts compared across categories or periods (spend by category, month by month): bars, from a zero baseline, sorted by value unless the order means something (months).
+- Never a pie, a dual-axis chart (two y-scales), 3D, or a gauge. Two measures of different size are two charts.
+
+### Colour
+
+- Series take `chart-1` to `chart-5` in that order (lilac, sage, amber, sky, rose), through `ls-chart__series-1` to `-5`. A series keeps its colour when a filter hides others: colour follows the entity, never its rank. More than 5 series fold into "Other" or become small multiples.
+- The order is validated (dataviz palette checks) against `surface` in both themes: worst adjacent colour-blind separation ΔE 8.9 light and 8.2 dark, normal vision 18.4 and 16.4, every series 3:1 or more on `surface`. Scatter-style charts where any two series can touch take the first 3 only.
+- A series that means good or bad (overspent, overdue) uses the status tokens with an icon and a word, never a `chart-` colour.
+- Text in a chart (labels, values, legend) is `chart-label`, never a series colour. Gridlines are `chart-grid`; the baseline and crosshair `chart-axis`.
+
+### Never colour alone
+
+- Two or more series: `ul.ls-chart__legend` is always there, with `li.ls-chart__key` per series (a 16px line in the series colour, then the name). Up to 4 series are also labelled directly at the end of their line.
+- A projected or still-due part of a series is the same colour, dashed (`ls-chart__line--projected`, `ls-chart__key--projected`), and the legend says "still due" or "projected".
+- One series needs no legend: the title names it.
+
+### Marks, axes and numbers
+
+- Lines 2px, round joins. Points 8px (`r="4"`) with a 2px `surface` ring. Bars have a 2px `surface` gap between them; their data end has a 4px radius and the baseline end none.
+- Horizontal gridlines only, at 4 or 5 round steps; no vertical gridlines, no chart border. The y-axis starts at 0.
+- Labels 12px, tabular. Money on an axis in whole units, short ("£3k", `Intl.NumberFormat` with `notation: "compact"`); in tooltips and the table in full ("£2,140.00"). Dates as "8 Nov". Mark today on a time axis with the `ls-chart__crosshair` line and the word "Today".
+- No animation: charts draw at once and values change in place. No draw-in, no counting up.
+
+### Tooltip
+
+- Every point or bar has a hit target bigger than the mark: `circle.ls-chart__hit` (`r="12"`, 24px) that is focusable (`tabindex="0"`, `role="button"`, an `aria-label` with the date and values).
+- Hover, focus or tap shows an `ls-popover ls-popover--at` (detail card, `popover="manual"`) with the date in `ls-popover__title` and each series' value in `ls-popover__meta`. Pointer leave or blur hides it; a tap elsewhere or Escape hides it on touch.
+- `showPopover({ source })` takes only HTML elements, so an SVG point can't anchor it. `ls-popover--at` turns off anchor positioning and reads `--ls-popover-x` and `--ls-popover-y`, which `showChartTip` sets from the hit target: above the point, or below when there is no room, kept `popover-offset` inside the viewport.
+
+```ts
+// Shows a chart tooltip next to an SVG hit target.
+export function showChartTip(tip: HTMLElement, hit: SVGGraphicsElement) {
+  tip.showPopover();
+  const offset = parseFloat(getComputedStyle(tip).getPropertyValue("--popover-offset"));
+  const h = hit.getBoundingClientRect();
+  const p = tip.getBoundingClientRect();
+  const fitsAbove = h.top - offset - p.height >= offset;
+  const y = fitsAbove ? h.top - offset - p.height : h.bottom + offset;
+  const x = Math.min(Math.max(offset, h.left + h.width / 2 - p.width / 2), innerWidth - offset - p.width);
+  tip.style.setProperty("--ls-popover-x", `${x}px`);
+  tip.style.setProperty("--ls-popover-y", `${y}px`);
+}
+```
+- On a line chart a pointer anywhere over the plot snaps the crosshair and tooltip to the nearest day.
+
+### Text alternative and empty state
+
+- `figure.ls-chart` with `figcaption.ls-chart__title`. The SVG has `role="img"` and `aria-labelledby` pointing at the title and a `desc` that states the finding in a sentence ("£2,140 spent by 8 November..."). The drawing inside is `aria-hidden`; the hit targets stay outside it so they can be reached.
+- `details.ls-chart__table` with `summary` "Show as table" holds an `ls-table` of the same values, for screen readers and anyone who wants the numbers.
+- No data yet: `p.ls-chart__empty` in place of the plot, saying what will appear ("Spending shows here once the first bill is paid."). Keep the title; drop the legend and table.
+- On a phone the chart is full width at the same aspect; the tooltip opens on tap.
+
+Example markup (November's spending, with today on 8 November):
+
+```html
+<div class="ls-stack">
+<div class="ls-card">
+<figure class="ls-chart">
+<figcaption class="ls-chart__title" id="spend-title">Spending in November</figcaption>
+<ul class="ls-chart__legend"><li class="ls-chart__key ls-chart__series-1">Spent so far</li><li class="ls-chart__key ls-chart__key--projected ls-chart__series-1">Still due</li><li class="ls-chart__key ls-chart__series-2">Income</li></ul>
+<svg class="ls-chart__plot" viewBox="0 0 320 172" role="img" aria-labelledby="spend-title spend-desc">
+<desc id="spend-desc">£2,140 spent by 8 November. With £1,755 still due, spending reaches £3,895 by 30 November, £695 more than the £3,200 income.</desc>
+<g aria-hidden="true">
+<line class="ls-chart__grid" x1="40" x2="310" y1="10" y2="10"/><line class="ls-chart__grid" x1="40" x2="310" y1="45" y2="45"/><line class="ls-chart__grid" x1="40" x2="310" y1="80" y2="80"/><line class="ls-chart__grid" x1="40" x2="310" y1="115" y2="115"/>
+<line class="ls-chart__axis" x1="40" x2="310" y1="150" y2="150"/>
+<text class="ls-chart__label" x="34" y="14" text-anchor="end">£4k</text><text class="ls-chart__label" x="34" y="49" text-anchor="end">£3k</text><text class="ls-chart__label" x="34" y="84" text-anchor="end">£2k</text><text class="ls-chart__label" x="34" y="119" text-anchor="end">£1k</text><text class="ls-chart__label" x="34" y="154" text-anchor="end">£0</text>
+<text class="ls-chart__label" x="40" y="166">1 Nov</text><text class="ls-chart__label" x="105" y="166" text-anchor="middle">Today</text><text class="ls-chart__label" x="310" y="166" text-anchor="end">30 Nov</text>
+<line class="ls-chart__crosshair" x1="105.2" x2="105.2" y1="10" y2="150"/>
+<line class="ls-chart__line ls-chart__series-2" x1="40" x2="310" y1="38" y2="38"/>
+<text class="ls-chart__label" x="44" y="32">Income £3,200</text>
+<polyline class="ls-chart__line ls-chart__series-1" points="40,150 58.6,127.6 77.2,103.8 105.2,75.1"/>
+<polyline class="ls-chart__line ls-chart__line--projected ls-chart__series-1" points="105.2,75.1 170.3,48.5 291,24 310,13.7"/>
+<text class="ls-chart__label" x="306" y="8" text-anchor="end">£3,895</text>
+<circle class="ls-chart__point ls-chart__series-1" cx="105.2" cy="75.1" r="4"/>
+</g>
+<circle class="ls-chart__hit" cx="105.2" cy="75.1" r="12" tabindex="0" role="button" aria-label="8 November: £2,140 spent, £1,755 still due"/>
+</svg>
+<div class="ls-popover ls-popover--at" id="spend-tip" popover="manual"><h3 class="ls-popover__title">8 November</h3><p class="ls-popover__meta">£2,140.00 spent · £1,755.00 still due</p></div>
+<details class="ls-chart__table"><summary>Show as table</summary><div class="ls-table-wrap"><table class="ls-table"><thead><tr><th>Date</th><th class="num">Spent so far</th><th class="num">Still due</th></tr></thead><tbody><tr><td>1 Nov</td><td class="num">£0.00</td><td class="num">£3,895.00</td></tr><tr><td>3 Nov</td><td class="num">£640.00</td><td class="num">£3,255.00</td></tr><tr><td>5 Nov</td><td class="num">£1,320.00</td><td class="num">£2,575.00</td></tr><tr><td>8 Nov</td><td class="num">£2,140.00</td><td class="num">£1,755.00</td></tr></tbody></table></div></details>
+</figure>
+</div>
+<div class="ls-card"><figure class="ls-chart"><figcaption class="ls-chart__title">Spending in December</figcaption><p class="ls-chart__empty">Spending shows here once the first bill is paid.</p></figure></div>
+</div>
+```
+
 ## Motion utilities
 
 Classes for the patterns in the brand book's Motion section. Their durations come from the motion tokens, so they stop under `prefers-reduced-motion` with no extra code.
