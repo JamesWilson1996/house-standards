@@ -236,6 +236,54 @@ Example markup:
 </div>
 ```
 
+## List
+
+Rows of things you act on in place: bills due, shopping items, household members, today's meals. Use a list when each row has its own action; use an `ls-table` when people compare values across columns.
+
+`ul.ls-list > li.ls-list__row`, each with up to three parts:
+
+- `div.ls-list__lead` (optional): one of a checkbox (`label.ls-check` holding the input and `ls-sr-only` text such as "Bought Milk"), an `span.ls-date` chip ("4 Nov"), or an `ls-drag-handle` button.
+- `div.ls-list__main`: the title, then `p.ls-list__meta` with one line of detail (badges, who, when). The title is `button.ls-list__title` or `a.ls-list__title` when it opens the row's dialog, and `span.ls-list__title` when nothing opens.
+- `div.ls-list__end` (optional): `span.ls-list__value` (an amount or count, tabular numerals), then the row's actions.
+
+Actions (decided 8 November, #23): every row shows its one main action as a visible control, on touch and desktop alike. The main action is the lead checkbox or one `ls-btn ls-btn--sm` in the end ("Mark paid"). Everything else is in the row's dialog, or under an `ls-btn--ghost` More button with `aria-label="More for Council tax"` opening an `ls-popover--menu`. No swipe actions.
+
+- Rows are 56px tall at least. On a phone the end stacks the value over the action, and end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
+- Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
+- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities. A toast with Undo confirms the change.
+- Consumer provides: the rows from the API, each row's `allowedActions` deciding which main action shows.
+
+```ts
+const FOLD_DELAY_MS = 400;
+
+// Marks a ticked row at once, then folds it away; removeRow drops it from the list's state.
+export function foldRow(row: HTMLElement, removeRow: () => void) {
+  row.classList.add("ls-list__row--done");
+  setTimeout(() => {
+    row.style.height = `${row.offsetHeight}px`; // a px start height, so the fold animates in every browser
+    row.classList.add("ls-list__row--leaving");
+    row.addEventListener("animationend", removeRow, { once: true });
+  }, FOLD_DELAY_MS);
+}
+```
+
+Example markup:
+
+```html
+<div class="ls-stack">
+<ul class="ls-list">
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--danger">4 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Window cleaner</button><p class="ls-list__meta"><span class="ls-badge ls-badge--danger">4 days overdue</span>Card</p></div><div class="ls-list__end"><span class="ls-list__value">£15.00</span><button class="ls-btn ls-btn--sm" type="button">Mark paid</button></div></li>
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--warning">10 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Council tax</button><p class="ls-list__meta"><span class="ls-badge ls-badge--warning">Due in 2 days</span>Direct debit</p></div><div class="ls-list__end"><span class="ls-list__value">£189.00</span></div></li>
+<li class="ls-list__row"><div class="ls-list__lead"><span class="ls-date ls-date--success">6 Nov</span></div><div class="ls-list__main"><button class="ls-list__title" type="button">Mortgage</button><p class="ls-list__meta"><span class="ls-badge ls-badge--success">Paid</span>Direct debit</p></div><div class="ls-list__end"><span class="ls-list__value">£1,085.00</span></div></li>
+</ul>
+<ul class="ls-list">
+<li class="ls-list__row"><div class="ls-list__lead"><label class="ls-check"><input type="checkbox"><span class="ls-sr-only">Bought Milk</span></label></div><div class="ls-list__main"><span class="ls-list__title">Milk</span><p class="ls-list__meta">2 pints · added by Alex</p></div><div class="ls-list__end"><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button" aria-label="More for Milk"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></div></li>
+<li class="ls-list__row ls-list__row--done"><div class="ls-list__lead"><label class="ls-check"><input type="checkbox" checked><span class="ls-sr-only">Bought Eggs</span></label></div><div class="ls-list__main"><span class="ls-list__title">Eggs</span></div></li>
+</ul>
+</div>
+```
+
 ## Table
 
 Tabular records. `div.ls-table-wrap > table.ls-table`. Right-align numbers with `td.num`; mark a selected row with `aria-selected="true"`.
