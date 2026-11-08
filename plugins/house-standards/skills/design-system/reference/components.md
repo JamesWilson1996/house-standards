@@ -284,14 +284,15 @@ A modal window over the current page. Record details (a bill, a transaction) and
 
 `dialog.ls-dialog` opened with `showModal()`, holding `header.ls-dialog__header` (an `h2.ls-dialog__title` and a close button), `div.ls-dialog__body` and an optional `footer.ls-dialog__foot` for actions.
 
-- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen.
+- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet.
+- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
 - The body scrolls and the header and foot stay in view. The page behind does not scroll while the dialog is open.
 - Consumer provides: `aria-labelledby` pointing at the title, a close button with `aria-label="Close"` and a 16px Lucide `x` icon, and actions in the foot with the primary first, as in `ls-form__actions`. A form inside the body is an `ls-form`; its submit button sits in the foot with `form="<form id>"`.
 - Open state lives in the URL as a search param (`?bill=<id>`, Zod-validated), so a reload or a shared link reopens it. Opening pushes a history entry, and Back closes the dialog.
 - Escape, a click on the backdrop, the close button and Back all close it. The first three fire the dialog's `close` event. If the app opened the dialog by pushing a history entry (marked in history state), the `close` handler calls `history.back()` to pop that entry. Only when the dialog opened from a deep link or a reload, with no such state, does the handler replace the URL without the param. Either way history ends as it was before the dialog opened; pushing or replacing a URL after an in-app open leaves a duplicate entry, so Back returns to the same page. Set `closedby="any"` for the backdrop click. Where the browser lacks `closedby`, close the dialog when a click's target is the dialog element itself; the dialog has no padding, so that target is always the backdrop.
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
-- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it rises from the bottom edge over `motion-travel`. Closing is instant, as the native `<dialog>` leaves the top layer at once.
+- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is instant, as the native `<dialog>` leaves the top layer at once.
 
 Example markup:
 
@@ -337,6 +338,56 @@ function BillDialog() {
 ```
 
 `openedInApp` needs a `HistoryState` entry in the router's module augmentation.
+
+### Sheet
+
+`ls-dialog--sheet` on the same `dialog.ls-dialog`, with `div.ls-dialog__handle` (`aria-hidden="true"`) as its first child. Everything else is the dialog's: URL param, history, focus, Escape, backdrop click, close button and foot.
+
+- On a phone it is as tall as its content, up to 90% of the screen (`90dvh`), and the body scrolls past that. Its top corners are `radius-lg`; the foot, or the body when there is no foot, clears the home indicator with `env(safe-area-inset-bottom)`.
+- The handle is a 24px strip at the top with a 36px bar. Dragging it down moves the sheet with the finger, with no easing; let go past a quarter of the sheet's height and it closes, otherwise it settles back over `motion-base`. A tap on the page above it (the backdrop) also closes it. Keyboard and screen reader users close it with Escape or the close button, so the handle is hidden from them.
+- Keep the close button: not everyone knows to swipe.
+- Add `interactive-widget=resizes-content` to the page's viewport meta, so on Android the on-screen keyboard pushes the sheet up instead of covering its fields. iOS scrolls the focused field into view itself.
+
+```ts
+// Drags a sheet down by its handle; past a quarter of its height it closes, otherwise it settles back.
+export function dragToClose(dialog: HTMLDialogElement, handle: HTMLElement) {
+  handle.addEventListener("pointerdown", (down) => {
+    const startY = down.clientY;
+    let dy = 0;
+    handle.setPointerCapture(down.pointerId);
+    const move = (e: PointerEvent) => {
+      dy = Math.max(0, e.clientY - startY);
+      dialog.style.translate = `0 ${dy}px`;
+    };
+    const release = () => {
+      handle.removeEventListener("pointermove", move);
+      dialog.style.translate = "";
+      if (dy > dialog.offsetHeight / 4) return dialog.close();
+      const css = getComputedStyle(dialog);
+      const duration = parseFloat(css.getPropertyValue("--motion-base"));
+      if (duration) dialog.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration, easing: css.getPropertyValue("--ease-enter") });
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", release, { once: true });
+    handle.addEventListener("pointercancel", release, { once: true });
+  });
+}
+```
+
+Example markup (Change income, two fields):
+
+```html
+<button class="ls-btn" type="button" onclick="document.getElementById('income').showModal()">Change income</button>
+<dialog class="ls-dialog ls-dialog--sm ls-dialog--sheet" id="income" aria-labelledby="income-title" closedby="any">
+<div class="ls-dialog__handle" aria-hidden="true"></div>
+<header class="ls-dialog__header"><h2 class="ls-dialog__title" id="income-title">Income</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
+<div class="ls-dialog__body"><form class="ls-form" id="income-form">
+<div class="ls-field"><label class="ls-label" for="inc-you">You, paid the last Friday</label><input class="ls-input" id="inc-you" inputmode="decimal" value="2,100.00" autofocus></div>
+<div class="ls-field"><label class="ls-label" for="inc-partner">Partner, paid on the 28th</label><input class="ls-input" id="inc-partner" inputmode="decimal" value="1,450.00"></div>
+</form></div>
+<footer class="ls-dialog__foot"><button class="ls-btn ls-btn--primary" type="submit" form="income-form">Save income</button><form method="dialog"><button class="ls-btn">Cancel</button></form></footer>
+</dialog>
+```
 
 ## Popover
 
