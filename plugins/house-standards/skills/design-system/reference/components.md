@@ -311,7 +311,7 @@ The one row of controls above a list, on every screen size: the scope (which mon
 
 `div.ls-filterbar` holds `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`. The row holds, in order:
 
-1. Scope, if the list has one: Previous, the period ("November 2026"), Next.
+1. Scope, if the list has one: an `ls-stepper` (see Stepper). Its short label on a phone leaves room for search.
 2. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
 3. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
 4. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
@@ -351,6 +351,29 @@ Example markup:
 <div class="ls-field"><label class="ls-label" for="f-pay">Paid by</label><select class="ls-select" id="f-pay"><option>Anyone</option><option>Direct debit</option><option>Card</option></select></div>
 <label class="ls-check"><input type="checkbox"> Include paid bills</label>
 </form></div>
+```
+
+## Stepper
+
+Moves a list through time one period at a time: Budget's month, Meals' week. Previous, the current period, Next, and a way back to now when you have stepped away.
+
+`div.ls-stepper[role=group]` with an `aria-label` naming the period ("Month"), holding `button.ls-stepper__step` (Previous), `span.ls-stepper__label`, `button.ls-stepper__step` (Next) and, only when away from the current period, `button.ls-stepper__now`.
+
+- Step buttons hold a 16px Lucide `chevron-left` or `chevron-right` and an `aria-label` with the unit: "Previous month", "Next week". Disable one at the end of the data (no months before the household started).
+- Label: `span.ls-stepper__long` ("November 2026", "Week of 9 November") and `span.ls-stepper__short` (`aria-hidden="true"`; "Nov 2026", "9 Nov"). On a phone the short one shows and the long one is read by screen readers, so the stepper leaves room in a filter bar. The label has `aria-live="polite"` so a step is announced.
+- Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
+- The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
+- Changing period swaps the list in place: no slide or fade (brand book Motion pattern 4 treats it like switching tabs).
+- In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
+- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
+
+Example markup:
+
+```html
+<div class="ls-row">
+<div class="ls-stepper" role="group" aria-label="Month"><button class="ls-stepper__step" type="button" aria-label="Previous month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">November 2026</span><span class="ls-stepper__short" aria-hidden="true">Nov 2026</span></span><button class="ls-stepper__step" type="button" aria-label="Next month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button></div>
+<div class="ls-stepper" role="group" aria-label="Week"><button class="ls-stepper__step" type="button" aria-label="Previous week"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">Week of 23 November</span><span class="ls-stepper__short" aria-hidden="true">23 Nov</span></span><button class="ls-stepper__step" type="button" aria-label="Next week"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button class="ls-stepper__now" type="button">This week</button></div>
+</div>
 ```
 
 ## Dialog
