@@ -398,6 +398,8 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
     position-try-fallbacks: flip-block, block-end span-inline-end, block-end span-inline-start, block-start span-inline-end, block-start span-inline-start; }
   .ls-popover--top { position-area: block-start; }
 }
+/* Placed by coordinates the app sets, for an anchor that can't be a popover source (a point in an SVG chart). */
+.ls-popover.ls-popover--at { top: var(--ls-popover-y, 0); left: var(--ls-popover-x, 0); margin: 0; position-area: none; position-try-fallbacks: none; }
 
 /* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
 .ls-toasts { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); display: flex; justify-content: center;
@@ -416,6 +418,35 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @media (max-width: 640px) {
   :root:has(.ls-tabbar) .ls-toasts { bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-2)); }
 }
+
+/* ---------- Chart (inline SVG drawn by the app, styled only from the chart tokens) ---------- */
+.ls-chart { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; margin: 0; }
+.ls-chart__title { margin: 0; font: 600 15px/22px var(--font-sans); color: var(--ink); }
+.ls-chart__legend { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-4); margin: 0; padding: 0; list-style: none; font: 400 13px/18px var(--font-sans); color: var(--chart-label); }
+.ls-chart__key { display: inline-flex; align-items: center; gap: var(--space-2); }
+.ls-chart__key::before { content: ""; width: 16px; border-top: 2px solid var(--ls-series); }
+.ls-chart__key--projected::before { border-top-style: dashed; }
+.ls-chart__plot { display: block; width: 100%; height: auto; overflow: visible; font: 400 12px/16px var(--font-sans); }
+.ls-chart__grid { stroke: var(--chart-grid); stroke-width: 1; }
+.ls-chart__axis { stroke: var(--chart-axis); stroke-width: 1; }
+.ls-chart__label { fill: var(--chart-label); font-variant-numeric: tabular-nums; }
+.ls-chart__line { fill: none; stroke: var(--ls-series); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ls-chart__line--projected { stroke-dasharray: 4 4; }
+/* A 2px surface gap between fills and a 2px surface ring round points, so touching marks stay apart. */
+.ls-chart__bar { fill: var(--ls-series); stroke: var(--surface); stroke-width: 2; }
+.ls-chart__point { fill: var(--ls-series); stroke: var(--surface); stroke-width: 2; }
+.ls-chart__hit { fill: transparent; cursor: pointer; }
+.ls-chart__hit:focus-visible { outline: none; stroke: var(--focus-ring); stroke-width: 2; }
+.ls-chart__crosshair { stroke: var(--chart-axis); stroke-width: 1; stroke-dasharray: 2 2; }
+.ls-chart__empty { display: grid; place-items: center; min-height: 160px; margin: 0; padding: var(--space-4); text-align: center; font: 400 13px/18px var(--font-sans); color: var(--ink-muted);
+  border: 1px dashed var(--line); border-radius: var(--radius-md); }
+.ls-chart__table > summary { width: fit-content; font: 600 13px/18px var(--font-sans); color: var(--link); cursor: pointer; }
+.ls-chart__table > .ls-table-wrap { margin-top: var(--space-2); }
+.ls-chart__series-1 { --ls-series: var(--chart-1); }
+.ls-chart__series-2 { --ls-series: var(--chart-2); }
+.ls-chart__series-3 { --ls-series: var(--chart-3); }
+.ls-chart__series-4 { --ls-series: var(--chart-4); }
+.ls-chart__series-5 { --ls-series: var(--chart-5); }
 
 /* ---------- Motion (durations come from the motion tokens, which drop to 0ms under prefers-reduced-motion) ---------- */
 @keyframes ls-fade { from { opacity: 0; } }
