@@ -336,6 +336,33 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   .ls-column--folded .ls-column__cards { display: flex; }
 }
 
+/* ---------- Week (day rows on a phone and tablet, 7 columns on a wide screen, a slot per meal) ---------- */
+.ls-week { display: grid; margin: 0; padding: 0; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.ls-week__day { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); align-items: start; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--line); }
+.ls-week__day:last-child { border-bottom: 0; }
+.ls-week__date { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-1) var(--space-2); margin: 0; padding-top: var(--space-2); font: 400 15px/22px var(--font-sans); color: var(--ink-muted); }
+.ls-week__dnum { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); }
+.ls-week__day--today { background: var(--accent-soft); }
+.ls-week__day--today .ls-week__date, .ls-week__day--today .ls-week__dnum { color: var(--on-accent-soft); }
+.ls-week__day--past .ls-week__dnum, .ls-week__day--past .ls-week__meal { font-weight: 400; color: var(--ink-muted); }
+.ls-week__slots { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+.ls-week__slot { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; min-height: 44px; padding: var(--space-2) var(--space-3); border: 1px solid var(--line);
+  border-radius: var(--radius-md); background: var(--surface); font: 400 15px/22px var(--font-sans); color: var(--ink); text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color var(--motion-quick) ease; }
+.ls-week__slot:hover { background: var(--surface-sunken); }
+.ls-week__slot--empty { flex-direction: row; align-items: center; gap: var(--space-2); border: 1px dashed var(--line-strong); color: var(--ink-muted); }
+.ls-week__slot--empty svg { flex: none; width: 16px; height: 16px; }
+.ls-week__kind { font: 500 12px/16px var(--font-sans); color: var(--ink-muted); }
+.ls-week__meal { font-weight: 600; overflow-wrap: anywhere; }
+.ls-week__note { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); overflow-wrap: anywhere; }
+/* Seven columns need about 128px each, so they start where a desktop sidebar still leaves room. */
+@media (min-width: 1100px) {
+  .ls-week { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .ls-week__day { grid-template-columns: minmax(0, 1fr); align-content: start; padding: var(--space-3); border-bottom: 0; border-right: 1px solid var(--line); }
+  .ls-week__day:last-child { border-right: 0; }
+  .ls-week__date { padding-top: 0; }
+}
+
 /* ---------- Dialog (native <dialog> opened with showModal()) ---------- */
 /* Sizes are set here because the UA stylesheet caps a dialog at calc(100% - 6px - 2em). */
 .ls-dialog { width: min(var(--dialog-md), calc(100vw - 2 * var(--overlay-margin))); max-width: none; max-height: calc(100dvh - 2 * var(--overlay-margin));
