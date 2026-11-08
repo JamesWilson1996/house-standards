@@ -193,7 +193,7 @@ For a long or growing list, a button in the field shows the current value ("Chil
 Each device can follow the OS theme or keep its own (decided 8 November, #50). The setting is an `ls-segmented` with three options, Match device, Light and Dark, with "Saved on this device only." as its help. It applies at once, with no Save.
 
 - The choice lives in `localStorage` on the device, never on the server. Match device stores nothing.
-- The inline script in `<head>` reads it before first paint, so the page never flashes the wrong theme. Match device follows the OS live, while the page is open.
+- The inline script in `<head>` reads it before first paint, so the page never flashes the wrong theme, and sets `theme-color` to match. It goes after the `tokens.css` link. Match device follows the OS live, while the page is open.
 
 ```html
 <script>
@@ -202,7 +202,10 @@ Each device can follow the OS theme or keep its own (decided 8 November, #50). T
     let pick = null;
     try { pick = localStorage.getItem("ls-appearance"); } catch { /* storage blocked: follow the OS */ }
     const dark = pick ? pick === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    const root = document.documentElement;
+    root.dataset.theme = dark ? "dark" : "light";
+    // The browser bar matches the page; tokens.css is linked above this script, so --bg is ready.
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", getComputedStyle(root).getPropertyValue("--bg").trim());
   })();
 </script>
 ```
@@ -225,7 +228,10 @@ export function readAppearance(): Appearance {
 
 export function applyAppearance(choice: Appearance = readAppearance()) {
   const dark = choice === "match" ? osDark.matches : choice === "dark";
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  const root = document.documentElement;
+  root.dataset.theme = dark ? "dark" : "light";
+  // The phone's browser bar and the installed app's title bar follow the page (see App shell).
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", getComputedStyle(root).getPropertyValue("--bg").trim());
 }
 
 export function setAppearance(choice: Appearance) {
@@ -483,6 +489,69 @@ Example markup:
 
 ```html
 <div class="ls-tabs" role="tablist"><button class="ls-tab" role="tab" aria-selected="true">Overview</button><button class="ls-tab" role="tab">Activity</button><button class="ls-tab" role="tab">Members</button><button class="ls-tab" role="tab">Settings</button></div>
+```
+
+## App shell
+
+What every app's frame is, so each app doesn't build its own (decided 8 November, #49). `div.ls-app` holds the skip link's target and the sidebar beside the page; the bottom tab bar, toast region and dialogs sit outside it, at the end of `body`.
+
+- Above 640px: `ls-nav` (`nav-width`, 220px) on the left, sticky so it stays in view, then `main.ls-main`. The page is left-aligned beside the sidebar and capped at `content-width` (1040px), so list rows and lines stay readable. A board or wide table uses `ls-main ls-main--wide` for the full width.
+- 640px and below: one column with `page-gutter` (16px) plus the safe area on each side. With an `ls-tabbar`, the sidebar is hidden and the bar takes over.
+- `main.ls-main` has `id="main"` and `tabindex="-1"`, as the skip link's target.
+
+```html
+<body>
+<a class="ls-skip-link" href="#main">Skip to content</a>
+<div class="ls-app">
+<nav class="ls-nav" aria-label="Main">…</nav>
+<main class="ls-main" id="main" tabindex="-1">
+<header class="ls-page-header">…<h1 class="ls-page-header__title" tabindex="-1">Bills</h1>…</header>
+…
+</main>
+</div>
+<nav class="ls-tabbar" aria-label="Main">…</nav>
+<div class="ls-toasts" role="status"></div>
+</body>
+```
+
+### The head
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="theme-color" content="">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<title>Hearth</title>
+<link rel="stylesheet" href="…/tokens.css"><link rel="stylesheet" href="…/bundle.css">
+<script>/* the Appearance script, which also sets theme-color: see Appearance */</script>
+```
+
+- `viewport-fit=cover` makes `env(safe-area-inset-*)` real, so the tab bar, toasts and sheets clear the system bars on Android gesture navigation and the iPhone home indicator. `interactive-widget=resizes-content` keeps sheets above the Android keyboard.
+- `theme-color` colours the phone's browser bar and the installed app's title bar. Set it from `--bg` after the theme is applied (see Appearance), so it matches in both themes and follows the Appearance choice.
+- Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape. Until a logo exists, the app's initial in `on-accent` on an `accent` square.
+
+### After navigation
+
+On every route change, the page says where you are:
+
+- `document.title` is "Page · App" ("Bills · Hearth"); the app's home is just the app's name.
+- Focus moves to the page's `h1` (`tabindex="-1"`), so a screen reader reads the new page from its title and Tab continues from there. Not on the first load, where the browser's own start is right, and not when only the search params change (a filter, a dialog's param).
+- Back and Forward restore the scroll position; a new page starts at the top. TanStack Router's `scrollRestoration: true` does both.
+
+```ts
+export const APP_NAME = "Hearth";
+const TITLE_SEPARATOR = " · ";
+
+export const router = createRouter({ routeTree, scrollRestoration: true });
+
+// Each route sets staticData.title ("Bills"); the home route leaves it out.
+router.subscribe("onResolved", ({ fromLocation, toLocation }) => {
+  const title = router.state.matches.at(-1)?.staticData.title;
+  document.title = title ? `${title}${TITLE_SEPARATOR}${APP_NAME}` : APP_NAME;
+  if (!fromLocation || fromLocation.pathname === toLocation.pathname) return; // first load, or only the search params changed
+  document.querySelector<HTMLElement>(".ls-page-header__title")?.focus({ preventScroll: true });
+});
 ```
 
 ## Nav
