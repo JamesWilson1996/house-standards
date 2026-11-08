@@ -85,3 +85,5 @@ For new repos, make this the default by creating them from a GitHub template rep
 - doesn't register the `house` marketplace or enable `house-standards@house`
 - contains a pasted copy of the standards text
 - uses raw hex or `rgb()` colours in `src/` instead of tokens
+
+It runs on `ubuntu-latest` unless the caller passes `runs-on`, a JSON string of runner labels such as `'["self-hosted","hearth"]'`, so a private repo can use its own runners instead of paid minutes.

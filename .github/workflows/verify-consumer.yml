@@ -2,9 +2,15 @@
 name: verify-consumer
 on:
   workflow_call:
+    inputs:
+      runs-on:
+        # A private repo pays for hosted minutes, so it can pass its self-hosted labels, e.g. '["self-hosted","hearth"]'.
+        description: Runner labels as a JSON string or array. The runner needs bash, grep and jq.
+        type: string
+        default: '"ubuntu-latest"'
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     steps:
       - uses: actions/checkout@v4
       - name: Plugin is registered and enabled
