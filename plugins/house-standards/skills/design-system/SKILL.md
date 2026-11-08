@@ -19,6 +19,7 @@ Hard rules:
 - Every screen must work in both `data-theme="light"` and `data-theme="dark"`; text on a fill always uses its `on-*` token.
 - Status is never colour alone: pair it with a word or a Lucide icon.
 - Keep the 2px `focus-ring` outline on every interactive element.
+- Every state must survive forced colours (Windows High Contrast): a fill or shadow alone is lost, so chosen, current and progress states get a system-colour rule in the bundle's forced-colours block.
 - The frame is the App shell in `reference/components.md`: `ls-app` with the sidebar and a left-aligned `ls-main` capped at `content-width`, a skip link, the head (viewport, `theme-color`, icons, manifest), and after each navigation a "Page · App" title and focus on the `h1`.
 - Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields. One of 2 to 4 short options is an `ls-segmented`, 5 or more an `ls-select`, a long or searched list a picker dialog. Mark optional fields with "(optional)"; required ones carry no mark.
