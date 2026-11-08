@@ -74,6 +74,26 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-help { margin: 0; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
 .ls-field[data-invalid] :is(.ls-input, .ls-select, .ls-textarea) { border-color: var(--danger); }
 .ls-field[data-invalid] .ls-help { color: var(--danger-ink); }
+/* "(optional)" after a label; required fields carry no mark. */
+.ls-label__optional { font-weight: 400; color: var(--ink-muted); }
+/* A select's open list matches menus and popovers where the browser lets it be styled (Chrome and Edge 135+).
+   Only with a mouse or trackpad: phones and tablets keep their own picker, which suits a finger better. */
+@supports (appearance: base-select) {
+  @media (pointer: fine) {
+    .ls-select, .ls-select::picker(select) { appearance: base-select; }
+    .ls-select { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; }
+    .ls-select::picker-icon { color: var(--ink-muted); transition: rotate var(--motion-quick) var(--ease-enter); }
+    .ls-select:open::picker-icon { rotate: 180deg; }
+    .ls-select::picker(select) { margin-block: var(--space-1); padding: var(--space-1); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+    .ls-select:open::picker(select) { animation: ls-rise var(--motion-base) var(--ease-enter); }
+    .ls-select option { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-sm); font: 500 15px/22px var(--font-sans); }
+    .ls-select option:checked { font-weight: 600; }
+    .ls-select option:is(:hover, :focus-visible) { background: var(--accent-soft); color: var(--on-accent-soft); outline: none; }
+    .ls-select option::checkmark { color: var(--accent); }
+    .ls-select option:disabled { color: var(--on-disabled); }
+  }
+}
 
 /* ---------- File picker (native input, themed picker button) ---------- */
 .ls-file { min-height: 36px; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); cursor: pointer; }
@@ -128,6 +148,28 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: var(--radius-pill); background: var(--line-strong); transition: transform var(--motion-base) var(--ease-enter); }
 .ls-switch input:checked { background: var(--accent); border-color: var(--accent); }
 .ls-switch input:checked::after { transform: translateX(16px); background: var(--on-accent); }
+/* The same label holds a radio, for a list of choices that each need a line of help. */
+.ls-check input[type="radio"] { border-radius: var(--radius-pill); }
+.ls-check input[type="radio"]:checked::after { width: 8px; height: 8px; border: 0; border-radius: var(--radius-pill); background: var(--on-accent); transform: none; }
+
+/* ---------- Segmented control (one of up to 4 short options, all in view) ---------- */
+/* Real radio inputs, so the browser gives arrow keys, the group's name and the form value; each input covers its option and stays invisible. */
+.ls-segmented { display: inline-flex; max-width: 100%; height: 36px; padding: 2px; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
+.ls-field > .ls-segmented { align-self: flex-start; }
+.ls-segmented__option { position: relative; flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--space-3);
+  border-radius: var(--radius-sm); font: 600 13px/16px var(--font-sans); color: var(--ink); white-space: nowrap; cursor: pointer;
+  transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
+.ls-segmented__option input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.ls-segmented__option:has(input:checked) { background: var(--accent-soft); color: var(--on-accent-soft); }
+.ls-segmented__option:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.ls-segmented__option:has(input:disabled) { color: var(--on-disabled); cursor: not-allowed; }
+@media (hover: hover) { .ls-segmented__option:not(:has(input:checked, input:disabled)):hover { background: var(--surface-sunken); } }
+.ls-field[data-invalid] .ls-segmented { border-color: var(--danger); }
+/* Touch: 44px, and full width in a field so each option is a wide target. */
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-segmented { height: 44px; }
+  .ls-field > .ls-segmented { align-self: stretch; }
+}
 
 /* ---------- Badge ---------- */
 .ls-badge { display: inline-flex; align-items: center; gap: var(--space-1); height: 22px; padding: 0 8px; border-radius: var(--radius-sm);
