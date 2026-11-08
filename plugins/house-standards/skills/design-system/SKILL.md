@@ -21,6 +21,7 @@ Hard rules:
 - Keep the 2px `focus-ring` outline on every interactive element.
 - Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
+- Filters above a list are one `ls-filterbar` row on every screen size: scope, search, active filters as `ls-chip`s, a Filter chip that opens the rest (popover on desktop, sheet on a phone), and the result count. Never a second row of filters.
 - Top-level navigation is `ls-nav` (sidebar, 5 to 7 items) on wider screens and `ls-tabbar` (bottom bar, 5 items at most) at 640px and below. Account, Settings and Sign out live in the page header's account menu on a phone.
 - A command's result is confirmed in an `ls-toast` (one at a time, at most one action such as Undo, 6 seconds); persistent conditions use `ls-alert`.
 - Details and filtered lists open in an `ls-dialog` over the current page rather than navigating away. On a phone, pickers, filters and forms of up to 4 fields use `ls-dialog--sheet`, and longer forms stay full screen; tooltips and small detail cards use `ls-popover`.

@@ -305,6 +305,54 @@ Example markup:
 </nav>
 ```
 
+## Filter bar and chips
+
+The one row of controls above a list, on every screen size: the scope (which month, which week), search, the filters in use as removable chips, a Filter chip that holds every other filter, and the result count. It replaces rows of selects and checkboxes, which push the first result below the first screen on a phone.
+
+`div.ls-filterbar` holds `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`. The row holds, in order:
+
+1. Scope, if the list has one: Previous, the period ("November 2026"), Next.
+2. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
+3. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
+4. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
+Then, after the row: the Filter chip, `button.ls-chip.ls-filterbar__filter` with a 16px Lucide `sliders-horizontal` icon, the word "Filter" and, when filters are in use, `span.ls-chip__count` with how many.
+
+- One row, always. When the row is wider than the screen it scrolls sideways; it never wraps. The Filter chip stays outside the scrolling part, so it is always in view, and its count shows how many filters are in use when some have scrolled away. A filter that doesn't earn a place in the row lives behind the Filter chip.
+- The Filter chip opens the full set of filters as an `ls-form`: in an `ls-popover ls-popover--panel` (320px) below the chip on desktop, and in an `ls-dialog--sheet` on a phone. The same form component goes in either. Each change applies at once and updates the URL, so the list behind updates while the panel is open; the sheet's foot has "Show 3 bills" (closes it) and "Clear all".
+- Count: `p.ls-filterbar__count` with `aria-live="polite"`, the result count in words ("3 of 12 bills"). It sits at the right end on desktop and under the row on a phone.
+- Filter state lives in the URL search params (Zod-validated), so a filtered list can be linked and survives reload. The sheet's open state follows the dialog rules; the popover's does not go in the URL.
+- Chips are 32px tall with a 44px hit area. Pressed and active chips use `accent-soft` with `on-accent-soft`.
+- Lists with no filters have no filter bar. A list with only a search has a bar with just the search and the count.
+
+```ts
+const phone = matchMedia("(max-width: 640px)");
+
+// The Filter chip opens the sheet (a URL param, so Back closes it) on a phone and the popover elsewhere.
+export function openFilters(chip: HTMLElement, popover: HTMLElement, openSheet: () => void) {
+  if (phone.matches) openSheet();
+  else popover.showPopover({ source: chip });
+}
+```
+
+Example markup:
+
+```html
+<div class="ls-filterbar">
+<div class="ls-filterbar__row">
+<input class="ls-input ls-filterbar__search" type="search" aria-label="Search bills" placeholder="Search bills">
+<button class="ls-chip ls-chip--active" type="button" aria-label="Remove filter Category: Home">Category: Home<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+<button class="ls-chip" type="button" aria-pressed="false">Overdue</button>
+</div>
+<button class="ls-chip ls-filterbar__filter" type="button" popovertarget="bill-filters"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></svg>Filter<span class="ls-chip__count">1<span class="ls-sr-only"> in use</span></span></button>
+<p class="ls-filterbar__count" aria-live="polite">3 of 12 bills</p>
+</div>
+<div class="ls-popover ls-popover--panel" id="bill-filters" popover><form class="ls-form">
+<div class="ls-field"><label class="ls-label" for="f-cat">Category</label><select class="ls-select" id="f-cat"><option>Home</option><option>Car</option><option>Subscriptions</option></select></div>
+<div class="ls-field"><label class="ls-label" for="f-pay">Paid by</label><select class="ls-select" id="f-pay"><option>Anyone</option><option>Direct debit</option><option>Card</option></select></div>
+<label class="ls-check"><input type="checkbox"> Include paid bills</label>
+</form></div>
+```
+
 ## Dialog
 
 A modal window over the current page. Record details (a bill, a transaction) and filtered lists opened from a summary ("3 bills due this week") open in a dialog, so closing it puts the user back where they were. A multi-step flow or a form longer than one screen gets its own route.
