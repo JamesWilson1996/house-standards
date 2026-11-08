@@ -506,6 +506,21 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
   /* Clear of the home indicator. */
   .ls-dialog--sheet > .ls-dialog__foot:last-child { padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom)); }
   .ls-dialog--sheet > .ls-dialog__body:last-child { padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); }
+  /* dragToClose moves the sheet with the finger through --ls-drag, so a close continues from where the finger let go. */
+  .ls-dialog--sheet[open] { translate: 0 var(--ls-drag, 0px); }
+}
+/* Closing: the dialog fades and drops 8px over motion-quick, and the backdrop fades with it; on a phone it slides off the bottom edge over motion-base.
+   The transitions sit on the closed state only, so a dragged sheet still follows the finger exactly. overlay and display hold the dialog in the
+   top layer until the fade ends; browsers without overlay close at once, as before. */
+@supports (overlay: auto) {
+  .ls-dialog:not([open]) { opacity: 0; translate: 0 8px; pointer-events: none;
+    transition: opacity var(--motion-quick) var(--ease-exit), translate var(--motion-quick) var(--ease-exit), overlay var(--motion-quick) allow-discrete, display var(--motion-quick) allow-discrete; }
+  .ls-dialog::backdrop { transition: opacity var(--motion-quick) var(--ease-exit), overlay var(--motion-quick) allow-discrete, display var(--motion-quick) allow-discrete; }
+  .ls-dialog:not([open])::backdrop { opacity: 0; pointer-events: none; }
+  @media (max-width: 640px) {
+    .ls-dialog:not([open]) { opacity: 1; translate: 0 100%; transition-duration: var(--motion-base); }
+    .ls-dialog:not([open])::backdrop { transition-duration: var(--motion-base); }
+  }
 }
 
 /* ---------- Popover (Popover API: top layer, anchored to its trigger) ---------- */
@@ -533,6 +548,12 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 /* Detail cards, menus and the filter panel rise 8px and fade in, as a dialog does. Tooltips and a chart's point card follow the pointer, so they only fade. */
 .ls-popover:popover-open { animation: ls-rise var(--motion-base) var(--ease-enter); }
 .ls-popover:is(.ls-popover--tip, .ls-popover--at):popover-open { animation: ls-fade var(--motion-quick) var(--ease-enter); }
+/* Closing: the reverse over motion-quick, on the closed state only, held in the top layer by overlay until it ends. */
+@supports (overlay: auto) {
+  .ls-popover:not(:popover-open) { opacity: 0; translate: 0 8px; pointer-events: none;
+    transition: opacity var(--motion-quick) var(--ease-exit), translate var(--motion-quick) var(--ease-exit), overlay var(--motion-quick) allow-discrete, display var(--motion-quick) allow-discrete; }
+  .ls-popover:is(.ls-popover--tip, .ls-popover--at):not(:popover-open) { translate: none; }
+}
 @supports (position-area: block-end) {
   .ls-popover { top: auto; left: auto; margin: var(--popover-offset); position-area: block-end;
     position-try-fallbacks: flip-block, block-end span-inline-end, block-end span-inline-start, block-start span-inline-end, block-start span-inline-start; }

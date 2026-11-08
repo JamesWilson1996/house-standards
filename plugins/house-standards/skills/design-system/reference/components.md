@@ -741,7 +741,41 @@ A modal window over the current page. Record details (a bill, a transaction) and
 - Escape, a click on the backdrop, the close button and Back all close it. The first three fire the dialog's `close` event. If the app opened the dialog by pushing a history entry (marked in history state), the `close` handler calls `history.back()` to pop that entry. Only when the dialog opened from a deep link or a reload, with no such state, does the handler replace the URL without the param. Either way history ends as it was before the dialog opened; pushing or replacing a URL after an in-app open leaves a duplicate entry, so Back returns to the same page. Set `closedby="any"` for the backdrop click. Where the browser lacks `closedby`, close the dialog when a click's target is the dialog element itself; the dialog has no padding, so that target is always the backdrop.
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
-- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is instant, as the native `<dialog>` leaves the top layer at once.
+- Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is the reverse and quicker (decided 8 November, #54): the dialog fades and drops 8px over `motion-quick` with `ease-exit`, and at 640px and below it slides off the bottom edge over `motion-base`. The bundle holds the dialog in the top layer until the fade ends (`overlay` with `transition-behavior: allow-discrete`); browsers without `overlay` close at once. The `close` event fires at the start, so URL and focus handling don't wait for the motion.
+
+### Confirm
+
+Deleting or anything else that can't be put back (decided 8 November, #51):
+
+- When the API can restore the item, don't ask: delete at once and offer Undo in the toast ("Gym deleted · Undo"). Undo sends the restore command.
+- When it can't (a whole board, a household, anything permanent), confirm first in an `ls-dialog ls-dialog--sm`:
+  - Title: the action and the item, as a question: "Delete Kitchen snagging?"
+  - Body: one sentence on what is lost and what stays: "Its 12 cards go too. This can't be undone."
+  - Foot: an `ls-btn--danger` that repeats the verb and names the thing ("Delete board"), then Cancel. Cancel has `autofocus`, so Enter never deletes by accident. Escape and the backdrop cancel.
+- Never "Are you sure?", and never OK and Cancel as the buttons.
+
+```html
+<dialog class="ls-dialog ls-dialog--sm" id="delete-board" aria-labelledby="delete-board-title" closedby="any">
+<header class="ls-dialog__header"><h2 class="ls-dialog__title" id="delete-board-title">Delete Kitchen snagging?</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
+<div class="ls-dialog__body"><p>Its 12 cards go too. This can't be undone.</p></div>
+<footer class="ls-dialog__foot"><button class="ls-btn ls-btn--danger" type="button">Delete board</button><form method="dialog"><button class="ls-btn" autofocus>Cancel</button></form></footer>
+</dialog>
+```
+
+### Unsaved changes
+
+Leaving a form with changes that weren't saved asks first (#52), with the same confirm: "Leave without saving?", "Your changes to Council tax will be lost.", then `ls-btn--danger` "Discard changes" and "Keep editing" (with `autofocus`).
+
+- Ask only when a field differs from what was loaded. A saved or untouched form leaves without asking.
+- In-app navigation, Back and closing the form's dialog go through TanStack Router's `useBlocker` with `shouldBlockFn` reading the form's `isDirty`, so the app's own dialog asks. Closing the tab or reloading uses `beforeunload`, where the browser shows its own wording.
+- A dialog that holds a form asks before it closes on Escape or the backdrop: handle `cancel` and call `preventDefault()` while the form is dirty, then show the confirm.
+
+```tsx
+const form = useForm({ /* … */ });
+const isDirty = form.useStore((s) => s.isDirty && !s.isSubmitted);
+const blocker = useBlocker({ shouldBlockFn: () => isDirty, enableBeforeUnload: () => isDirty, withResolver: true });
+// blocker.status === "blocked" opens the confirm; Discard changes calls blocker.proceed(), Keep editing blocker.reset().
+```
 
 Example markup:
 
@@ -793,25 +827,27 @@ function BillDialog() {
 `ls-dialog--sheet` on the same `dialog.ls-dialog`, with `div.ls-dialog__handle` (`aria-hidden="true"`) as its first child. Everything else is the dialog's: URL param, history, focus, Escape, backdrop click, close button and foot.
 
 - On a phone it is as tall as its content, up to 90% of the screen (`90dvh`), and the body scrolls past that. Its top corners are `radius-lg`; the foot, or the body when there is no foot, clears the home indicator with `env(safe-area-inset-bottom)`.
-- The handle is a 24px strip at the top with a 36px bar. Dragging it down moves the sheet with the finger, with no easing; let go past a quarter of the sheet's height and it closes, otherwise it settles back over `motion-base`. A tap on the page above it (the backdrop) also closes it. Keyboard and screen reader users close it with Escape or the close button, so the handle is hidden from them.
+- The handle is a 24px strip at the top with a 36px bar. Dragging it down moves the sheet with the finger, with no easing; let go past a quarter of the sheet's height and it slides on off the bottom edge from there, otherwise it settles back over `motion-base`. The drag sets `--ls-drag` rather than `translate`, so the closing slide starts where the finger let go. A tap on the page above it (the backdrop) also closes it. Keyboard and screen reader users close it with Escape or the close button, so the handle is hidden from them.
 - Keep the close button: not everyone knows to swipe.
 - Add `interactive-widget=resizes-content` to the page's viewport meta, so on Android the on-screen keyboard pushes the sheet up instead of covering its fields. iOS scrolls the focused field into view itself.
 
 ```ts
-// Drags a sheet down by its handle; past a quarter of its height it closes, otherwise it settles back.
+// Drags a sheet down by its handle; past a quarter of its height it closes from there, otherwise it settles back.
+// The offset goes in --ls-drag, which the bundle reads only while the sheet is open, so the closing slide starts where the finger let go.
 export function dragToClose(dialog: HTMLDialogElement, handle: HTMLElement) {
+  dialog.addEventListener("close", () => dialog.style.removeProperty("--ls-drag"));
   handle.addEventListener("pointerdown", (down) => {
     const startY = down.clientY;
     let dy = 0;
     handle.setPointerCapture(down.pointerId);
     const move = (e: PointerEvent) => {
       dy = Math.max(0, e.clientY - startY);
-      dialog.style.translate = `0 ${dy}px`;
+      dialog.style.setProperty("--ls-drag", `${dy}px`);
     };
     const release = () => {
       handle.removeEventListener("pointermove", move);
-      dialog.style.translate = "";
       if (dy > dialog.offsetHeight / 4) return dialog.close();
+      dialog.style.removeProperty("--ls-drag");
       const css = getComputedStyle(dialog);
       const duration = parseFloat(css.getPropertyValue("--motion-base"));
       if (duration) dialog.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration, easing: css.getPropertyValue("--ease-enter") });
@@ -853,7 +889,7 @@ A small layer anchored to the element that opened it, built on the Popover API. 
 | Escape | Hides it | Closes it and returns focus to the trigger |
 
 - The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`.
-- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing is instant.
+- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing reverses it over `motion-quick` (#54); browsers without `overlay` close at once.
 - A tooltip never holds the only copy of information. An icon-only button keeps its own `aria-label`, and on touch the tooltip appears only when tapped.
 - Placement: below the trigger by default, `ls-popover--top` above. Where the browser supports CSS anchor positioning (`position-area`), the popover anchors to its trigger (the `popovertarget` button, or the `source` passed to `showPopover()`), flips above or below, and shifts sideways to stay `popover-offset` (8px) inside the viewport.
 - Fallback where `position-area` is missing: compute the position from the trigger and set `--ls-popover-x` and `--ls-popover-y`. Run it on the popover's `toggle` event when `newState` is `"open"`, and on scroll and resize while it is open.
