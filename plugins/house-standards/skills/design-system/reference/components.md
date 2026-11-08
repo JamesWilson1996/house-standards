@@ -931,44 +931,17 @@ Columns of numbered cards that move between stages: a project's To do, In progre
 - Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL. Cards hold no other buttons.
 - Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit.
 - Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
-- Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls. The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
+- Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls (`pressToLift`). The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
 - When the tab hold switches columns on a phone, the card's own column stops being current. The bundle keeps a non-current column that holds `ls-lifted` as a zero-height box (`:has(.ls-lifted)`), so the fixed card stays drawn under the finger. Drag code that measures drop targets skips columns whose height is 0.
-- On desktop, when the columns don't fit, holding a card within 48px of the board's left or right edge scrolls the board that way, faster the nearer the edge (`scrollNearEdge`). Call it on every animation frame while a card is lifted, with the pointer's last position, so the board keeps scrolling while the pointer rests; when it scrolls, place the slot again for the column now under the pointer. It runs under reduced motion too, because the user is moving it.
+- When the columns don't fit, holding a card within 48px of the board's left or right edge scrolls the board that way, faster the nearer the edge; in a column taller than the screen (on a phone, the whole page), the top and bottom edges scroll it up and down the same way. `scrollWhileHeld` does both, as in Motion utilities: pass the board and the page.
 - Without dragging: the card's dialog has Move to, which opens an `ls-dialog--sheet` on a phone listing the columns. This is the keyboard and screen reader route.
 - After a move, the API's new order is the truth; a toast with Undo confirms it.
 
 ```ts
-const LIFT_DELAY_MS = 350;
-const MOVE_TOLERANCE_PX = 8;
+import { pressToLift } from "@jameswilson1996/ui-tokens/motion.js";
 
-// On touch, lifts a card after a press; moving first means the finger is scrolling, so nothing lifts.
-export function pressToLift(card: HTMLElement, lift: (e: PointerEvent) => void) {
-  card.addEventListener("pointerdown", (down) => {
-    if (down.pointerType === "mouse") return lift(down);
-    const timer = setTimeout(() => {
-      navigator.vibrate?.(15);
-      lift(down);
-    }, LIFT_DELAY_MS);
-    const cancel = () => clearTimeout(timer);
-    const move = (e: PointerEvent) => Math.hypot(e.clientX - down.clientX, e.clientY - down.clientY) > MOVE_TOLERANCE_PX && cancel();
-    card.addEventListener("pointermove", move);
-    card.addEventListener("pointerup", cancel, { once: true });
-    card.addEventListener("pointercancel", cancel, { once: true });
-  });
-}
-
-const EDGE_ZONE_PX = 48;
-const MAX_SCROLL_STEP_PX = 16;
-
-// Scrolls the board sideways while a held card is near its left or right edge; returns whether it scrolled.
-export function scrollNearEdge(board: HTMLElement, pointerX: number) {
-  const { left, right } = board.getBoundingClientRect();
-  const depth = pointerX < left + EDGE_ZONE_PX ? pointerX - (left + EDGE_ZONE_PX) : pointerX > right - EDGE_ZONE_PX ? pointerX - (right - EDGE_ZONE_PX) : 0;
-  if (!depth) return false;
-  const before = board.scrollLeft;
-  board.scrollLeft += Math.max(-1, Math.min(1, depth / EDGE_ZONE_PX)) * MAX_SCROLL_STEP_PX;
-  return board.scrollLeft !== before;
-}
+// Returns a cleanup, so a React effect can return it.
+const stopLifting = pressToLift(card, (down) => startDrag(card, down));
 ```
 
 Example markup (the tab row shows on a phone only):
@@ -1473,22 +1446,43 @@ Classes for the patterns in the brand book's Motion section. Their durations com
 - `ls-drop-slot`: the dashed placeholder where the item will land. Insert it in the item's place on pick-up, with the item's height, and move it as the pointer moves.
 - `ls-dragging`: on `body` while a drag is in progress, for the grabbing cursor and to stop text selection.
 
-When the slot moves, slide the items around it from their old position to their new one, and on release settle the item into the slot, both over `motion-base`:
+The drag code ships in `@jameswilson1996/ui-tokens/motion.js`, with types. Import it; don't copy it into the app. Every duration and distance below is a named export (`LIFT_DELAY_MS`, `LIFT_VIBRATION_MS`, `MOVE_TOLERANCE_PX`, `EDGE_ZONE_PX`, `MAX_SCROLL_STEP_PX`).
+
+- `moveSlot(list, held, place)`: calls `place()` to move the slot, then slides the list's other items from their old position to their new one over `motion-base`. Nothing slides when the token is 0ms.
+- `capture(listOrElements, exclude?)` and `slideFrom(captured)`: the same slide in two steps, for when the app doesn't move the DOM itself. In React, call `capture` before the state change and `slideFrom` in a layout effect; key the rows by id so React keeps their elements.
+- `settle(held, drop)`: on release, `drop()` takes the item out of `ls-lifted` and puts it where the slot was, and the item slides from where it was let go into its place over `motion-base`.
+- `pressToLift(card, lift)`: for cards with no handle. A mouse (main button) lifts at once; touch lifts after 350ms with a 15ms vibration, and moving more than 8px first cancels it, since the finger is scrolling. Returns a function that removes it.
+- `scrollNearEdge(scroller, { x, y })`: while the pointer is within 48px of an edge of the scroller's visible part, scrolls it that way on either axis, faster the nearer the edge; returns whether it scrolled. Pass `document.scrollingElement` for the page.
+- `scrollWhileHeld(scrollers, pointer, onScroll)`: from pick-up to release, runs `scrollNearEdge` on every animation frame for each scroller with the pointer's last position, so it keeps scrolling while the pointer rests, and calls `onScroll` to place the slot again after a scroll. Pass the list or board when it scrolls itself, then `document.scrollingElement`, so a row held near the top or bottom of the screen scrolls a long `ls-list` or a tall column. Returns a function that stops it. Edge scrolling runs under reduced motion, because the user is moving it.
 
 ```ts
-// Moves the drop slot and slides every other item from where it was to where it is now.
-export function moveSlot(list: HTMLElement, held: HTMLElement, place: () => void) {
-  const items = [...list.children].filter((el): el is HTMLElement => el !== held);
-  const before = new Map(items.map((el) => [el, el.getBoundingClientRect().top]));
-  place();
-  const duration = parseFloat(getComputedStyle(list).getPropertyValue("--motion-base"));
-  if (!duration) return;
-  const easing = getComputedStyle(list).getPropertyValue("--ease-enter");
-  for (const el of items) {
-    const dy = (before.get(el) ?? 0) - el.getBoundingClientRect().top;
-    if (dy) el.animate([{ translate: `0 ${dy}px` }, { translate: "0 0" }], { duration, easing });
-  }
-}
+import { moveSlot, settle, scrollWhileHeld, type Point } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Puts the slot before the first row whose middle is below the pointer.
+const placeSlotAt = ({ y }: Point) => {
+  const rows = [...list.children].filter((el) => el !== held && el !== slot);
+  const next = rows.find((el) => {
+    const { top, height } = el.getBoundingClientRect();
+    return y < top + height / 2;
+  });
+  moveSlot(list, held, () => list.insertBefore(slot, next ?? null));
+};
+
+let last = { x: down.clientX, y: down.clientY };
+const stopScrolling = scrollWhileHeld([list, document.scrollingElement!], () => last, placeSlotAt);
+const onMove = (e: PointerEvent) => {
+  last = { x: e.clientX, y: e.clientY };
+  held.style.translate = `${e.clientX - down.clientX}px ${e.clientY - down.clientY}px`;
+  placeSlotAt(last);
+};
+const onUp = () => {
+  stopScrolling();
+  settle(held, () => {
+    held.classList.remove("ls-lifted");
+    held.style.translate = "";
+    slot.replaceWith(held);
+  });
+};
 ```
 
 Example markup, mid-drag:

@@ -1,13 +1,18 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.0.0",
-  "description": "Lilac & Sage design tokens and ls- component styles. Generated from plugins/house-standards; do not edit files here.",
+  "version": "1.1.0",
+  "description": "Lilac & Sage design tokens, ls- component styles and drag helpers. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
-  "files": ["tokens.css", "bundle.css", "tokens.json"],
+  "type": "module",
+  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts"],
   "exports": {
     "./tokens.css": "./tokens.css",
     "./bundle.css": "./bundle.css",
-    "./tokens.json": "./tokens.json"
+    "./tokens.json": "./tokens.json",
+    "./motion.js": {
+      "types": "./motion.d.ts",
+      "default": "./motion.js"
+    }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
