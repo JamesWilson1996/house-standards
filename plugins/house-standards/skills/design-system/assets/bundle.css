@@ -227,6 +227,7 @@ a.ls-page-header__area:hover { color: var(--ink); text-decoration: underline; }
   .ls-filterbar { flex-wrap: wrap; }
   .ls-filterbar__search { width: 140px; }
   .ls-filterbar__count { flex-basis: 100%; margin-left: 0; }
+}
 
 /* ---------- Stepper (previous, the period, next, back to now) ---------- */
 .ls-stepper { display: inline-flex; align-items: center; height: 36px; padding: 0 2px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); }
