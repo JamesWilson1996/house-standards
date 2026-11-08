@@ -478,6 +478,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   .ls-board { display: block; overflow: visible; padding-bottom: 0; }
   .ls-column { padding: 0; background: none; border: 0; }
   .ls-column:not(.ls-column--current) { display: none; }
+  /* A tab hold moves the held card to another column; its own column keeps a zero-height box so the fixed ls-lifted card stays drawn. */
+  .ls-column:not(.ls-column--current):has(.ls-lifted) { display: block; height: 0; overflow: hidden; }
   .ls-column__head { display: none; }
   .ls-column--folded .ls-column__cards { display: flex; }
 }
