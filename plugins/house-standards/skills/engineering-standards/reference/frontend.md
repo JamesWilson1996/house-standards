@@ -7,7 +7,7 @@ TanStack fits the backend-owned model: Query treats the server as the source of 
 | App framework | TanStack Start (SSR) or TanStack Router as an SPA behind the BFF | Pick per app in its ADR; the folder layout is the same either way |
 | Language | TypeScript, `strict` on | No `any` without a comment explaining why |
 | Server state | TanStack Query | All data from the backend goes through Query. No copying server data into local stores |
-| URL state | TanStack Router search params, validated with Zod | Filters, sort, tabs and pagination cursors live in the URL |
+| URL state | TanStack Router search params, validated with Zod | Filters, sort and tabs live in the URL. Long lists load more with `useInfiniteQuery`, so their cursors stay in the query cache (design system, Long lists) |
 | Forms | TanStack Form with Zod | Client validation for shape only; business rules come back from the API as problem+json and map onto fields |
 | Tables | TanStack Table, headless, `manualPagination` and `manualSorting` | The server sorts, filters and pages |
 | API client | Generated from each service's OpenAPI (e.g. orval or openapi-ts) into query and mutation hooks | No hand-written fetch calls |
@@ -56,27 +56,28 @@ const cancelOrder = useMutation({
 - An empty value is written as `undefined`, which removes the key.
 - Typing and filtering navigate with `replace: true`, so each keystroke doesn't add a history entry. Selecting a record pushes a new entry, so Back returns to the list.
 - `loaderDeps` returns only the params the loader reads. Returning the whole search object reruns the loader on every unrelated change.
-- Standard keys: `q` for free text, `sort`, `page` or `cursor`, `tab`, and the record's id name (`orderId`) for selection.
+- Standard keys: `q` for free text, `sort` (a field name, with `-` in front for descending: `-total`), `tab`, and the record's id name (`orderId`) for selection. No `page` or `cursor`: a shared link opens a list at its start, and Load more keeps its cursors in the query cache.
 - Components read search state from the route and receive it as props. It is never copied into `useState`.
 
 ```ts
 const ordersSearch = z.object({
   q: z.string().optional().catch(undefined),
   status: z.enum(ORDER_STATUSES).optional().catch(undefined),
-  cursor: z.string().optional().catch(undefined),
+  sort: z.enum(ORDER_SORTS).optional().catch(undefined),
 })
 
 export const Route = createFileRoute('/orders/')({
   validateSearch: ordersSearch,
-  loaderDeps: ({ search: { q, status, cursor } }) => ({ q, status, cursor }),
-  loader: ({ context, deps }) => context.queryClient.ensureQueryData(listOrdersOptions(deps)),
+  loaderDeps: ({ search: { q, status, sort } }) => ({ q, status, sort }),
+  // The first page; Load more fetches the rest through the same infinite query.
+  loader: ({ context, deps }) => context.queryClient.ensureInfiniteQueryData(listOrdersOptions(deps)),
 })
 
 function OrdersPage() {
   const { q = '' } = Route.useSearch()
   const navigate = Route.useNavigate()
   const onSearchChange = (value: string) =>
-    navigate({ search: (prev) => ({ ...prev, q: value || undefined, cursor: undefined }), replace: true })
+    navigate({ search: (prev) => ({ ...prev, q: value || undefined }), replace: true })
 }
 ```
 

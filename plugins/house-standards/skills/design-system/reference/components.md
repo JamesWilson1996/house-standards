@@ -146,6 +146,70 @@ Example markup:
 </div>
 ```
 
+## Dates and times
+
+One way to show a date in every app (#53). The API sends calendar days as plain dates (`YYYY-MM-DD`) and moments as UTC instants (ISO 8601 with `Z`), as the time rules require; these helpers only display them.
+
+| Where | Shown as | Helper |
+| --- | --- | --- |
+| A day in a list, chip or table | "8 Nov"; "8 Nov 2025" outside the current year | `formatDay` |
+| A day where the weekday matters (meals, a week) | "Mon 9 Nov" | `formatDay(day, today, { weekday: true })` |
+| How far away a due day is | "today", "tomorrow", "in 3 days", "yesterday", "4 days ago" | `formatDaysAway` |
+| When something happened (last synced, changed by) | "just now", "2 minutes ago", "3 hours ago", "yesterday", then "20 Oct" | `formatAgo` |
+
+- "Today" is the household's calendar day, worked out from the `Clock` port's instant in the household's time zone (`dayIn`), never `new Date()` in a component. Whether something is overdue comes from the API.
+- Plain dates are formatted in UTC, so the 15th stays the 15th in every zone. Instants are turned into a day in the household's zone first.
+- Times of day are 24-hour ("14:02") in `ls-amount`-style tabular figures. Full dates in prose spell the month: "1 December".
+- An `<time datetime="2026-11-08">` element wraps any date shown, so it can be read and copied exactly.
+
+```ts
+const MS_PER_DAY = 86_400_000;
+const LOCALE = "en-GB";
+const JUST_NOW_SECONDS = 45;
+const SECONDS_PER_MINUTE = 60;
+const MINUTES_PER_HOUR = 60;
+const HOURS_PER_DAY = 24;
+const DAYS_SHOWN_AS_AGO = 6;
+
+const asUtcMidnight = (day: string) => new Date(`${day}T00:00:00Z`);
+const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
+const daysBetween = (from: string, to: string) => Math.round((asUtcMidnight(to).getTime() - asUtcMidnight(from).getTime()) / MS_PER_DAY);
+
+/** The calendar day an instant falls on in a time zone, as "YYYY-MM-DD". today = dayIn(clock.now(), household.timeZone). */
+export const dayIn = (instant: Date, timeZone: string) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(instant);
+
+/** "8 Nov", "8 Nov 2025" outside today's year, or "Mon 9 Nov" with the weekday. */
+export function formatDay(day: string, today: string, { weekday = false } = {}) {
+  const sameYear = day.slice(0, 4) === today.slice(0, 4);
+  return new Intl.DateTimeFormat(LOCALE, {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    ...(sameYear ? {} : { year: "numeric" }),
+    ...(weekday ? { weekday: "short" } : {}),
+  }).format(asUtcMidnight(day));
+}
+
+/** "today", "tomorrow", "in 3 days", "yesterday", "4 days ago". */
+export const formatDaysAway = (day: string, today: string) => relative.format(daysBetween(today, day), "day");
+
+/** "just now", "2 minutes ago", "3 hours ago", then "yesterday" to "6 days ago", then the day. */
+export function formatAgo(instant: string, now: Date, timeZone: string) {
+  const seconds = Math.round((now.getTime() - new Date(instant).getTime()) / 1000);
+  if (seconds < JUST_NOW_SECONDS) return "just now";
+  const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
+  if (minutes < MINUTES_PER_HOUR) return relative.format(-minutes, "minute");
+  const hours = Math.floor(minutes / MINUTES_PER_HOUR);
+  if (hours < HOURS_PER_DAY) return relative.format(-hours, "hour");
+  const day = dayIn(new Date(instant), timeZone);
+  const today = dayIn(now, timeZone);
+  return -daysBetween(today, day) <= DAYS_SHOWN_AS_AGO ? formatDaysAway(day, today) : formatDay(day, today);
+}
+```
+
+Tests pin the clock and cover both clock-change days, as the time rules say: `dayIn(new Date("2026-06-30T23:30:00Z"), "Europe/London")` is `"2026-07-01"`.
+
 ## Checkbox and Switch
 
 `label.ls-check > input[type=checkbox] + text` for choices that are submitted with a form; `label.ls-switch > input[type=checkbox][role=switch] + text` for settings that apply immediately (the toggle dispatches a backend command at once).
@@ -441,15 +505,33 @@ Tabular records. `div.ls-table-wrap > table.ls-table`. Right-align numbers with 
 
 - Consumer provides: column headers and rows. Sorting, filtering and pagination are server-side (cursor-based) — the table renders what the query returns; TanStack Table is used in headless/manual mode.
 - Body text is `body-sm`; headers `ink-muted` on `surface-sunken`.
+- Sorting (#53): a sortable column's `th` holds `button.ls-table__sort` with the header text and a 14px Lucide icon, and carries `aria-sort` (`ascending`, `descending`, or none). The icon is `chevrons-up-down` while the column isn't sorted, `arrow-up` ascending and `arrow-down` descending; the sorted header reads in `ink`. A click sorts by that column, a second click reverses it. The sort lives in the URL (`?sort=due` or `?sort=-due`) and the server sorts. Only the columns the API can sort get the button.
+- More rows: an `ls-more` under the wrap, as for lists (see Long lists).
 
 Example markup:
 
 ```html
-<div class="ls-table-wrap"><table class="ls-table"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th class="num">Total</th><th><span class="ls-sr-only">Actions</span></th></tr></thead><tbody>
+<div class="ls-table-wrap"><table class="ls-table"><thead><tr><th>Order</th><th>Customer</th><th>Status</th><th class="num" aria-sort="descending"><button class="ls-table__sort" type="button">Total<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button></th><th><span class="ls-sr-only">Actions</span></th></tr></thead><tbody>
 <tr><td><code>ORD-1042</code></td><td>Harlow &amp; Co</td><td><span class="ls-badge ls-badge--success">Paid</span></td><td class="num">£1,240.00</td><td><button class="ls-btn ls-btn--ghost ls-btn--sm">Refund</button></td></tr>
 <tr aria-selected="true"><td><code>ORD-1041</code></td><td>Pennine Bakery</td><td><span class="ls-badge ls-badge--warning">Pending</span></td><td class="num">£86.50</td><td><button class="ls-btn ls-btn--ghost ls-btn--sm">Refund</button></td></tr>
 <tr><td><code>ORD-1040</code></td><td>Mossgate Ltd</td><td><span class="ls-badge ls-badge--danger">Refunded</span></td><td class="num">£312.00</td><td></td></tr>
 </tbody></table></div>
+```
+
+## Long lists
+
+Lists and tables longer than one page show the first page and a Load more button under them (decided 8 November, #53). It fits the API's cursor paging, keeps the footer reachable, and works the same by touch, keyboard and screen reader. No page numbers and no loading as you scroll.
+
+`div.ls-more` holds `p.ls-more__count` (`aria-live="polite"`) and an `ls-btn`:
+
+- Count: how far through, in words: "Showing 20 of 48" when the API sends a total, "Showing 20" when it doesn't. When everything is shown: "All 48 shown", and the button goes.
+- Button: "Show 20 more", or the remainder when it is smaller ("Show 8 more"); "Show more" when the total is unknown. It gets `aria-busy="true"` while the next page loads (see Loading and errors).
+- New rows join the end with `ls-enter`. Focus stays on the button; when it goes because the list is complete, focus moves to the first new row.
+- With TanStack Query: `useInfiniteQuery` keyed by the list's filters and sort, with `getNextPageParam` from the API's next cursor. The cursor stays in the query cache, not the URL, so a shared link opens at the start; Back returns to the list with the loaded rows and scroll position restored from the cache.
+- A failed page shows a Try again toast; the rows already shown stay.
+
+```html
+<div class="ls-more"><p class="ls-more__count" aria-live="polite">Showing 20 of 48</p><button class="ls-btn" type="button">Show 20 more</button></div>
 ```
 
 ## Progress
