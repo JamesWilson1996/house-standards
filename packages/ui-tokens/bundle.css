@@ -41,6 +41,20 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-btn--soft:is(:disabled, [aria-disabled="true"]) { border-color: var(--disabled-fill); }
 .ls-btn--ghost:is(:disabled, [aria-disabled="true"]) { background: transparent; border-color: transparent; }
 .ls-btn--danger:is(:disabled, [aria-disabled="true"]) { background: var(--danger-disabled); color: var(--on-danger-disabled); border-color: var(--danger-disabled); }
+/* Busy: aria-busy="true" while its command is on the way. After motion-wait a spinner shows before the label.
+   The side padding gives the spinner its room (14px and an 8px gap, 11px from each side), so the button keeps its width and nothing beside it moves. */
+.ls-btn[aria-busy="true"] { position: relative; cursor: progress; animation: ls-busy-room 0s var(--motion-wait) forwards; }
+.ls-btn[aria-busy="true"]::before { content: ""; position: absolute; top: calc(50% - 7px); left: calc(var(--space-4) - 11px); width: 14px; height: 14px;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: var(--radius-pill); opacity: 0;
+  animation: ls-appear 0s var(--motion-wait) forwards, ls-spin var(--motion-spin) linear infinite; }
+.ls-btn--sm[aria-busy="true"] { animation-name: ls-busy-room-sm; }
+.ls-btn--sm[aria-busy="true"]::before { top: calc(50% - 6px); left: calc(var(--space-3) - 9px); width: 12px; height: 12px; }
+@keyframes ls-busy-room { to { padding-left: calc(var(--space-4) + 11px); padding-right: calc(var(--space-4) - 11px); } }
+@keyframes ls-busy-room-sm { to { padding-left: calc(var(--space-3) + 9px); padding-right: calc(var(--space-3) - 9px); } }
+/* A still spinner reads as stuck, so reduced motion slows it rather than stopping it. */
+@media (prefers-reduced-motion: reduce) {
+  .ls-btn[aria-busy="true"]::before { animation-duration: 0s, calc(var(--motion-spin) * 3); }
+}
 
 /* ---------- Field (label + input + help/error) ---------- */
 .ls-field { display: flex; flex-direction: column; gap: var(--form-help-gap); min-width: 220px; }
@@ -483,6 +497,20 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
   .ls-empty__actions .ls-btn { height: 44px; }
 }
 
+/* ---------- Loading (placeholders where the content will be) ---------- */
+/* Hidden for motion-wait, so a fast load never flashes them. The placeholders sit in the real component, so content lands where they were. */
+.ls-loading { animation: ls-wait var(--motion-wait) step-end; }
+.ls-placeholder { display: block; width: 100%; height: 10px; border-radius: var(--radius-pill); background: var(--surface-sunken); animation: ls-pulse var(--motion-pulse) ease-in-out infinite; }
+.ls-placeholder--title { width: 60%; height: 14px; margin-block: 4px; }
+.ls-placeholder--meta { width: 35%; margin-block: 4px; }
+.ls-placeholder--value { width: 56px; }
+/* Rows vary a little, so a column of placeholders reads as a list rather than a pattern. */
+.ls-list__row:nth-child(3n + 2) .ls-placeholder--title { width: 45%; }
+.ls-list__row:nth-child(3n) .ls-placeholder--title { width: 52%; }
+@media (prefers-reduced-motion: reduce) {
+  .ls-placeholder { animation: none; }
+}
+
 /* ---------- Toast (one confirmation at a time, in a live region that is on the page from the start) ---------- */
 .ls-toasts { position: fixed; z-index: 30; left: 0; right: 0; bottom: calc(var(--space-5) + env(safe-area-inset-bottom)); display: flex; justify-content: center;
   padding: 0 var(--overlay-margin); pointer-events: none; }
@@ -539,6 +567,11 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-leave { to { opacity: 0; translate: 0 8px; } }
 /* No end keyframe, so the row fades back to its own background. */
 @keyframes ls-flash { 0%, 25% { background-color: var(--accent-soft); } }
+/* Loading: hidden until motion-wait has passed, a placeholder's breath, a busy spinner's turn. */
+@keyframes ls-wait { from, to { visibility: hidden; } }
+@keyframes ls-appear { to { opacity: 1; } }
+@keyframes ls-pulse { 50% { opacity: 0.45; } }
+@keyframes ls-spin { to { rotate: 1turn; } }
 
 /* Switching tabs, top-level places or a stepper's period: the old view fades out as the new one fades in over motion-quick, with no movement.
    Only navigations started with the ls-switch view transition type use it; other view transitions keep their own animation. */
