@@ -21,6 +21,7 @@ Hard rules:
 - Keep the 2px `focus-ring` outline on every interactive element.
 - Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields.
+- Stages of work are an `ls-board` of `ls-column`s side by side on desktop; on a phone one column shows at a time, picked from the page header's tab row.
 - Adding items in a burst uses `ls-quickadd`: the field clears on submit, before the server answers, and gets the text back only if the command fails.
 - Rows you act on are an `ls-list`: each row shows its one main action as a visible control, and the rest go in the row's dialog or a More menu. No swipe actions.
 - Filters above a list are one `ls-filterbar` row on every screen size: scope, search, active filters as `ls-chip`s, a Filter chip that opens the rest (popover on desktop, sheet on a phone), and the result count. Never a second row of filters.
