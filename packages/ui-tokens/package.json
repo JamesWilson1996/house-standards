@@ -1,10 +1,10 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.3.1",
-  "description": "Lilac & Sage design tokens, ls- component styles and motion helpers. Generated from plugins/house-standards; do not edit files here.",
+  "version": "1.4.0",
+  "description": "Lilac & Sage design tokens, ls- component styles, motion helpers and day helpers. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts"],
+  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts"],
   "exports": {
     "./tokens.css": "./tokens.css",
     "./bundle.css": "./bundle.css",
@@ -12,6 +12,10 @@
     "./motion.js": {
       "types": "./motion.d.ts",
       "default": "./motion.js"
+    },
+    "./days.js": {
+      "types": "./days.d.ts",
+      "default": "./days.js"
     }
   },
   "publishConfig": {

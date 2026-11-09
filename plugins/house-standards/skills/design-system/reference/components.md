@@ -163,37 +163,25 @@ One way to show a date in every app (#53). The API sends calendar days as plain 
 - Times of day are 24-hour ("14:02") in `ls-amount`-style tabular figures. Full dates in prose spell the month: "1 December".
 - An `<time datetime="2026-11-08">` element wraps any date shown, so it can be read and copied exactly.
 
+`formatDay` and `formatDaysAway` take plain dates and ship in `@jameswilson1996/ui-tokens/days.js`; import them. `dayIn` and `formatAgo` start from an instant and a time zone, so they stay in the app:
+
 ```ts
-const MS_PER_DAY = 86_400_000;
+import { formatDay, formatDaysAway } from "@jameswilson1996/ui-tokens/days.js";
+
 const LOCALE = "en-GB";
 const JUST_NOW_SECONDS = 45;
 const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 const DAYS_SHOWN_AS_AGO = 6;
+const MS_PER_DAY = 86_400_000;
 
-const asUtcMidnight = (day: string) => new Date(`${day}T00:00:00Z`);
 const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
-const daysBetween = (from: string, to: string) => Math.round((asUtcMidnight(to).getTime() - asUtcMidnight(from).getTime()) / MS_PER_DAY);
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
 
 /** The calendar day an instant falls on in a time zone, as "YYYY-MM-DD". today = dayIn(clock.now(), household.timeZone). */
 export const dayIn = (instant: Date, timeZone: string) =>
   new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(instant);
-
-/** "8 Nov", "8 Nov 2025" outside today's year, or "Mon 9 Nov" with the weekday. */
-export function formatDay(day: string, today: string, { weekday = false } = {}) {
-  const sameYear = day.slice(0, 4) === today.slice(0, 4);
-  return new Intl.DateTimeFormat(LOCALE, {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "short",
-    ...(sameYear ? {} : { year: "numeric" }),
-    ...(weekday ? { weekday: "short" } : {}),
-  }).format(asUtcMidnight(day));
-}
-
-/** "today", "tomorrow", "in 3 days", "yesterday", "4 days ago". */
-export const formatDaysAway = (day: string, today: string) => relative.format(daysBetween(today, day), "day");
 
 /** "just now", "2 minutes ago", "3 hours ago", then "yesterday" to "6 days ago", then the day. */
 export function formatAgo(instant: string, now: Date, timeZone: string) {
@@ -216,110 +204,46 @@ Tests pin the clock and cover both clock-change days, as the time rules say: `da
 Every app picks a calendar day the same way, with Lilac & Sage's own calendar in place of the browser's, which looks different in each browser and ignores the theme (decided 8 November, #57). Typing stays the fastest route; the calendar is beside it.
 
 - Field: an `ls-input` (not `type="date"`) in an `ls-field__row` with a calendar button: `ls-btn` holding a 16px Lucide `calendar` icon, `aria-label="Choose a date"` and `aria-haspopup="dialog"`. Help text says what to type: "Type a date like 1 Dec, or pick one."
-- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow"). Without a year it is the next such day on or after today. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
-- Calendar: the button opens it in an `ls-popover ls-popover--calendar` (`popover="auto"`, `role="dialog"`, `aria-label="Choose a date"`) below the field on desktop, and in an `ls-dialog--sheet` on a phone, with no URL param, as it belongs to its field. It opens on the field's month, or today's.
+- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow"). Without a year it is the next such day on or after today. It also reads the field's own form back ("Tue 1 Dec", "Fri, 1 Jan 2027"), so tabbing through a filled field or changing only the number keeps it valid (#81). The weekday is ignored, so "Tue 3 Dec" is the 3rd and the field then shows "Thu 3 Dec": the number is what someone just typed, and refusing it would be an error for a change they meant. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
+- Calendar: the button opens it in an `ls-popover ls-popover--calendar` (`popover="auto"`, `role="dialog"`, `aria-label="Choose a date"`) below the field on desktop, and in an `ls-dialog--sheet` on a phone, with no URL param, as it belongs to its field. It opens on the field's month, or today's. Where `position-area` is missing (Safari), place it with `placePopover(popover, button)` from Popover, on `toggle` and on scroll and resize while open, as for any popover; it goes below the button and flips above when there's no room.
 - Month: `div.ls-calendar` holds `div.ls-calendar__head` (previous month, `h2.ls-calendar__title` with `aria-live="polite"`, next month; the steps are `ls-btn ls-btn--ghost ls-calendar__step` with Lucide `chevron-left` and `chevron-right` and labels "Previous month" and "Next month") and `table.ls-calendar__grid` with `role="grid"`, `aria-labelledby` on the title, one `th` per weekday from Monday ("M" with `abbr="Monday"`), and a `td.ls-calendar__day` per day from `monthGrid`. Blank cells are empty `td`s.
 - Days: each day cell carries `data-day`, `aria-label` from `dayLabel` ("Tuesday, 1 December 2026"), `aria-selected="true"` on the chosen one (filled `accent`), `aria-current="date"` on today (an `accent` ring), and `aria-disabled="true"` outside a min or max (`on-disabled`, not chosen). Only one day has `tabindex="0"`: the chosen day, else today, else the 1st; the rest have `tabindex="-1"`.
-- Keyboard, from the WAI-ARIA date picker dialog pattern: arrows move by a day and a week, Home and End to the week's ends, Page Up and Page Down by a month (with Shift, a year); moving past the month shows the next one. Enter or Space picks, which closes the calendar, fills the field and returns focus to the calendar button. Escape closes without picking. `moveFocus` gives the day each key moves to.
+- Keyboard, from the WAI-ARIA date picker dialog pattern: arrows move by a day and a week, Home and End to the week's ends, Page Up and Page Down by a month (with Shift, a year); moving past the month shows the next one. Enter or Space picks, which closes the calendar, fills the field and returns focus to the calendar button. Escape closes only the calendar, never a dialog the field sits in, and returns focus to the button. `calendarKey(event, focusedDay, { min, max })` turns a key into what to do (below); a day outside the min or max can be focused but not picked.
 - 36px days with a pointer, 44px on a phone or touch screen, where the month fills the sheet's width. Motion is the popover's or sheet's own.
 - The value sent is the plain date (`YYYY-MM-DD`), never a time or an instant.
 
-```ts
-// Plain dates are "YYYY-MM-DD" throughout, as the API sends them; the maths runs on UTC midnights so no zone can shift a day.
-const DAYS_PER_WEEK = 7;
-const MONTHS_PER_YEAR = 12;
-const MS_PER_DAY = 86_400_000;
-const LOCALE = "en-GB";
-const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-const MONTH_ABBREVIATION_LENGTH = 3;
-const TWO_DIGIT_YEAR_BASE = 2000;
-const LEAP_YEAR_SEARCH = 8;
+The helpers ship in `@jameswilson1996/ui-tokens/days.js`, with types (#82). Import them; don't copy them into the app. Everything takes and returns plain dates (`YYYY-MM-DD`), and "today" is always passed in from the household's day, so nothing reads the browser clock.
 
-const toDate = (day: string) => new Date(`${day}T00:00:00Z`);
-const toDay = (date: Date) => date.toISOString().slice(0, 10);
-const pad = (n: number) => String(n).padStart(2, "0");
-const daysInMonth = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate(); // month is 1-12
-// Monday is 0, as weeks start on Monday in en-GB.
-const weekdayIndex = (day: string) => (toDate(day).getUTCDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK;
-const isRealDay = (y: number, m: number, d: number) => m >= 1 && m <= MONTHS_PER_YEAR && d >= 1 && d <= daysInMonth(y, m);
-const fullYear = (y: string) => (y.length === 2 ? TWO_DIGIT_YEAR_BASE + Number(y) : Number(y));
+| Export | Does |
+| --- | --- |
+| `parseDay(text, today)` | A typed date as a plain date, or null |
+| `formatDay(day, today, { weekday })` | "1 Dec", "Tue 1 Dec", "Fri, 1 Jan 2027" |
+| `monthGrid("2026-12")` | The month's weeks, Monday first, null for blank cells |
+| `dayLabel(day)`, `monthLabel(month)` | "Tuesday, 1 December 2026", "December 2026" |
+| `addDays(day, n)`, `addMonths(day, n)` | Day maths; `addMonths` keeps inside the month (31 Jan plus one is 28 Feb) |
+| `moveFocus(day, key, shiftKey)` | The day an arrow, Home, End or Page key moves to |
+| `isOutside(day, { min, max })` | Whether a day can't be picked |
+| `calendarKey(event, day, { min, max })` | `{ type: "move", day }`, `{ type: "pick", day }`, `{ type: "close" }` or null |
 
-export const addDays = (day: string, n: number) => toDay(new Date(toDate(day).getTime() + n * MS_PER_DAY));
+The calendar's key handler, in React:
 
-/** The same day n months on, kept inside the month: 31 Jan plus one month is 28 Feb (29 in a leap year). */
-export function addMonths(day: string, n: number) {
-  const [y, m, d] = day.split("-").map(Number);
-  const index = y * MONTHS_PER_YEAR + (m - 1) + n;
-  const year = Math.floor(index / MONTHS_PER_YEAR);
-  const month = (index % MONTHS_PER_YEAR) + 1;
-  return `${year}-${pad(month)}-${pad(Math.min(d, daysInMonth(year, month)))}`;
-}
+```tsx
+import { calendarKey } from "@jameswilson1996/ui-tokens/days.js";
 
-/** A month's weeks, Monday first; null pads the first and last week. month is "YYYY-MM". */
-export function monthGrid(month: string): (string | null)[][] {
-  const [y, m] = month.split("-").map(Number);
-  const cells: (string | null)[] = Array(weekdayIndex(`${month}-01`)).fill(null);
-  for (let d = 1; d <= daysInMonth(y, m); d++) cells.push(`${month}-${pad(d)}`);
-  while (cells.length % DAYS_PER_WEEK) cells.push(null);
-  return Array.from({ length: cells.length / DAYS_PER_WEEK }, (_, w) => cells.slice(w * DAYS_PER_WEEK, (w + 1) * DAYS_PER_WEEK));
-}
-
-/** Where a key moves the focused day, or null for keys the grid leaves alone. */
-export function moveFocus(day: string, key: string, shiftKey = false): string | null {
-  switch (key) {
-    case "ArrowLeft": return addDays(day, -1);
-    case "ArrowRight": return addDays(day, 1);
-    case "ArrowUp": return addDays(day, -DAYS_PER_WEEK);
-    case "ArrowDown": return addDays(day, DAYS_PER_WEEK);
-    case "Home": return addDays(day, -weekdayIndex(day));
-    case "End": return addDays(day, DAYS_PER_WEEK - 1 - weekdayIndex(day));
-    case "PageUp": return addMonths(day, shiftKey ? -MONTHS_PER_YEAR : -1);
-    case "PageDown": return addMonths(day, shiftKey ? MONTHS_PER_YEAR : 1);
-    default: return null;
+const onKeyDown = (e: React.KeyboardEvent<HTMLTableElement>) => {
+  const action = calendarKey(e, focused, { min, max });
+  if (!action) return;
+  e.preventDefault();
+  if (action.type === "move") setFocused(action.day); // a layout effect focuses the cell with that data-day; its month shows when it's another
+  if (action.type === "pick") pick(action.day); // fill the field, close, return focus to the calendar button
+  if (action.type === "close") {
+    e.stopPropagation(); // so a dialog round the field stays open
+    close();
   }
-}
-
-/** "Tuesday, 1 December 2026", what a screen reader reads for a day. */
-export const dayLabel = (day: string) =>
-  new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(toDate(day));
-
-/** "December 2026", the calendar's heading. */
-export const monthLabel = (month: string) =>
-  new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", month: "long", year: "numeric" }).format(toDate(`${month}-01`));
-
-/**
- * A typed date as "YYYY-MM-DD", or null when it isn't one. Day first, as in the UK:
- * "today", "tomorrow", "2026-12-01", "1/12/2026", "1/12/26", "1/12", "1 Dec", "1 December 2026".
- * Without a year it is the next such day on or after today, so "1 Jan" typed in November is next January.
- */
-export function parseDay(text: string, today: string): string | null {
-  const t = text.trim().toLowerCase().replace(/,/g, "");
-  if (t === "today") return today;
-  if (t === "tomorrow") return addDays(today, 1);
-  let y: number | undefined, m: number, d: number;
-  let match = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (match) [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  else if ((match = t.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2}|\d{4}))?$/))) [d, m, y] = [Number(match[1]), Number(match[2]), match[3] ? fullYear(match[3]) : undefined];
-  else if ((match = t.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)(?:\s+(\d{4}))?$/))) {
-    // "Dec", "Decem" and "December" all count; "Decx" doesn't.
-    const word = match[2];
-    const month = word.length < MONTH_ABBREVIATION_LENGTH ? 0 : MONTHS.findIndex((name) => name.startsWith(word)) + 1;
-    if (!month) return null;
-    [d, m, y] = [Number(match[1]), month, match[3] ? Number(match[3]) : undefined];
-  } else return null;
-  if (y === undefined) {
-    // The first year from this one in which that day exists and isn't past: 29 Feb can be up to 8 years away.
-    const thisYear = Number(today.slice(0, 4));
-    for (let year = thisYear; year <= thisYear + LEAP_YEAR_SEARCH; year++) {
-      if (isRealDay(year, m, d) && `${year}-${pad(m)}-${pad(d)}` >= today) return `${year}-${pad(m)}-${pad(d)}`;
-    }
-    return null;
-  }
-  return isRealDay(y, m, d) ? `${y}-${pad(m)}-${pad(d)}` : null;
-}
+};
 ```
 
-Tests for these run as unit tests with no DOM: "1 Jan" typed on 8 November 2026 is `"2027-01-01"`, "29 Feb" is `"2028-02-29"`, "31/4/2026" and "1 Decx" are null, `addMonths("2026-01-31", 1)` is `"2026-02-28"`, and December 2026's first week starts on Tuesday the 1st.
+The package's tests cover the forms above, the field's weekday form, "1 Jan" typed on 8 November 2026 as `"2027-01-01"`, "29 Feb" as `"2028-02-29"`, "31/4/2026" and "1 Decx" as null, `addMonths("2026-01-31", 1)` as `"2026-02-28"`, both clock-change days, December 2026's first week starting on Tuesday the 1st, and every key.
 
 Example markup (December 2026, the 1st chosen, today the 8th of November so no ring in this month):
 
