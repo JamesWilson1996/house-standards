@@ -451,6 +451,7 @@ osDark.addEventListener("change", () => applyAppearance());
 
 A one- or two-word status beside an item. Tones: neutral (default), `--accent`, `--success`, `--warning`, `--danger`, `--info`. Add `span.ls-dot` for live states.
 
+- One line: the badge doesn't wrap, so in a narrow table cell the column widens to fit it. Keep the word short ("Due in 17 days" at most).
 - Consumer provides: the word. Colour never carries meaning alone — the word must say it ("Failed", not just a rose chip).
 - Statuses map 1:1 to the backend's state enum; render the label the API sends rather than re-deriving state in the client.
 
@@ -790,7 +791,8 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The same goes for the sidebar, a page's `ls-tabs`, the board's column tabs and a stepper's period. Each tab keeps its own scroll position and state where the router allows.
+- Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. Each tab keeps its own scroll position and state where the router allows.
+- Within a place (a page's `ls-tabs`, the board's column tabs, a stepper's period) the page holds still and only the content below the tabs fades through, with no scale (decided 9 November, since fading the whole screen to change Overview to Bills was jarring). Wrap that content in `div.ls-tab-panel`, once per page, and mark the navigation `ls-tab`. The bundle names the panel only during an `ls-tab` transition. Without a panel the page swaps at once.
 - Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
 
 ```ts
@@ -798,6 +800,14 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 export function switchView(update: () => void) {
   if (!document.startViewTransition) return update();
   document.startViewTransition({ update, types: ["ls-switch"] });
+}
+```
+
+```ts
+// Fades only the ls-tab-panel through, for a page's own tabs and periods.
+export function switchPanel(update: () => void) {
+  if (!document.startViewTransition) return update();
+  document.startViewTransition({ update, types: ["ls-tab"] });
 }
 ```
 - Consumer provides: the links (TanStack Router `<Link>` with `activeProps={{ "aria-current": "page" }}`) and the counts from the API.
@@ -910,7 +920,7 @@ Moves a list through time one period at a time: Budget's month, Meals' week. Pre
 - Label: `span.ls-stepper__long` ("November 2026", "Week of 9 November") and `span.ls-stepper__short` (`aria-hidden="true"`; "Nov 2026", "9 Nov"). On a phone the short one shows and the long one is read by screen readers, so the stepper leaves room in a filter bar. The label has `aria-live="polite"` so a step is announced.
 - Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
 - The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
-- Changing period fades the list through like switching tabs (`ls-switch`, see Tab bar), with no slide.
+- Changing period fades only the content below through (`ls-tab` with an `ls-tab-panel`, see Tab bar), with no slide. The stepper stays still.
 - In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
 - 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
 
