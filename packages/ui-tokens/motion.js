@@ -1,4 +1,5 @@
-// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding) and waiting for an exit to finish (pattern 3).
+// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding), waiting for an exit to finish (pattern 3)
+// and choosing a navigation's motion (pattern 4).
 // Durations come from the motion tokens, so reduced motion stops the slides with no extra code.
 
 /** How long a touch press must last before a card with no handle lifts. */
@@ -194,4 +195,19 @@ export function afterLeaving(el) {
   void getComputedStyle(el).opacity;
   const exits = el.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
   return Promise.allSettled(exits.map((a) => a.finished)).then(() => undefined);
+}
+
+/**
+ * The view transition type for a navigation between two pages (brand book Motion pattern 4), chosen by where it lands,
+ * never by where the link sits. A page is its top-level place ("budget") and its depth: 0 for the place's own pages and
+ * tabs, 1 for a page one level down, and so on.
+ * - Another place: "ls-switch" (fade through), whatever page it lands on and however deep, Back included.
+ * - Deeper in the same place: "ls-drill". Shallower: "ls-back".
+ * - Another of the place's own pages (its tabs): "ls-tab". Another page at the same depth below them: "ls-switch".
+ */
+export function navigationMotion(from, to) {
+  if (from.place !== to.place) return "ls-switch";
+  if (to.depth > from.depth) return "ls-drill";
+  if (to.depth < from.depth) return "ls-back";
+  return to.depth === 0 ? "ls-tab" : "ls-switch";
 }

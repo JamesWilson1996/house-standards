@@ -691,6 +691,55 @@ router.subscribe("onResolved", ({ fromLocation, toLocation }) => {
 });
 ```
 
+### Navigation motion
+
+Every navigation between pages takes its motion from where it lands, never from where the link sits, so a link from one module to another moves the same way as the tab bar (brand book Motion pattern 4). The router chooses it once for every link and for Back and Forward; links don't pass their own types.
+
+Each route says where it sits in `staticData`: its top-level `place` (`"budget"`, matching its tab bar item) and its `depth`, 0 for the place's own pages and tabs and 1 for a page one level down (a bill, a board). `navigationMotion(from, to)` from `@jameswilson1996/ui-tokens/motion.js` turns two of those into the view transition type:
+
+| From → to | Type | Seen as |
+| --- | --- | --- |
+| Another place, at any depth (the tab bar, Today's "All bills", a shopping item's meal, Back from any of them) | `ls-switch` | Fade through |
+| Deeper in the same place | `ls-drill` | Slides in from the right on a phone, nudges in on wider screens |
+| Shallower in the same place (the page header's back link, Back) | `ls-back` | The reverse |
+| Another of the place's own pages (its tabs) | `ls-tab` | Only the `ls-tab-panel` fades through |
+| Another page at the same depth below them (one bill to the next) | `ls-switch` | Fade through |
+
+- A link into another place never drills, even when it lands on a page one level down (Today's "Kitchen snagging" card opening the board): a slide promises that Back returns to the page underneath, and that page belongs to another place. The page header there still shows its own place's back link ("Projects"), which goes back with `ls-back`.
+- A link to one record in another place lands on the page that lists it, fades through, then points at its row: scrolled into view and marked with `ls-flash` (pattern 5). It doesn't open that place's dialog over a page the user hasn't seen. Inside a place, record details still open in a dialog (see Dialog).
+- Changes to the search params only (a dialog's param, a filter, a stepper's period) take no page motion from the router: dialogs and filters have their own, and the stepper's links pass `viewTransition={{ types: ["ls-tab"] }}` themselves.
+- Without a router, call `switchView`, `switchPanel` or `drillView` with the type `navigationMotion` gives.
+
+```ts
+import { createRouter, type ParsedLocation } from "@tanstack/react-router";
+import { navigationMotion, type PagePlace } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Every page route sets both; layout routes leave them out.
+declare module "@tanstack/react-router" {
+  interface StaticDataRouteOption {
+    title?: string;
+    place?: string; // the tab bar item this page belongs to
+    depth?: number; // 0 for the place's own pages and tabs, 1 one level down
+  }
+}
+
+// The deepest matched route's place and depth: the page's own route.
+const pageAt = (location: ParsedLocation): PagePlace => {
+  const { place = "", depth = 0 } = router.matchRoutes(location).at(-1)?.staticData ?? {};
+  return { place, depth };
+};
+
+export const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+  // Runs for every link, navigate() call, and Back and Forward.
+  defaultViewTransition: {
+    types: ({ fromLocation, toLocation, pathChanged }) =>
+      fromLocation && pathChanged ? [navigationMotion(pageAt(fromLocation), pageAt(toLocation))] : false,
+  },
+});
+```
+
 ## Nav
 
 The app's primary sidebar. `nav.ls-nav > a.ls-nav__item`, an 18px Lucide icon then the label; the current page has `aria-current="page"`.
@@ -718,7 +767,7 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
 - Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. Each tab keeps its own scroll position and state where the router allows.
 - Within a place (a page's `ls-tabs`, the board's column tabs, a stepper's period) the page holds still and only the content below the tabs fades through, with no scale (decided 9 November, since fading the whole screen to change Overview to Bills was jarring). Wrap that content in `div.ls-tab-panel`, once per page, and mark the navigation `ls-tab`. The bundle names the panel only during an `ls-tab` transition. Without a panel the page swaps at once.
-- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
+- The router marks these navigations with the `ls-switch` view transition type, and an `ls-tab` within a place, from each route's place and depth (see Navigation motion in App shell); the bundle animates only those. Without a router, use `switchView` and `switchPanel`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
 
 ```ts
 // Fades through to the next tab; update swaps the content. Falls back to an instant swap.
@@ -1119,7 +1168,7 @@ The top of every page, laid out the same everywhere: the area name or a back lin
 `header.ls-page-header` holds `div.ls-page-header__main` (with `div.ls-page-header__heading` and `div.ls-page-header__actions`) and optional tabs, `div.ls-tabs.ls-page-header__tabs`.
 
 - Area: `span.ls-page-header__area` with the top-level place ("Budget"), or `a.ls-page-header__area` with a 16px Lucide `chevron-left` and the parent's name ("Projects") on a page one level down.
-- Going one level down and back (brand book Motion pattern 4): mark the link into the page with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. On a phone the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base`; on wider screens the new page fades in from 8px right over `motion-base` and Back fades it out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still. With TanStack Router, pass `viewTransition={{ types: ["ls-drill"] }}` on the link in and `["ls-back"]` on the back link. Without a router, use `drillView`.
+- Going one level down and back (brand book Motion pattern 4): the link into the page moves with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. The router picks them from each route's depth (see Navigation motion in App shell), so a link arriving from another place fades through instead. On a phone the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base`; on wider screens the new page fades in from 8px right over `motion-base` and Back fades it out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still. Without a router, use `drillView`.
 
 ```ts
 // Moves to a page one level down ("in") or back to its parent ("back"); update swaps the content. Falls back to an instant swap.

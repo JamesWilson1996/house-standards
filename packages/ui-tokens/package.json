@@ -1,6 +1,6 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Lilac & Sage design tokens, ls- component styles, motion helpers and day helpers. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",

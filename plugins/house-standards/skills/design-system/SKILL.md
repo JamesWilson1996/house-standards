@@ -5,7 +5,7 @@ description: Lilac & Sage, the house design system (pastel lilac and sage, light
 
 # Lilac & Sage design system
 
-Apps consume this system through the `@jameswilson1996/ui-tokens` package (`tokens.css` + `bundle.css`, `motion.js` for the drag helpers and `days.js` for the day helpers). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
+Apps consume this system through the `@jameswilson1996/ui-tokens` package (`tokens.css` + `bundle.css`, `motion.js` for the drag and navigation helpers and `days.js` for the day helpers). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
 
 Before building UI:
 
@@ -34,5 +34,5 @@ Hard rules:
 - A long list or table shows its first page and an `ls-more` ("Showing 20 of 48", Show 20 more) under it; sortable columns use `ls-table__sort` with `aria-sort`. Dates and times use the helpers in Dates and times ("8 Nov", "in 3 days", "2 minutes ago").
 - A calendar day is picked with the Date picker: a typed `ls-input` read by `parseDay` from `@jameswilson1996/ui-tokens/days.js` and a calendar button opening an `ls-calendar` (a popover on desktop, a sheet on a phone). Never `type="date"`.
 - Charts are inline SVG with `ls-chart` and the `chart-*` tokens in order: a legend or direct labels, a tooltip in `ls-popover`, and a table view. One figure is an `ls-stat`, not a chart.
-- Motion uses only the `--motion-*` and `--ease-*` tokens and the patterns in the brand book's Motion section, so reduced motion works everywhere. Drags use `ls-lifted`, `ls-drop-slot` and `ls-drag-handle`, with the helpers from `@jameswilson1996/ui-tokens/motion.js`.
+- Motion uses only the `--motion-*` and `--ease-*` tokens and the patterns in the brand book's Motion section, so reduced motion works everywhere. Drags use `ls-lifted`, `ls-drop-slot` and `ls-drag-handle`, with the helpers from `@jameswilson1996/ui-tokens/motion.js`. Page changes take their view transition type from `navigationMotion` in the router, by where they land, so a link from one module to another fades through like the tab bar.
 - A genuinely new component is added to this system first (PR to house-standards), then used from apps.

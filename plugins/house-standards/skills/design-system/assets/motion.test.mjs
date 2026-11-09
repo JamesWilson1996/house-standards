@@ -10,6 +10,7 @@ import {
   scrollNearEdge,
   scrollWhileHeld,
   afterLeaving,
+  navigationMotion,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -343,4 +344,25 @@ test("afterLeaving resolves when an exit is cancelled, so the element is still r
 
 test("afterLeaving resolves at once where the browser has no getAnimations", async () => {
   assert.equal(await settled(afterLeaving(new FakeElement())), true);
+});
+
+test("navigationMotion fades through to another place, whatever the depth either side", () => {
+  // The tab bar, and a link from one module to another: Today's "All bills", a shopping item's meal.
+  assert.equal(navigationMotion({ place: "today", depth: 0 }, { place: "budget", depth: 0 }), "ls-switch");
+  // Today straight into one project's board: still another place, so no drill.
+  assert.equal(navigationMotion({ place: "today", depth: 0 }, { place: "projects", depth: 1 }), "ls-switch");
+  // Back from that board to Today fades through too, rather than sliding.
+  assert.equal(navigationMotion({ place: "projects", depth: 1 }, { place: "today", depth: 0 }), "ls-switch");
+});
+
+test("navigationMotion drills in and back within a place", () => {
+  assert.equal(navigationMotion({ place: "projects", depth: 0 }, { place: "projects", depth: 1 }), "ls-drill");
+  assert.equal(navigationMotion({ place: "projects", depth: 1 }, { place: "projects", depth: 2 }), "ls-drill");
+  assert.equal(navigationMotion({ place: "projects", depth: 1 }, { place: "projects", depth: 0 }), "ls-back");
+  assert.equal(navigationMotion({ place: "projects", depth: 2 }, { place: "projects", depth: 0 }), "ls-back");
+});
+
+test("navigationMotion fades only the panel between a place's own tabs, and the page between siblings below them", () => {
+  assert.equal(navigationMotion({ place: "budget", depth: 0 }, { place: "budget", depth: 0 }), "ls-tab");
+  assert.equal(navigationMotion({ place: "projects", depth: 1 }, { place: "projects", depth: 1 }), "ls-switch");
 });
