@@ -261,14 +261,19 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* Ticked: marked at once, then the app folds the row away after 400ms. */
 .ls-list__row--done .ls-list__title { color: var(--ink-muted); font-weight: 400; text-decoration: line-through; }
 .ls-list__row--leaving { overflow: hidden; animation: ls-fold var(--motion-base) var(--ease-exit) forwards; }
-@media (max-width: 640px) {
+/* A list 640px wide or less stacks its rows' ends by its own width, so one in a narrow card on a wide screen stacks as it does on a phone.
+   The list is the container (no layout containment, so a lifted row's position: fixed still measures from the viewport). */
+.ls-list { container: ls-list / inline-size; }
+@container ls-list (max-width: 640px) {
   .ls-list__row { padding: var(--space-2) var(--space-3); }
   .ls-list__end { flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  .ls-list__lead > .ls-check { margin-left: calc(var(--space-2) * -1); }
+  .ls-list__lead > .ls-drag-handle { margin-left: calc(var(--space-2) * -1); }
+}
+@media (max-width: 640px) {
   /* 36px buttons with a 44px hit area, so a row stays compact. */
   .ls-list__end .ls-btn { height: 36px; }
   .ls-list__end .ls-btn::after { content: ""; position: absolute; inset: -4px 0; }
-  .ls-list__lead > .ls-check { margin-left: calc(var(--space-2) * -1); }
-  .ls-list__lead > .ls-drag-handle { margin-left: calc(var(--space-2) * -1); }
 }
 
 /* ---------- Date chip (a day in a list row) ---------- */
@@ -395,6 +400,10 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-quickadd__row > .ls-btn { flex: none; }
 .ls-quickadd__suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ls-quickadd__label { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+/* A failed add: the help line sits right under the row, and data-invalid on the form marks it as ls-field[data-invalid] does. */
+.ls-quickadd__row + .ls-help { margin-top: calc(var(--form-help-gap) - var(--space-3)); }
+.ls-quickadd[data-invalid] .ls-quickadd__row > .ls-input { border-color: var(--danger); }
+.ls-quickadd[data-invalid] .ls-help { color: var(--danger-ink); }
 
 /* ---------- Filter bar and chips (one row above a list: scope, search, active filters, Filter, count) ---------- */
 .ls-filterbar { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }

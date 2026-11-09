@@ -524,7 +524,8 @@ Rows of things you act on in place: bills due, shopping items, household members
 
 Actions (decided 8 November, #23): every row shows its one main action as a visible control, on touch and desktop alike. The main action is the lead checkbox or one `ls-btn ls-btn--sm` in the end ("Mark paid"). Everything else is in the row's dialog, or under an `ls-btn--ghost` More button with `aria-label="More for Council tax"` opening an `ls-popover--menu`. No swipe actions.
 
-- Rows are 56px tall at least. On a phone the end stacks the value over the action, and end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- Rows are 56px tall at least. A list 640px wide or less stacks each row's end, the value over the action, by its own width (a container query on `ls-list`), so a list in a narrow card or dialog on a wide screen stacks as it does on a phone (#78). Don't add your own override. On a phone end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- The list is a size container, so it takes its width from where it sits and never from its rows: in a flex row or grid give it a width (`flex: 1`, a column), or it collapses.
 - Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
 - Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
 - Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities. A toast with Undo confirms the change.
@@ -805,6 +806,7 @@ Adds items one after another without leaving the keyboard: the shopping list, a 
 `form.ls-quickadd` holds `div.ls-quickadd__row` (an `input.ls-input` with an `aria-label` and `enterkeyhint="done"`, then a `button.ls-btn.ls-btn--primary[type=submit]` "Add") and, optionally, `div.ls-quickadd__suggestions` with `span.ls-quickadd__label` ("Bought before") and `button.ls-chip` per suggestion.
 
 - Enter or Add submits. The field clears at once and keeps focus, before the server answers, so the next item can be typed straight away. If the command fails, the text comes back into the field with the error in a help line. Never disable the field while a command is in flight: text typed during the wait belongs to the next item.
+- The error (#80): `p.ls-help` straight after `ls-quickadd__row`, before `ls-quickadd__suggestions`, with the problem+json message ("Couldn't add Milk. Try again."). Set `data-invalid` on the form, and `aria-invalid="true"` and `aria-describedby` on the input; the input gets the `danger` border and the help line `danger-ink`, as in Field. Render the help line only while there is an error, and clear all three on the next submit.
 - Each submit is its own command with its own client-made id and `Idempotency-Key`, so items typed quickly arrive as separate items and a retry is safe.
 - The new item appears in the list in place with `ls-enter`. No toast when the new row is on screen; a toast with Undo when it lands somewhere out of view.
 - Suggestions: at most 8 chips with a 16px Lucide `plus`, from the API (items bought before, most frequent first). Tapping one adds it at once and the chip goes. They wrap onto as many lines as they need; this is not a filter bar.
@@ -833,6 +835,15 @@ Example markup:
 <form class="ls-quickadd">
 <div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" placeholder="Add an item" enterkeyhint="done" autocomplete="off"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
 <div class="ls-quickadd__suggestions"><span class="ls-quickadd__label">Bought before</span><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Milk</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bread</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bananas</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Washing-up liquid</button></div>
+</form>
+```
+
+After a failed add:
+
+```html
+<form class="ls-quickadd" data-invalid>
+<div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" value="Milk" enterkeyhint="done" autocomplete="off" aria-invalid="true" aria-describedby="add-error"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
+<p class="ls-help" id="add-error">Couldn't add Milk. Try again.</p>
 </form>
 ```
 
