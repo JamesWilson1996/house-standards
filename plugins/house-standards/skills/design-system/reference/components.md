@@ -512,6 +512,52 @@ Example markup:
 </div>
 ```
 
+## Fold
+
+A section heading that folds its section: a card on an overview, a settings group, the "Picked up" list under a shopping list (#79). The same control as a board column's toggle, on any heading.
+
+`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id`.
+
+- The button has `type="button"`, `aria-expanded` and `aria-controls` pointing at the body, and holds a 16px Lucide `chevron-down` (`aria-hidden="true"`) before the heading text. The heading keeps its level, so the page's outline and screen reader heading lists stay right; the button takes the heading's font and sits flush with where the text would start.
+- Folded: `aria-expanded="false"` and `hidden` on the body. The chevron turns -90deg over `motion-quick`, so reduced motion shows no turn; the body shows and hides at once.
+- An action beside the heading (All bills, Clear) stays visible and usable while the section is folded.
+- The button is 32px tall with a pointer and 44px on a phone or touch screen.
+- Fold state is per device, in local storage, never on the server. Each app picks each section's default (open unless the section is long and rarely needed, like "Picked up"). Wrap storage reads and writes in `try`, so a blocked store falls back to the default.
+
+```tsx
+// Remembers a section's fold on this device; falls back to the default when storage is blocked.
+export function useFold(key: string, openByDefault = true) {
+  const storageKey = `fold:${key}`;
+  const [open, setOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved === null ? openByDefault : saved === "open";
+    } catch {
+      return openByDefault;
+    }
+  });
+  const toggle = () =>
+    setOpen((was) => {
+      try { localStorage.setItem(storageKey, was ? "folded" : "open"); } catch { /* the fold still works for this visit */ }
+      return !was;
+    });
+  return { open, toggle };
+}
+```
+
+Example markup:
+
+```html
+<section class="ls-card" aria-labelledby="due-title">
+<div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="due-title"><button class="ls-fold" type="button" aria-expanded="true" aria-controls="due-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Due in the next 30 days</button></h2><a href="#">All bills</a></div>
+<div id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
+</section>
+<section class="ls-card" aria-labelledby="picked-title">
+<div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="picked-title"><button class="ls-fold" type="button" aria-expanded="false" aria-controls="picked-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Picked up</button></h2><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button">Clear</button></div>
+<div id="picked-body" hidden><p>Milk, Bread</p></div>
+</section>
+```
+
 ## List
 
 Rows of things you act on in place: bills due, shopping items, household members, today's meals. Use a list when each row has its own action; use an `ls-table` when people compare values across columns.
