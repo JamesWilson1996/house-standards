@@ -9,6 +9,7 @@ import {
   pressToLift,
   scrollNearEdge,
   scrollWhileHeld,
+  afterLeaving,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -291,4 +292,55 @@ test("scrollWhileHeld scrolls on every frame with the pointer's last position an
   last = { x: 300, y: 300 };
   runFrame();
   assert.equal(b.scrollLeft, MAX_SCROLL_STEP_PX * 2);
+});
+
+// A running animation as getAnimations() reports it: `finished` settles when end() or cancel() is called.
+const fakeAnimation = (endTime = BASE_MS) => {
+  let end;
+  let cancel;
+  const finished = new Promise((resolve, reject) => { end = resolve; cancel = reject; });
+  return { finished, effect: { getComputedTiming: () => ({ endTime }) }, end: () => end(), cancel: () => cancel(new Error("AbortError")) };
+};
+const leaving = (animations) => {
+  const el = new FakeElement();
+  el.getAnimations = (options) => { el.asked = options; return animations; };
+  return el;
+};
+const settled = async (promise) => {
+  let done = false;
+  promise.then(() => (done = true));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return done;
+};
+
+test("afterLeaving waits for every exit animation on the element, its ::backdrop included", async () => {
+  const fade = fakeAnimation();
+  const backdrop = fakeAnimation();
+  const el = leaving([fade, backdrop]);
+  const left = afterLeaving(el);
+  assert.deepEqual(el.asked, { subtree: true });
+  fade.end();
+  assert.equal(await settled(left), false);
+  backdrop.end();
+  assert.equal(await settled(left), true);
+});
+
+test("afterLeaving resolves at once when nothing runs (reduced motion makes every exit 0ms)", async () => {
+  assert.equal(await settled(afterLeaving(leaving([]))), true);
+});
+
+test("afterLeaving ignores endless animations inside, such as a busy button's spinner", async () => {
+  const spinner = fakeAnimation(Infinity);
+  assert.equal(await settled(afterLeaving(leaving([spinner]))), true);
+});
+
+test("afterLeaving resolves when an exit is cancelled, so the element is still removed", async () => {
+  const fade = fakeAnimation();
+  const left = afterLeaving(leaving([fade]));
+  fade.cancel();
+  assert.equal(await settled(left), true);
+});
+
+test("afterLeaving resolves at once where the browser has no getAnimations", async () => {
+  assert.equal(await settled(afterLeaving(new FakeElement())), true);
 });

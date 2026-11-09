@@ -1,4 +1,4 @@
-// Lilac & Sage drag helpers for brand book Motion pattern 1 (Holding).
+// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding) and waiting for an exit to finish (pattern 3).
 // Durations come from the motion tokens, so reduced motion stops the slides with no extra code.
 
 /** How long a touch press must last before a card with no handle lifts. */
@@ -180,4 +180,18 @@ export function scrollWhileHeld(scrollers, pointer, onScroll) {
     frame = requestAnimationFrame(tick);
   });
   return () => cancelAnimationFrame(frame);
+}
+
+/**
+ * Resolves once an element's exit motion has finished: the animations and transitions running on it, its
+ * descendants and its pseudo-elements (a dialog's ::backdrop). Call it right after the change that starts the exit
+ * (close(), hidePopover(), adding ls-leave), then remove the element. Endless animations inside, such as a busy
+ * button's spinner, are not waited for. Under reduced motion the exits are 0ms, so it resolves at once.
+ */
+export function afterLeaving(el) {
+  if (typeof el.getAnimations !== "function") return Promise.resolve();
+  // Reading a style applies the closed state, so its transitions exist before they are listed.
+  void getComputedStyle(el).opacity;
+  const exits = el.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+  return Promise.allSettled(exits.map((a) => a.finished)).then(() => undefined);
 }

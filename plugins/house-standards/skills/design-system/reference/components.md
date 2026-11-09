@@ -694,7 +694,7 @@ Example markup:
 Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-tab[role=tab]`; the active tab has `aria-selected="true"`.
 
 - Consumer provides: tab labels and the panels. Each tab is a route segment or search param (TanStack Router) so it survives reload and can be linked.
-- Switching tabs crossfades over `motion-quick` (see Tab bar), never slides.
+- Switching tabs fades through (see Tab bar), never slides.
 
 Example markup:
 
@@ -790,11 +790,11 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs crossfades (brand book Motion pattern 4): the old view fades out as the new one fades in over `motion-quick`, with no slide. The same goes for the sidebar, a page's `ls-tabs`, the board's column tabs and a stepper's period. Each tab keeps its own scroll position and state where the router allows.
-- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
+- Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The same goes for the sidebar, a page's `ls-tabs`, the board's column tabs and a stepper's period. Each tab keeps its own scroll position and state where the router allows.
+- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
 
 ```ts
-// Crossfades to the next tab; update swaps the content. Falls back to an instant swap.
+// Fades through to the next tab; update swaps the content. Falls back to an instant swap.
 export function switchView(update: () => void) {
   if (!document.startViewTransition) return update();
   document.startViewTransition({ update, types: ["ls-switch"] });
@@ -910,7 +910,7 @@ Moves a list through time one period at a time: Budget's month, Meals' week. Pre
 - Label: `span.ls-stepper__long` ("November 2026", "Week of 9 November") and `span.ls-stepper__short` (`aria-hidden="true"`; "Nov 2026", "9 Nov"). On a phone the short one shows and the long one is read by screen readers, so the stepper leaves room in a filter bar. The label has `aria-live="polite"` so a step is announced.
 - Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
 - The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
-- Changing period crossfades the list like switching tabs (`ls-switch`, see Tab bar), with no slide.
+- Changing period fades the list through like switching tabs (`ls-switch`, see Tab bar), with no slide.
 - In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
 - 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
 
@@ -996,6 +996,7 @@ A modal window over the current page. Record details (a bill, a transaction) and
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
 - Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is the reverse and quicker (decided 8 November, #54): the dialog fades and drops 8px over `motion-quick` with `ease-exit`, and at 640px and below it slides off the bottom edge over `motion-base`. The bundle holds the dialog in the top layer until the fade ends (`overlay` with `transition-behavior: allow-discrete`); browsers without `overlay` close at once. The `close` event fires at the start, so URL and focus handling don't wait for the motion.
+- Keep the `dialog` element on the page while it closes, or the exit never shows (see Leaving in Motion utilities). The example below renders it all the time and calls `close()`. A component that renders the dialog only while it is open calls `close()` first and unmounts it after `afterLeaving(dialog)`.
 
 ### Confirm
 
@@ -1143,7 +1144,7 @@ A small layer anchored to the element that opened it, built on the Popover API. 
 | Escape | Hides it | Closes it and returns focus to the trigger |
 
 - The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`.
-- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing reverses it over `motion-quick` (#54); browsers without `overlay` close at once.
+- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing reverses it over `motion-quick` (#54); browsers without `overlay` close at once. As with a dialog, hide it with `hidePopover()` and unmount it only after `afterLeaving` (see Leaving in Motion utilities).
 - A tooltip never holds the only copy of information. An icon-only button keeps its own `aria-label`, and on touch the tooltip appears only when tapped.
 - Placement: below the trigger by default, `ls-popover--top` above. Where the browser supports CSS anchor positioning (`position-area`), the popover anchors to its trigger (the `popovertarget` button, or the `source` passed to `showPopover()`), flips above or below, and shifts sideways to stay `popover-offset` (8px) inside the viewport.
 - Fallback where `position-area` is missing: compute the position from the trigger and set `--ls-popover-x` and `--ls-popover-y`. Run it on the popover's `toggle` event when `newState` is `"open"`, and on scroll and resize while it is open.
@@ -1440,11 +1441,46 @@ Example markup (November's spending, with today on 8 November):
 Classes for the patterns in the brand book's Motion section. Their durations come from the motion tokens, so they stop under `prefers-reduced-motion` with no extra code.
 
 - `ls-enter`: a new row or item fades in at its place over `motion-base`.
+- `ls-leave`: the same item leaving. It fades and drops 8px over `motion-quick` with `ease-exit` and stops taking taps at once; remove it after `afterLeaving`. For an inline alert, a removed chip or a section that goes away. A ticked list row folds with `ls-list__row--leaving` instead, and a toast uses `ls-toast--leaving`.
 - `ls-flash`: the row a link pointed at, marked in `accent-soft` and faded back over `motion-flash` (1.2s). Scroll it into view first (`scrollIntoView({ block: "center", behavior })`, with `behavior: "auto"` under reduced motion). To flash it again, remove the class, read `offsetWidth`, and add it back.
 - `ls-drag-handle`: the grip a row is dragged by. It sets `touch-action: none`, so a finger on it drags instead of scrolling. Give it an `aria-label` ("Move Milk") and handle Arrow Up and Arrow Down on it.
 - `ls-lifted`: the item being dragged. Add it on pick-up after setting `left`, `top` and `width` from the item's rect; the item becomes `position: fixed` above the page. Move it by setting `translate`, never `top`, so it follows the pointer without layout work. Add `ls-lifted--tilt` for board cards.
 - `ls-drop-slot`: the dashed placeholder where the item will land. Insert it in the item's place on pick-up, with the item's height, and move it as the pointer moves.
 - `ls-dragging`: on `body` while a drag is in progress, for the grabbing cursor and to stop text selection.
+
+### Leaving
+
+Everything that arrives with motion leaves with motion (brand book Motion pattern 3): dialogs, sheets, popovers, menus, toasts and items that used `ls-enter`. The exit is in the bundle; the app's part is to keep the element on the page until it has played. Removing an open dialog or popover from the DOM, as a React component does when its URL param goes and it unmounts, cuts the exit off and the element vanishes.
+
+1. Start the exit: `dialog.close()`, `popover.hidePopover()`, or add `ls-leave` (`ls-toast--leaving`, `ls-list__row--leaving`).
+2. Wait for `afterLeaving(el)` from `@jameswilson1996/ui-tokens/motion.js`. It resolves when the element's exit animations and transitions end, its `::backdrop` included, and skips endless ones such as a busy spinner inside. Under reduced motion they are 0ms, so it resolves at once.
+3. Remove the element (unmount it).
+
+URL, history and focus handling don't wait: do them on `close` as before. In React, keep the last open value in state, so the component renders until the exit ends:
+
+```tsx
+import { afterLeaving } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Renders while `open` is true and on until the element's exit motion has played.
+export function useLeaving<T extends HTMLElement>(open: boolean, leave: (el: T) => void) {
+  const ref = useRef<T>(null);
+  const [shown, setShown] = useState(open);
+  useEffect(() => {
+    if (open) return setShown(true);
+    const el = ref.current;
+    if (!el) return setShown(false);
+    let current = true;
+    leave(el);
+    afterLeaving(el).then(() => current && setShown(false));
+    return () => { current = false; };
+  }, [open]);
+  return { ref, shown };
+}
+// const { ref, shown } = useLeaving<HTMLDialogElement>(Boolean(bill), (d) => d.open && d.close());
+// return shown ? <dialog ref={ref} className="ls-dialog">…</dialog> : null;
+```
+
+### Drag helpers
 
 The drag code ships in `@jameswilson1996/ui-tokens/motion.js`, with types. Import it; don't copy it into the app. Every duration and distance below is a named export (`LIFT_DELAY_MS`, `LIFT_VIBRATION_MS`, `MOVE_TOLERANCE_PX`, `EDGE_ZONE_PX`, `MAX_SCROLL_STEP_PX`).
 
