@@ -10,6 +10,7 @@ Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once pe
 - Sizes: default 36px, `ls-btn--sm` 28px for dense tables. On a phone or touch screen the default is 44px and a small button keeps its 28px look with a 44px hit area (brand book, Touch).
 - Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
 - Busy: while its command is on the way, set `aria-busy="true"` on the button and leave it enabled-looking, since the backend owns the action and it may still succeed. After `motion-wait` (400ms) the bundle shows a spinner before the label, and the button keeps its width. Ignore further clicks while it is busy, and remove the attribute when the command settles. See Loading and errors.
+- A link may carry `ls-btn` when it navigates but sits among buttons (an empty state's action, "Add bill" in a page header). It looks the same as a `button.ls-btn`, with no underline at rest, on hover or on focus.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
 
 Example markup:
@@ -997,8 +998,8 @@ A modal window over the current page. Record details (a bill, a transaction) and
 
 `dialog.ls-dialog` opened with `showModal()`, holding `header.ls-dialog__header` (an `h2.ls-dialog__title` and a close button), `div.ls-dialog__body` and an optional `footer.ls-dialog__foot` for actions.
 
-- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet.
-- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
+- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet; a confirm is always a sheet.
+- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for confirms (Confirm and Unsaved changes below), pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
 - The body scrolls and the header and foot stay in view. The page behind does not scroll while the dialog is open.
 - Consumer provides: `aria-labelledby` pointing at the title, a close button with `aria-label="Close"` and a 16px Lucide `x` icon, and actions in the foot with the primary first, as in `ls-form__actions`. A form inside the body is an `ls-form`; its submit button sits in the foot with `form="<form id>"`.
 - Open state lives in the URL as a search param (`?bill=<id>`, Zod-validated), so a reload or a shared link reopens it. Opening pushes a history entry, and Back closes the dialog.
@@ -1013,14 +1014,15 @@ A modal window over the current page. Record details (a bill, a transaction) and
 Deleting or anything else that can't be put back (decided 8 November, #51):
 
 - When the API can restore the item, don't ask: delete at once and offer Undo in the toast ("Gym deleted · Undo"). Undo sends the restore command.
-- When it can't (a whole board, a household, anything permanent), confirm first in an `ls-dialog ls-dialog--sm`:
+- When it can't (a whole board, a household, anything permanent), confirm first in an `ls-dialog ls-dialog--sm ls-dialog--sheet` (#84): small and centred on desktop, and on a phone a sheet as tall as its content, so the page or form it asks about stays in view above it. It carries the sheet's `ls-dialog__handle` and `dragToClose`, and a drag down cancels.
   - Title: the action and the item, as a question: "Delete Kitchen snagging?"
   - Body: one sentence on what is lost and what stays: "Its 12 cards go too. This can't be undone."
   - Foot: an `ls-btn--danger` that repeats the verb and names the thing ("Delete board"), then Cancel. Cancel has `autofocus`, so Enter never deletes by accident. Escape and the backdrop cancel.
 - Never "Are you sure?", and never OK and Cancel as the buttons.
 
 ```html
-<dialog class="ls-dialog ls-dialog--sm" id="delete-board" aria-labelledby="delete-board-title" closedby="any">
+<dialog class="ls-dialog ls-dialog--sm ls-dialog--sheet" id="delete-board" aria-labelledby="delete-board-title" closedby="any">
+<div class="ls-dialog__handle" aria-hidden="true"></div>
 <header class="ls-dialog__header"><h2 class="ls-dialog__title" id="delete-board-title">Delete Kitchen snagging?</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
 <div class="ls-dialog__body"><p>Its 12 cards go too. This can't be undone.</p></div>
 <footer class="ls-dialog__foot"><button class="ls-btn ls-btn--danger" type="button">Delete board</button><form method="dialog"><button class="ls-btn" autofocus>Cancel</button></form></footer>
@@ -1029,7 +1031,7 @@ Deleting or anything else that can't be put back (decided 8 November, #51):
 
 ### Unsaved changes
 
-Leaving a form with changes that weren't saved asks first (#52), with the same confirm: "Leave without saving?", "Your changes to Council tax will be lost.", then `ls-btn--danger` "Discard changes" and "Keep editing" (with `autofocus`).
+Leaving a form with changes that weren't saved asks first (#52), with the same confirm (a sheet on a phone, so the form stays in view): "Leave without saving?", "Your changes to Council tax will be lost.", then `ls-btn--danger` "Discard changes" and "Keep editing" (with `autofocus`).
 
 - Ask only when a field differs from what was loaded. A saved or untouched form leaves without asking.
 - In-app navigation, Back and closing the form's dialog go through TanStack Router's `useBlocker` with `shouldBlockFn` reading the form's `isDirty`, so the app's own dialog asks. Closing the tab or reloading uses `beforeunload`, where the browser shows its own wording.
