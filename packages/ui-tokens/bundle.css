@@ -176,7 +176,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 
 /* ---------- Badge ---------- */
 .ls-badge { display: inline-flex; align-items: center; gap: var(--space-1); height: 22px; padding: 0 8px; border-radius: var(--radius-sm);
-  font: 500 12px/16px var(--font-sans); letter-spacing: .02em; background: var(--surface-sunken); color: var(--ink-muted); }
+  font: 500 12px/16px var(--font-sans); letter-spacing: .02em; background: var(--surface-sunken); color: var(--ink-muted);
+  white-space: nowrap; } /* one line, so the word never runs past the 22px chip in a narrow cell */
 .ls-badge--accent { background: var(--accent-soft); color: var(--on-accent-soft); }
 .ls-badge--success { background: var(--success-soft); color: var(--success-ink); }
 .ls-badge--warning { background: var(--warning-soft); color: var(--warning-ink); }
@@ -729,6 +730,17 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 ::view-transition-old(ls-nav), ::view-transition-new(ls-nav),
 ::view-transition-old(ls-tabbar), ::view-transition-new(ls-tabbar),
 ::view-transition-old(ls-toasts), ::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
+
+/* Within a place (a page's tabs, the board's column tabs, a stepper's period), apps mark the navigation ls-tab and wrap the part that
+   changes in ls-tab-panel. The header and tabs stay put; only the panel fades through, with no scale. The panel is named only during an
+   ls-tab transition, so between places it fades with the page. Without a panel the page swaps at once. */
+html:active-view-transition-type(ls-tab) .ls-tab-panel { view-transition-name: ls-tab-panel; }
+html:active-view-transition-type(ls-tab)::view-transition-old(root) { animation: none; opacity: 0; }
+html:active-view-transition-type(ls-tab)::view-transition-new(root) { animation: none; }
+html:active-view-transition-type(ls-tab)::view-transition-group(root) { animation: none; }
+::view-transition-group(ls-tab-panel) { animation: none; } /* takes the new panel's size at once; the old one fades out over it */
+::view-transition-old(ls-tab-panel) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
+::view-transition-new(ls-tab-panel) { animation: ls-fade var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
 
 /* Opening something one level down (ls-drill) and Back (ls-back). On wider screens the content moves 8px, the same distance a dialog rises:
    drilling in, the new view fades in from 8px right; Back, the old view fades out 8px to the right as the parent fades in. */
