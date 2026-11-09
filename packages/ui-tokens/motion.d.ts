@@ -1,4 +1,4 @@
-// Types for motion.js, the Lilac & Sage motion helpers (brand book Motion patterns 1 and 3).
+// Types for motion.js, the Lilac & Sage motion helpers (brand book Motion patterns 1, 3 and 4).
 
 export interface Point {
   x: number;
@@ -29,11 +29,32 @@ export declare function settle(held: HTMLElement, drop: () => void): Animation |
 /** Mouse lifts at once; touch lifts after LIFT_DELAY_MS unless the finger moves first. Returns a cleanup function. */
 export declare function pressToLift(card: HTMLElement, lift: (down: PointerEvent) => void): () => void;
 
-/** Scrolls `scroller` (document.scrollingElement for the page) while `pointer` is near its edge. Returns whether it scrolled. */
-export declare function scrollNearEdge(scroller: Element, pointer: Point): boolean;
+/** Space a bar of the app's own covers at the top or bottom of the viewport, in px. */
+export interface EdgeInsets {
+  top?: number;
+  bottom?: number;
+}
+
+/**
+ * Scrolls `scroller` (document.scrollingElement for the page) while `pointer` is near its edge. The zones start above a fixed
+ * ls-tabbar, below a stuck page header tab row, and inside `insets`. Returns whether it scrolled.
+ */
+export declare function scrollNearEdge(scroller: Element, pointer: Point, insets?: EdgeInsets): boolean;
 
 /** Runs scrollNearEdge on every animation frame with the pointer's last position; `onScroll` places the slot again. Returns a stop function. */
-export declare function scrollWhileHeld(scrollers: Element[], pointer: () => Point, onScroll: (pointer: Point) => void): () => void;
+export declare function scrollWhileHeld(scrollers: Element[], pointer: () => Point, onScroll: (pointer: Point) => void, insets?: EdgeInsets): () => void;
 
 /** Resolves once `el`'s exit animations (its ::backdrop included) have finished; call after close(), hidePopover() or adding ls-leave, then remove it. */
 export declare function afterLeaving(el: Element): Promise<void>;
+
+/** Where a page sits: its top-level place ("budget") and its depth (0 for the place's own pages and tabs, 1 one level down). */
+export interface PagePlace {
+  place: string;
+  depth: number;
+}
+
+/** The view transition types the bundle animates between pages. */
+export type NavigationMotion = "ls-switch" | "ls-tab" | "ls-drill" | "ls-back";
+
+/** The view transition type for a navigation, chosen by where it lands: another place fades through, deeper drills, shallower goes back, a sibling tab fades the panel. */
+export declare function navigationMotion(from: PagePlace, to: PagePlace): NavigationMotion;

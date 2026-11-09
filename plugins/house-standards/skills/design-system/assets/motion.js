@@ -1,4 +1,5 @@
-// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding) and waiting for an exit to finish (pattern 3).
+// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding), waiting for an exit to finish (pattern 3)
+// and choosing a navigation's motion (pattern 4).
 // Durations come from the motion tokens, so reduced motion stops the slides with no extra code.
 
 /** How long a touch press must last before a card with no handle lifts. */
@@ -128,10 +129,31 @@ export function pressToLift(card, lift) {
 
 const isPage = (scroller) => scroller === document.scrollingElement || scroller === document.documentElement;
 
-// The part of the scroller on screen: the page's own rect is the whole document, and a tall
-// column's bottom edge may be below the viewport where the pointer can't reach it.
-const visibleEdges = (scroller) => {
-  const view = { left: 0, top: 0, right: innerWidth, bottom: innerHeight };
+// A bar this close to the top of the screen is stuck there.
+const STUCK_TOLERANCE_PX = 1;
+// Bars that stay on screen over the page: the fixed tab bar along the bottom, and the page header's tab row
+// (a board's column tabs on a phone), which sticks to the top once scrolled to it.
+const BOTTOM_BAR = ".ls-tabbar";
+const TOP_BAR = ".ls-page-header__tabs";
+
+// The part of the viewport the content shows in: below a stuck tab row and above the tab bar, and inside any insets
+// the app passes for bars of its own. Hidden bars measure 0px tall and are skipped.
+const contentView = (insets = {}) => {
+  let top = insets.top ?? 0;
+  let bottom = innerHeight - (insets.bottom ?? 0);
+  const bar = document.querySelector?.(BOTTOM_BAR)?.getBoundingClientRect();
+  if (bar?.height && bar.top < bottom) bottom = bar.top;
+  for (const row of document.querySelectorAll?.(TOP_BAR) ?? []) {
+    const rect = row.getBoundingClientRect();
+    const stuck = rect.height && Math.abs(rect.top) <= STUCK_TOLERANCE_PX && getComputedStyle(row).position === "sticky";
+    if (stuck && rect.bottom > top) top = rect.bottom;
+  }
+  return { left: 0, top, right: innerWidth, bottom };
+};
+
+// The part of the scroller on screen and not under a bar: the page's own rect is the whole document, and a tall
+// column's bottom edge may be below the viewport or under the tab bar, where the pointer can't reach it.
+const visibleEdges = (scroller, view) => {
   if (isPage(scroller)) return view;
   const rect = scroller.getBoundingClientRect();
   return {
@@ -154,12 +176,17 @@ const scrollStep = (position, start, end) => {
 
 /**
  * Scrolls a container while a held item is within EDGE_ZONE_PX of its edge, on either axis, faster the nearer
- * the edge. For the page, pass document.scrollingElement. Returns whether it scrolled.
+ * the edge. For the page, pass document.scrollingElement. The edges are those of the part the content shows in:
+ * the zones start above a fixed ls-tabbar and below a stuck page header tab row, and inside `insets` (px from the
+ * top and bottom of the viewport) for any other bar the app keeps on screen. A pointer over a bar at the top scrolls
+ * nothing up or down, since the hold is for the bar (dropping on a tab). Returns whether it scrolled.
  */
-export function scrollNearEdge(scroller, pointer) {
-  const edges = visibleEdges(scroller);
+export function scrollNearEdge(scroller, pointer, insets) {
+  const view = contentView(insets);
+  const edges = visibleEdges(scroller, view);
   const dx = scrollStep(pointer.x, edges.left, edges.right);
-  const dy = scrollStep(pointer.y, edges.top, edges.bottom);
+  // Over a bar at the top (a stuck tab row) the hold belongs to the bar, such as dropping on a tab, so nothing scrolls up or down.
+  const dy = pointer.y < view.top ? 0 : scrollStep(pointer.y, edges.top, edges.bottom);
   if (!dx && !dy) return false;
   const before = { left: scroller.scrollLeft, top: scroller.scrollTop };
   scroller.scrollLeft += dx;
@@ -169,13 +196,14 @@ export function scrollNearEdge(scroller, pointer) {
 
 /**
  * While an item is lifted, runs scrollNearEdge on every animation frame with the pointer's last position, so the
- * containers keep scrolling while the pointer rests; onScroll places the slot again. Returns a function that stops it.
+ * containers keep scrolling while the pointer rests; onScroll places the slot again. `insets` is passed on to
+ * scrollNearEdge. Returns a function that stops it.
  */
-export function scrollWhileHeld(scrollers, pointer, onScroll) {
+export function scrollWhileHeld(scrollers, pointer, onScroll, insets) {
   let frame = requestAnimationFrame(function tick() {
     const position = pointer();
     let scrolled = false;
-    for (const scroller of scrollers) scrolled = scrollNearEdge(scroller, position) || scrolled;
+    for (const scroller of scrollers) scrolled = scrollNearEdge(scroller, position, insets) || scrolled;
     if (scrolled) onScroll(position);
     frame = requestAnimationFrame(tick);
   });
@@ -194,4 +222,19 @@ export function afterLeaving(el) {
   void getComputedStyle(el).opacity;
   const exits = el.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
   return Promise.allSettled(exits.map((a) => a.finished)).then(() => undefined);
+}
+
+/**
+ * The view transition type for a navigation between two pages (brand book Motion pattern 4), chosen by where it lands,
+ * never by where the link sits. A page is its top-level place ("budget") and its depth: 0 for the place's own pages and
+ * tabs, 1 for a page one level down, and so on.
+ * - Another place: "ls-switch" (fade through), whatever page it lands on and however deep, Back included.
+ * - Deeper in the same place: "ls-drill". Shallower: "ls-back".
+ * - Another of the place's own pages (its tabs): "ls-tab". Another page at the same depth below them: "ls-switch".
+ */
+export function navigationMotion(from, to) {
+  if (from.place !== to.place) return "ls-switch";
+  if (to.depth > from.depth) return "ls-drill";
+  if (to.depth < from.depth) return "ls-back";
+  return to.depth === 0 ? "ls-tab" : "ls-switch";
 }

@@ -10,6 +10,7 @@ Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once pe
 - Sizes: default 36px, `ls-btn--sm` 28px for dense tables. On a phone or touch screen the default is 44px and a small button keeps its 28px look with a 44px hit area (brand book, Touch).
 - Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
 - Busy: while its command is on the way, set `aria-busy="true"` on the button and leave it enabled-looking, since the backend owns the action and it may still succeed. After `motion-wait` (400ms) the bundle shows a spinner before the label, and the button keeps its width. Ignore further clicks while it is busy, and remove the attribute when the command settles. See Loading and errors.
+- A link may carry `ls-btn` when it navigates but sits among buttons (an empty state's action, "Add bill" in a page header). It looks the same as a `button.ls-btn`, with no underline at rest, on hover or on focus.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
 
 Example markup:
@@ -162,37 +163,25 @@ One way to show a date in every app (#53). The API sends calendar days as plain 
 - Times of day are 24-hour ("14:02") in `ls-amount`-style tabular figures. Full dates in prose spell the month: "1 December".
 - An `<time datetime="2026-11-08">` element wraps any date shown, so it can be read and copied exactly.
 
+`formatDay` and `formatDaysAway` take plain dates and ship in `@jameswilson1996/ui-tokens/days.js`; import them. `dayIn` and `formatAgo` start from an instant and a time zone, so they stay in the app:
+
 ```ts
-const MS_PER_DAY = 86_400_000;
+import { formatDay, formatDaysAway } from "@jameswilson1996/ui-tokens/days.js";
+
 const LOCALE = "en-GB";
 const JUST_NOW_SECONDS = 45;
 const SECONDS_PER_MINUTE = 60;
 const MINUTES_PER_HOUR = 60;
 const HOURS_PER_DAY = 24;
 const DAYS_SHOWN_AS_AGO = 6;
+const MS_PER_DAY = 86_400_000;
 
-const asUtcMidnight = (day: string) => new Date(`${day}T00:00:00Z`);
 const relative = new Intl.RelativeTimeFormat(LOCALE, { numeric: "auto" });
-const daysBetween = (from: string, to: string) => Math.round((asUtcMidnight(to).getTime() - asUtcMidnight(from).getTime()) / MS_PER_DAY);
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / MS_PER_DAY);
 
 /** The calendar day an instant falls on in a time zone, as "YYYY-MM-DD". today = dayIn(clock.now(), household.timeZone). */
 export const dayIn = (instant: Date, timeZone: string) =>
   new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(instant);
-
-/** "8 Nov", "8 Nov 2025" outside today's year, or "Mon 9 Nov" with the weekday. */
-export function formatDay(day: string, today: string, { weekday = false } = {}) {
-  const sameYear = day.slice(0, 4) === today.slice(0, 4);
-  return new Intl.DateTimeFormat(LOCALE, {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "short",
-    ...(sameYear ? {} : { year: "numeric" }),
-    ...(weekday ? { weekday: "short" } : {}),
-  }).format(asUtcMidnight(day));
-}
-
-/** "today", "tomorrow", "in 3 days", "yesterday", "4 days ago". */
-export const formatDaysAway = (day: string, today: string) => relative.format(daysBetween(today, day), "day");
 
 /** "just now", "2 minutes ago", "3 hours ago", then "yesterday" to "6 days ago", then the day. */
 export function formatAgo(instant: string, now: Date, timeZone: string) {
@@ -215,110 +204,46 @@ Tests pin the clock and cover both clock-change days, as the time rules say: `da
 Every app picks a calendar day the same way, with Lilac & Sage's own calendar in place of the browser's, which looks different in each browser and ignores the theme (decided 8 November, #57). Typing stays the fastest route; the calendar is beside it.
 
 - Field: an `ls-input` (not `type="date"`) in an `ls-field__row` with a calendar button: `ls-btn` holding a 16px Lucide `calendar` icon, `aria-label="Choose a date"` and `aria-haspopup="dialog"`. Help text says what to type: "Type a date like 1 Dec, or pick one."
-- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow"). Without a year it is the next such day on or after today. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
-- Calendar: the button opens it in an `ls-popover ls-popover--calendar` (`popover="auto"`, `role="dialog"`, `aria-label="Choose a date"`) below the field on desktop, and in an `ls-dialog--sheet` on a phone, with no URL param, as it belongs to its field. It opens on the field's month, or today's.
+- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow"). Without a year it is the next such day on or after today. It also reads the field's own form back ("Tue 1 Dec", "Fri, 1 Jan 2027"), so tabbing through a filled field or changing only the number keeps it valid (#81). The weekday is ignored, so "Tue 3 Dec" is the 3rd and the field then shows "Thu 3 Dec": the number is what someone just typed, and refusing it would be an error for a change they meant. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
+- Calendar: the button opens it in an `ls-popover ls-popover--calendar` (`popover="auto"`, `role="dialog"`, `aria-label="Choose a date"`) below the field on desktop, and in an `ls-dialog--sheet` on a phone, with no URL param, as it belongs to its field. It opens on the field's month, or today's. Where `position-area` is missing (Safari), place it with `placePopover(popover, button)` from Popover, on `toggle` and on scroll and resize while open, as for any popover; it goes below the button and flips above when there's no room.
 - Month: `div.ls-calendar` holds `div.ls-calendar__head` (previous month, `h2.ls-calendar__title` with `aria-live="polite"`, next month; the steps are `ls-btn ls-btn--ghost ls-calendar__step` with Lucide `chevron-left` and `chevron-right` and labels "Previous month" and "Next month") and `table.ls-calendar__grid` with `role="grid"`, `aria-labelledby` on the title, one `th` per weekday from Monday ("M" with `abbr="Monday"`), and a `td.ls-calendar__day` per day from `monthGrid`. Blank cells are empty `td`s.
 - Days: each day cell carries `data-day`, `aria-label` from `dayLabel` ("Tuesday, 1 December 2026"), `aria-selected="true"` on the chosen one (filled `accent`), `aria-current="date"` on today (an `accent` ring), and `aria-disabled="true"` outside a min or max (`on-disabled`, not chosen). Only one day has `tabindex="0"`: the chosen day, else today, else the 1st; the rest have `tabindex="-1"`.
-- Keyboard, from the WAI-ARIA date picker dialog pattern: arrows move by a day and a week, Home and End to the week's ends, Page Up and Page Down by a month (with Shift, a year); moving past the month shows the next one. Enter or Space picks, which closes the calendar, fills the field and returns focus to the calendar button. Escape closes without picking. `moveFocus` gives the day each key moves to.
+- Keyboard, from the WAI-ARIA date picker dialog pattern: arrows move by a day and a week, Home and End to the week's ends, Page Up and Page Down by a month (with Shift, a year); moving past the month shows the next one. Enter or Space picks, which closes the calendar, fills the field and returns focus to the calendar button. Escape closes only the calendar, never a dialog the field sits in, and returns focus to the button. `calendarKey(event, focusedDay, { min, max })` turns a key into what to do (below); a day outside the min or max can be focused but not picked.
 - 36px days with a pointer, 44px on a phone or touch screen, where the month fills the sheet's width. Motion is the popover's or sheet's own.
 - The value sent is the plain date (`YYYY-MM-DD`), never a time or an instant.
 
-```ts
-// Plain dates are "YYYY-MM-DD" throughout, as the API sends them; the maths runs on UTC midnights so no zone can shift a day.
-const DAYS_PER_WEEK = 7;
-const MONTHS_PER_YEAR = 12;
-const MS_PER_DAY = 86_400_000;
-const LOCALE = "en-GB";
-const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-const MONTH_ABBREVIATION_LENGTH = 3;
-const TWO_DIGIT_YEAR_BASE = 2000;
-const LEAP_YEAR_SEARCH = 8;
+The helpers ship in `@jameswilson1996/ui-tokens/days.js`, with types (#82). Import them; don't copy them into the app. Everything takes and returns plain dates (`YYYY-MM-DD`), and "today" is always passed in from the household's day, so nothing reads the browser clock.
 
-const toDate = (day: string) => new Date(`${day}T00:00:00Z`);
-const toDay = (date: Date) => date.toISOString().slice(0, 10);
-const pad = (n: number) => String(n).padStart(2, "0");
-const daysInMonth = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate(); // month is 1-12
-// Monday is 0, as weeks start on Monday in en-GB.
-const weekdayIndex = (day: string) => (toDate(day).getUTCDay() + DAYS_PER_WEEK - 1) % DAYS_PER_WEEK;
-const isRealDay = (y: number, m: number, d: number) => m >= 1 && m <= MONTHS_PER_YEAR && d >= 1 && d <= daysInMonth(y, m);
-const fullYear = (y: string) => (y.length === 2 ? TWO_DIGIT_YEAR_BASE + Number(y) : Number(y));
+| Export | Does |
+| --- | --- |
+| `parseDay(text, today)` | A typed date as a plain date, or null |
+| `formatDay(day, today, { weekday })` | "1 Dec", "Tue 1 Dec", "Fri, 1 Jan 2027" |
+| `monthGrid("2026-12")` | The month's weeks, Monday first, null for blank cells |
+| `dayLabel(day)`, `monthLabel(month)` | "Tuesday, 1 December 2026", "December 2026" |
+| `addDays(day, n)`, `addMonths(day, n)` | Day maths; `addMonths` keeps inside the month (31 Jan plus one is 28 Feb) |
+| `moveFocus(day, key, shiftKey)` | The day an arrow, Home, End or Page key moves to |
+| `isOutside(day, { min, max })` | Whether a day can't be picked |
+| `calendarKey(event, day, { min, max })` | `{ type: "move", day }`, `{ type: "pick", day }`, `{ type: "close" }` or null |
 
-export const addDays = (day: string, n: number) => toDay(new Date(toDate(day).getTime() + n * MS_PER_DAY));
+The calendar's key handler, in React:
 
-/** The same day n months on, kept inside the month: 31 Jan plus one month is 28 Feb (29 in a leap year). */
-export function addMonths(day: string, n: number) {
-  const [y, m, d] = day.split("-").map(Number);
-  const index = y * MONTHS_PER_YEAR + (m - 1) + n;
-  const year = Math.floor(index / MONTHS_PER_YEAR);
-  const month = (index % MONTHS_PER_YEAR) + 1;
-  return `${year}-${pad(month)}-${pad(Math.min(d, daysInMonth(year, month)))}`;
-}
+```tsx
+import { calendarKey } from "@jameswilson1996/ui-tokens/days.js";
 
-/** A month's weeks, Monday first; null pads the first and last week. month is "YYYY-MM". */
-export function monthGrid(month: string): (string | null)[][] {
-  const [y, m] = month.split("-").map(Number);
-  const cells: (string | null)[] = Array(weekdayIndex(`${month}-01`)).fill(null);
-  for (let d = 1; d <= daysInMonth(y, m); d++) cells.push(`${month}-${pad(d)}`);
-  while (cells.length % DAYS_PER_WEEK) cells.push(null);
-  return Array.from({ length: cells.length / DAYS_PER_WEEK }, (_, w) => cells.slice(w * DAYS_PER_WEEK, (w + 1) * DAYS_PER_WEEK));
-}
-
-/** Where a key moves the focused day, or null for keys the grid leaves alone. */
-export function moveFocus(day: string, key: string, shiftKey = false): string | null {
-  switch (key) {
-    case "ArrowLeft": return addDays(day, -1);
-    case "ArrowRight": return addDays(day, 1);
-    case "ArrowUp": return addDays(day, -DAYS_PER_WEEK);
-    case "ArrowDown": return addDays(day, DAYS_PER_WEEK);
-    case "Home": return addDays(day, -weekdayIndex(day));
-    case "End": return addDays(day, DAYS_PER_WEEK - 1 - weekdayIndex(day));
-    case "PageUp": return addMonths(day, shiftKey ? -MONTHS_PER_YEAR : -1);
-    case "PageDown": return addMonths(day, shiftKey ? MONTHS_PER_YEAR : 1);
-    default: return null;
+const onKeyDown = (e: React.KeyboardEvent<HTMLTableElement>) => {
+  const action = calendarKey(e, focused, { min, max });
+  if (!action) return;
+  e.preventDefault();
+  if (action.type === "move") setFocused(action.day); // a layout effect focuses the cell with that data-day; its month shows when it's another
+  if (action.type === "pick") pick(action.day); // fill the field, close, return focus to the calendar button
+  if (action.type === "close") {
+    e.stopPropagation(); // so a dialog round the field stays open
+    close();
   }
-}
-
-/** "Tuesday, 1 December 2026", what a screen reader reads for a day. */
-export const dayLabel = (day: string) =>
-  new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(toDate(day));
-
-/** "December 2026", the calendar's heading. */
-export const monthLabel = (month: string) =>
-  new Intl.DateTimeFormat(LOCALE, { timeZone: "UTC", month: "long", year: "numeric" }).format(toDate(`${month}-01`));
-
-/**
- * A typed date as "YYYY-MM-DD", or null when it isn't one. Day first, as in the UK:
- * "today", "tomorrow", "2026-12-01", "1/12/2026", "1/12/26", "1/12", "1 Dec", "1 December 2026".
- * Without a year it is the next such day on or after today, so "1 Jan" typed in November is next January.
- */
-export function parseDay(text: string, today: string): string | null {
-  const t = text.trim().toLowerCase().replace(/,/g, "");
-  if (t === "today") return today;
-  if (t === "tomorrow") return addDays(today, 1);
-  let y: number | undefined, m: number, d: number;
-  let match = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (match) [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  else if ((match = t.match(/^(\d{1,2})[/.-](\d{1,2})(?:[/.-](\d{2}|\d{4}))?$/))) [d, m, y] = [Number(match[1]), Number(match[2]), match[3] ? fullYear(match[3]) : undefined];
-  else if ((match = t.match(/^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+)(?:\s+(\d{4}))?$/))) {
-    // "Dec", "Decem" and "December" all count; "Decx" doesn't.
-    const word = match[2];
-    const month = word.length < MONTH_ABBREVIATION_LENGTH ? 0 : MONTHS.findIndex((name) => name.startsWith(word)) + 1;
-    if (!month) return null;
-    [d, m, y] = [Number(match[1]), month, match[3] ? Number(match[3]) : undefined];
-  } else return null;
-  if (y === undefined) {
-    // The first year from this one in which that day exists and isn't past: 29 Feb can be up to 8 years away.
-    const thisYear = Number(today.slice(0, 4));
-    for (let year = thisYear; year <= thisYear + LEAP_YEAR_SEARCH; year++) {
-      if (isRealDay(year, m, d) && `${year}-${pad(m)}-${pad(d)}` >= today) return `${year}-${pad(m)}-${pad(d)}`;
-    }
-    return null;
-  }
-  return isRealDay(y, m, d) ? `${y}-${pad(m)}-${pad(d)}` : null;
-}
+};
 ```
 
-Tests for these run as unit tests with no DOM: "1 Jan" typed on 8 November 2026 is `"2027-01-01"`, "29 Feb" is `"2028-02-29"`, "31/4/2026" and "1 Decx" are null, `addMonths("2026-01-31", 1)` is `"2026-02-28"`, and December 2026's first week starts on Tuesday the 1st.
+The package's tests cover the forms above, the field's weekday form, "1 Jan" typed on 8 November 2026 as `"2027-01-01"`, "29 Feb" as `"2028-02-29"`, "31/4/2026" and "1 Decx" as null, `addMonths("2026-01-31", 1)` as `"2026-02-28"`, both clock-change days, December 2026's first week starting on Tuesday the 1st, and every key.
 
 Example markup (December 2026, the 1st chosen, today the 8th of November so no ring in this month):
 
@@ -587,6 +512,52 @@ Example markup:
 </div>
 ```
 
+## Fold
+
+A section heading that folds its section: a card on an overview, a settings group, the "Picked up" list under a shopping list (#79). The same control as a board column's toggle, on any heading.
+
+`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id`.
+
+- The button has `type="button"`, `aria-expanded` and `aria-controls` pointing at the body, and holds a 16px Lucide `chevron-down` (`aria-hidden="true"`) before the heading text. The heading keeps its level, so the page's outline and screen reader heading lists stay right; the button takes the heading's font and sits flush with where the text would start.
+- Folded: `aria-expanded="false"` and `hidden` on the body. The chevron turns -90deg over `motion-quick`, so reduced motion shows no turn; the body shows and hides at once.
+- An action beside the heading (All bills, Clear) stays visible and usable while the section is folded.
+- The button is 32px tall with a pointer and 44px on a phone or touch screen.
+- Fold state is per device, in local storage, never on the server. Each app picks each section's default (open unless the section is long and rarely needed, like "Picked up"). Wrap storage reads and writes in `try`, so a blocked store falls back to the default.
+
+```tsx
+// Remembers a section's fold on this device; falls back to the default when storage is blocked.
+export function useFold(key: string, openByDefault = true) {
+  const storageKey = `fold:${key}`;
+  const [open, setOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      return saved === null ? openByDefault : saved === "open";
+    } catch {
+      return openByDefault;
+    }
+  });
+  const toggle = () =>
+    setOpen((was) => {
+      try { localStorage.setItem(storageKey, was ? "folded" : "open"); } catch { /* the fold still works for this visit */ }
+      return !was;
+    });
+  return { open, toggle };
+}
+```
+
+Example markup:
+
+```html
+<section class="ls-card" aria-labelledby="due-title">
+<div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="due-title"><button class="ls-fold" type="button" aria-expanded="true" aria-controls="due-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Due in the next 30 days</button></h2><a href="#">All bills</a></div>
+<div id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
+</section>
+<section class="ls-card" aria-labelledby="picked-title">
+<div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="picked-title"><button class="ls-fold" type="button" aria-expanded="false" aria-controls="picked-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Picked up</button></h2><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button">Clear</button></div>
+<div id="picked-body" hidden><p>Milk, Bread</p></div>
+</section>
+```
+
 ## List
 
 Rows of things you act on in place: bills due, shopping items, household members, today's meals. Use a list when each row has its own action; use an `ls-table` when people compare values across columns.
@@ -599,7 +570,8 @@ Rows of things you act on in place: bills due, shopping items, household members
 
 Actions (decided 8 November, #23): every row shows its one main action as a visible control, on touch and desktop alike. The main action is the lead checkbox or one `ls-btn ls-btn--sm` in the end ("Mark paid"). Everything else is in the row's dialog, or under an `ls-btn--ghost` More button with `aria-label="More for Council tax"` opening an `ls-popover--menu`. No swipe actions.
 
-- Rows are 56px tall at least. On a phone the end stacks the value over the action, and end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- Rows are 56px tall at least. A list 640px wide or less stacks each row's end, the value over the action, by its own width (a container query on `ls-list`), so a list in a narrow card or dialog on a wide screen stacks as it does on a phone (#78). Don't add your own override. On a phone end buttons are 36px with a 44px hit area; lead checkboxes and handles are 44px.
+- The list is a size container, so it takes its width from where it sits and never from its rows: in a flex row or grid give it a width (`flex: 1`, a column), or it collapses.
 - Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
 - Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
 - Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities. A toast with Undo confirms the change.
@@ -710,6 +682,7 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 - Above 640px: `ls-nav` (`nav-width`, 220px) on the left, sticky so it stays in view, then `main.ls-main`. The page is left-aligned beside the sidebar and capped at `content-width` (1040px), so list rows and lines stay readable. A board or wide table uses `ls-main ls-main--wide` for the full width.
 - 640px and below: one column with `page-gutter` (16px) plus the safe area on each side. With an `ls-tabbar`, the sidebar is hidden and the bar takes over.
 - `main.ls-main` has `id="main"` and `tabindex="-1"`, as the skip link's target.
+- Page motion (decided 9 November): when the page changes, only `main.ls-main` moves. The bundle captures it on its own (`view-transition-name: ls-page`) and runs every navigation motion on it: fade through, the tab panel's fade, and the drill slide. Everything outside it is the shell and stays still with nothing to add: the sidebar with the app's name, `ls-nav` and the account, the `ls-tabbar`, `ls-toasts`, and anything else the app puts beside them. The current place in the sidebar or tab bar changes at once. Keep the whole page, page header included, inside `ls-main`; content outside it changes at once with no motion. `ls-main` paints `--bg`, so a sliding page covers the one beneath. Dialogs, sheets, popovers and toasts keep their own motion.
 
 ```html
 <body>
@@ -766,6 +739,55 @@ router.subscribe("onResolved", ({ fromLocation, toLocation }) => {
 });
 ```
 
+### Navigation motion
+
+Every navigation between pages takes its motion from where it lands, never from where the link sits, so a link from one module to another moves the same way as the tab bar (brand book Motion pattern 4). The router chooses it once for every link and for Back and Forward; links don't pass their own types.
+
+Each route says where it sits in `staticData`: its top-level `place` (`"budget"`, matching its tab bar item) and its `depth`, 0 for the place's own pages and tabs and 1 for a page one level down (a bill, a board). `navigationMotion(from, to)` from `@jameswilson1996/ui-tokens/motion.js` turns two of those into the view transition type:
+
+| From → to | Type | Seen as |
+| --- | --- | --- |
+| Another place, at any depth (the tab bar, Today's "All bills", a shopping item's meal, Back from any of them) | `ls-switch` | Fade through |
+| Deeper in the same place | `ls-drill` | Slides in over the old page from the right |
+| Shallower in the same place (the page header's back link, Back) | `ls-back` | Slides off to the right, showing the parent |
+| Another of the place's own pages (its tabs) | `ls-tab` | Only the `ls-tab-panel` fades through |
+| Another page at the same depth below them (one bill to the next) | `ls-switch` | Fade through |
+
+- A link into another place never drills, even when it lands on a page one level down (Today's "Kitchen snagging" card opening the board): a slide promises that Back returns to the page underneath, and that page belongs to another place. The page header there still shows its own place's back link ("Projects"), which goes back with `ls-back`.
+- A link to one record in another place lands on the page that lists it, fades through, then points at its row: scrolled into view and marked with `ls-flash` (pattern 5). It doesn't open that place's dialog over a page the user hasn't seen. Inside a place, record details still open in a dialog (see Dialog).
+- Changes to the search params only (a dialog's param, a filter, a stepper's period) take no page motion from the router: dialogs and filters have their own, and the stepper's links pass `viewTransition={{ types: ["ls-tab"] }}` themselves.
+- Without a router, call `switchView`, `switchPanel` or `drillView` with the type `navigationMotion` gives.
+
+```ts
+import { createRouter, type ParsedLocation } from "@tanstack/react-router";
+import { navigationMotion, type PagePlace } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Every page route sets both; layout routes leave them out.
+declare module "@tanstack/react-router" {
+  interface StaticDataRouteOption {
+    title?: string;
+    place?: string; // the tab bar item this page belongs to
+    depth?: number; // 0 for the place's own pages and tabs, 1 one level down
+  }
+}
+
+// The deepest matched route's place and depth: the page's own route.
+const pageAt = (location: ParsedLocation): PagePlace => {
+  const { place = "", depth = 0 } = router.matchRoutes(location).at(-1)?.staticData ?? {};
+  return { place, depth };
+};
+
+export const router = createRouter({
+  routeTree,
+  scrollRestoration: true,
+  // Runs for every link, navigate() call, and Back and Forward.
+  defaultViewTransition: {
+    types: ({ fromLocation, toLocation, pathChanged }) =>
+      fromLocation && pathChanged ? [navigationMotion(pageAt(fromLocation), pageAt(toLocation))] : false,
+  },
+});
+```
+
 ## Nav
 
 The app's primary sidebar. `nav.ls-nav > a.ls-nav__item`, an 18px Lucide icon then the label; the current page has `aria-current="page"`.
@@ -791,9 +813,9 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. Each tab keeps its own scroll position and state where the router allows.
+- Switching tabs fades the page through (brand book Motion pattern 4, decided 9 November): the old page fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. The tab bar itself never moves; its current item changes at once. Each tab keeps its own scroll position and state where the router allows.
 - Within a place (a page's `ls-tabs`, the board's column tabs, a stepper's period) the page holds still and only the content below the tabs fades through, with no scale (decided 9 November, since fading the whole screen to change Overview to Bills was jarring). Wrap that content in `div.ls-tab-panel`, once per page, and mark the navigation `ls-tab`. The bundle names the panel only during an `ls-tab` transition. Without a panel the page swaps at once.
-- Mark these navigations with the `ls-switch` view transition type; the bundle animates only those. With TanStack Router, pass `viewTransition={{ types: ["ls-switch"] }}` on the `<Link>` (or to `navigate`). Without a router, use `switchView`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
+- The router marks these navigations with the `ls-switch` view transition type, and an `ls-tab` within a place, from each route's place and depth (see Navigation motion in App shell); the bundle animates only those. Without a router, use `switchView` and `switchPanel`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. Only `main.ls-main` moves (see Page motion in App shell), so the tab bar, sidebar and toasts stay still with nothing to add.
 
 ```ts
 // Fades through to the next tab; update swaps the content. Falls back to an instant swap.
@@ -831,6 +853,7 @@ Adds items one after another without leaving the keyboard: the shopping list, a 
 `form.ls-quickadd` holds `div.ls-quickadd__row` (an `input.ls-input` with an `aria-label` and `enterkeyhint="done"`, then a `button.ls-btn.ls-btn--primary[type=submit]` "Add") and, optionally, `div.ls-quickadd__suggestions` with `span.ls-quickadd__label` ("Bought before") and `button.ls-chip` per suggestion.
 
 - Enter or Add submits. The field clears at once and keeps focus, before the server answers, so the next item can be typed straight away. If the command fails, the text comes back into the field with the error in a help line. Never disable the field while a command is in flight: text typed during the wait belongs to the next item.
+- The error (#80): `p.ls-help` straight after `ls-quickadd__row`, before `ls-quickadd__suggestions`, with the problem+json message ("Couldn't add Milk. Try again."). Set `data-invalid` on the form, and `aria-invalid="true"` and `aria-describedby` on the input; the input gets the `danger` border and the help line `danger-ink`, as in Field. Render the help line only while there is an error, and clear all three on the next submit.
 - Each submit is its own command with its own client-made id and `Idempotency-Key`, so items typed quickly arrive as separate items and a retry is safe.
 - The new item appears in the list in place with `ls-enter`. No toast when the new row is on screen; a toast with Undo when it lands somewhere out of view.
 - Suggestions: at most 8 chips with a 16px Lucide `plus`, from the API (items bought before, most frequent first). Tapping one adds it at once and the chip goes. They wrap onto as many lines as they need; this is not a filter bar.
@@ -859,6 +882,15 @@ Example markup:
 <form class="ls-quickadd">
 <div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" placeholder="Add an item" enterkeyhint="done" autocomplete="off"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
 <div class="ls-quickadd__suggestions"><span class="ls-quickadd__label">Bought before</span><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Milk</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bread</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Bananas</button><button class="ls-chip" type="button"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Washing-up liquid</button></div>
+</form>
+```
+
+After a failed add:
+
+```html
+<form class="ls-quickadd" data-invalid>
+<div class="ls-quickadd__row"><input class="ls-input" aria-label="Add an item" value="Milk" enterkeyhint="done" autocomplete="off" aria-invalid="true" aria-describedby="add-error"><button class="ls-btn ls-btn--primary" type="submit">Add</button></div>
+<p class="ls-help" id="add-error">Couldn't add Milk. Try again.</p>
 </form>
 ```
 
@@ -997,8 +1029,8 @@ A modal window over the current page. Record details (a bill, a transaction) and
 
 `dialog.ls-dialog` opened with `showModal()`, holding `header.ls-dialog__header` (an `h2.ls-dialog__title` and a close button), `div.ls-dialog__body` and an optional `footer.ls-dialog__foot` for actions.
 
-- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet.
-- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
+- Sizes: default `dialog-md` (560px) for details and short forms, `ls-dialog--sm` (400px) for confirmations, `ls-dialog--lg` (800px) for lists and tables. At 640px wide and below every size fills the screen, except a sheet; a confirm is always a sheet.
+- Sheet (`ls-dialog--sheet`): on a phone, a short form or picker rises as a bottom sheet with the page still in view above it. Use it for confirms (Confirm and Unsaved changes below), pickers, filters, Move to, and forms of up to 4 fields (Change income, a meal slot). Anything longer, such as Add bill with More open, stays full screen. Above 640px a sheet is the centred dialog at its size class. See Sheet below.
 - The body scrolls and the header and foot stay in view. The page behind does not scroll while the dialog is open.
 - Consumer provides: `aria-labelledby` pointing at the title, a close button with `aria-label="Close"` and a 16px Lucide `x` icon, and actions in the foot with the primary first, as in `ls-form__actions`. A form inside the body is an `ls-form`; its submit button sits in the foot with `form="<form id>"`.
 - Open state lives in the URL as a search param (`?bill=<id>`, Zod-validated), so a reload or a shared link reopens it. Opening pushes a history entry, and Back closes the dialog.
@@ -1013,14 +1045,15 @@ A modal window over the current page. Record details (a bill, a transaction) and
 Deleting or anything else that can't be put back (decided 8 November, #51):
 
 - When the API can restore the item, don't ask: delete at once and offer Undo in the toast ("Gym deleted · Undo"). Undo sends the restore command.
-- When it can't (a whole board, a household, anything permanent), confirm first in an `ls-dialog ls-dialog--sm`:
+- When it can't (a whole board, a household, anything permanent), confirm first in an `ls-dialog ls-dialog--sm ls-dialog--sheet` (#84): small and centred on desktop, and on a phone a sheet as tall as its content, so the page or form it asks about stays in view above it. It carries the sheet's `ls-dialog__handle` and `dragToClose`, and a drag down cancels.
   - Title: the action and the item, as a question: "Delete Kitchen snagging?"
   - Body: one sentence on what is lost and what stays: "Its 12 cards go too. This can't be undone."
   - Foot: an `ls-btn--danger` that repeats the verb and names the thing ("Delete board"), then Cancel. Cancel has `autofocus`, so Enter never deletes by accident. Escape and the backdrop cancel.
 - Never "Are you sure?", and never OK and Cancel as the buttons.
 
 ```html
-<dialog class="ls-dialog ls-dialog--sm" id="delete-board" aria-labelledby="delete-board-title" closedby="any">
+<dialog class="ls-dialog ls-dialog--sm ls-dialog--sheet" id="delete-board" aria-labelledby="delete-board-title" closedby="any">
+<div class="ls-dialog__handle" aria-hidden="true"></div>
 <header class="ls-dialog__header"><h2 class="ls-dialog__title" id="delete-board-title">Delete Kitchen snagging?</h2><form method="dialog"><button class="ls-btn ls-btn--ghost ls-dialog__close" aria-label="Close"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></form></header>
 <div class="ls-dialog__body"><p>Its 12 cards go too. This can't be undone.</p></div>
 <footer class="ls-dialog__foot"><button class="ls-btn ls-btn--danger" type="button">Delete board</button><form method="dialog"><button class="ls-btn" autofocus>Cancel</button></form></footer>
@@ -1029,7 +1062,7 @@ Deleting or anything else that can't be put back (decided 8 November, #51):
 
 ### Unsaved changes
 
-Leaving a form with changes that weren't saved asks first (#52), with the same confirm: "Leave without saving?", "Your changes to Council tax will be lost.", then `ls-btn--danger` "Discard changes" and "Keep editing" (with `autofocus`).
+Leaving a form with changes that weren't saved asks first (#52), with the same confirm (a sheet on a phone, so the form stays in view): "Leave without saving?", "Your changes to Council tax will be lost.", then `ls-btn--danger` "Discard changes" and "Keep editing" (with `autofocus`).
 
 - Ask only when a field differs from what was loaded. A saved or untouched form leaves without asking.
 - In-app navigation, Back and closing the form's dialog go through TanStack Router's `useBlocker` with `shouldBlockFn` reading the form's `isDirty`, so the app's own dialog asks. Closing the tab or reloading uses `beforeunload`, where the browser shows its own wording.
@@ -1193,7 +1226,7 @@ The top of every page, laid out the same everywhere: the area name or a back lin
 `header.ls-page-header` holds `div.ls-page-header__main` (with `div.ls-page-header__heading` and `div.ls-page-header__actions`) and optional tabs, `div.ls-tabs.ls-page-header__tabs`.
 
 - Area: `span.ls-page-header__area` with the top-level place ("Budget"), or `a.ls-page-header__area` with a 16px Lucide `chevron-left` and the parent's name ("Projects") on a page one level down.
-- Going one level down and back (brand book Motion pattern 4): mark the link into the page with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. On a phone the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base`; on wider screens the new page fades in from 8px right over `motion-base` and Back fades it out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still. With TanStack Router, pass `viewTransition={{ types: ["ls-drill"] }}` on the link in and `["ls-back"]` on the back link. Without a router, use `drillView`.
+- Going one level down and back (brand book Motion pattern 4): the link into the page moves with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. The router picks them from each route's depth (see Navigation motion in App shell), so a link arriving from another place fades through instead. At every width the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base` (decided 9 November); only `ls-main` moves, so the sidebar and tab bar stay put beside it. Without a router, use `drillView`.
 
 ```ts
 // Moves to a page one level down ("in") or back to its parent ("back"); update swaps the content. Falls back to an instant swap.
@@ -1498,8 +1531,8 @@ The drag code ships in `@jameswilson1996/ui-tokens/motion.js`, with types. Impor
 - `capture(listOrElements, exclude?)` and `slideFrom(captured)`: the same slide in two steps, for when the app doesn't move the DOM itself. In React, call `capture` before the state change and `slideFrom` in a layout effect; key the rows by id so React keeps their elements.
 - `settle(held, drop)`: on release, `drop()` takes the item out of `ls-lifted` and puts it where the slot was, and the item slides from where it was let go into its place over `motion-base`.
 - `pressToLift(card, lift)`: for cards with no handle. A mouse (main button) lifts at once; touch lifts after 350ms with a 15ms vibration, and moving more than 8px first cancels it, since the finger is scrolling. Returns a function that removes it.
-- `scrollNearEdge(scroller, { x, y })`: while the pointer is within 48px of an edge of the scroller's visible part, scrolls it that way on either axis, faster the nearer the edge; returns whether it scrolled. Pass `document.scrollingElement` for the page.
-- `scrollWhileHeld(scrollers, pointer, onScroll)`: from pick-up to release, runs `scrollNearEdge` on every animation frame for each scroller with the pointer's last position, so it keeps scrolling while the pointer rests, and calls `onScroll` to place the slot again after a scroll. Pass the list or board when it scrolls itself, then `document.scrollingElement`, so a row held near the top or bottom of the screen scrolls a long `ls-list` or a tall column. Returns a function that stops it. Edge scrolling runs under reduced motion, because the user is moving it.
+- `scrollNearEdge(scroller, { x, y }, insets?)`: while the pointer is within 48px of an edge of the scroller's visible part, scrolls it that way on either axis, faster the nearer the edge; returns whether it scrolled. Pass `document.scrollingElement` for the page. The visible part is where the content actually shows (#83): above a fixed `ls-tabbar` and below the page header's tab row while it is stuck to the top (a board's column tabs on a phone). So a held row scrolls the page down before it reaches the tab bar, and over a stuck tab it doesn't scroll, since holding there is for the tab. For another bar the app keeps on screen, pass `insets` (`{ top, bottom }` in px from the viewport's edges).
+- `scrollWhileHeld(scrollers, pointer, onScroll, insets?)`: from pick-up to release, runs `scrollNearEdge` on every animation frame for each scroller with the pointer's last position, so it keeps scrolling while the pointer rests, and calls `onScroll` to place the slot again after a scroll. Pass the list or board when it scrolls itself, then `document.scrollingElement`, so a row held near the top or bottom of the screen scrolls a long `ls-list` or a tall column. Returns a function that stops it. Edge scrolling runs under reduced motion, because the user is moving it.
 
 ```ts
 import { moveSlot, settle, scrollWhileHeld, type Point } from "@jameswilson1996/ui-tokens/motion.js";

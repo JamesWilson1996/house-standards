@@ -22,7 +22,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 
 /* ---------- Button ---------- */
 .ls-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-4);
-  font: 600 13px/16px var(--font-sans); border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
+  font: 600 13px/16px var(--font-sans); text-decoration: none; border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
   background: var(--surface); color: var(--ink); border-color: var(--line-strong);
   transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, color var(--motion-quick) ease; }
 @media (hover: hover) { .ls-btn:hover { background: var(--surface-sunken); } }
@@ -241,6 +241,20 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-avatar { display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--radius-pill); font: 600 13px/1 var(--font-sans);
   background: var(--sage); color: var(--on-sage); }
 
+/* ---------- Fold (a section heading that folds its section; the board's column toggle on any heading) ---------- */
+.ls-fold__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
+.ls-fold__head:has(.ls-fold[aria-expanded="false"]) { margin-bottom: 0; }
+/* The heading keeps its own level and size (h2.h3, h3.ls-card__title); only its margin goes. */
+.ls-fold__title { margin: 0; min-width: 0; }
+/* Flush with the heading text: the padding the hover fill needs is taken back with a negative margin. */
+.ls-fold { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 32px; margin: 0 0 0 calc(var(--space-1) * -1); padding: 0 var(--space-2) 0 var(--space-1);
+  border: 0; border-radius: var(--radius-sm); background: none; font: inherit; color: inherit; letter-spacing: inherit; text-align: left; cursor: pointer;
+  transition: background-color var(--motion-quick) ease; }
+@media (hover: hover) { .ls-fold:hover { background: var(--surface-sunken); } }
+.ls-fold svg { flex: none; width: 16px; height: 16px; transition: rotate var(--motion-quick) var(--ease-enter); }
+.ls-fold[aria-expanded="false"] svg { rotate: -90deg; }
+@media (max-width: 640px), (pointer: coarse) { .ls-fold { min-height: 44px; } }
+
 /* ---------- List (rows that act in place: lead, title and meta, value and actions) ---------- */
 .ls-list { margin: 0; padding: 0; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
 .ls-list__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-4);
@@ -261,14 +275,19 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* Ticked: marked at once, then the app folds the row away after 400ms. */
 .ls-list__row--done .ls-list__title { color: var(--ink-muted); font-weight: 400; text-decoration: line-through; }
 .ls-list__row--leaving { overflow: hidden; animation: ls-fold var(--motion-base) var(--ease-exit) forwards; }
-@media (max-width: 640px) {
+/* A list 640px wide or less stacks its rows' ends by its own width, so one in a narrow card on a wide screen stacks as it does on a phone.
+   The list is the container (no layout containment, so a lifted row's position: fixed still measures from the viewport). */
+.ls-list { container: ls-list / inline-size; }
+@container ls-list (max-width: 640px) {
   .ls-list__row { padding: var(--space-2) var(--space-3); }
   .ls-list__end { flex-direction: column; align-items: flex-end; gap: var(--space-1); }
+  .ls-list__lead > .ls-check { margin-left: calc(var(--space-2) * -1); }
+  .ls-list__lead > .ls-drag-handle { margin-left: calc(var(--space-2) * -1); }
+}
+@media (max-width: 640px) {
   /* 36px buttons with a 44px hit area, so a row stays compact. */
   .ls-list__end .ls-btn { height: 36px; }
   .ls-list__end .ls-btn::after { content: ""; position: absolute; inset: -4px 0; }
-  .ls-list__lead > .ls-check { margin-left: calc(var(--space-2) * -1); }
-  .ls-list__lead > .ls-drag-handle { margin-left: calc(var(--space-2) * -1); }
 }
 
 /* ---------- Date chip (a day in a list row) ---------- */
@@ -395,6 +414,10 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-quickadd__row > .ls-btn { flex: none; }
 .ls-quickadd__suggestions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); }
 .ls-quickadd__label { font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+/* A failed add: the help line sits right under the row, and data-invalid on the form marks it as ls-field[data-invalid] does. */
+.ls-quickadd__row + .ls-help { margin-top: calc(var(--form-help-gap) - var(--space-3)); }
+.ls-quickadd[data-invalid] .ls-quickadd__row > .ls-input { border-color: var(--danger); }
+.ls-quickadd[data-invalid] .ls-help { color: var(--danger-ink); }
 
 /* ---------- Filter bar and chips (one row above a list: scope, search, active filters, Filter, count) ---------- */
 .ls-filterbar { display: flex; align-items: center; gap: var(--space-2) var(--space-3); margin-bottom: var(--space-4); }
@@ -711,56 +734,47 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-pulse { 50% { opacity: 0.45; } }
 @keyframes ls-spin { to { rotate: 1turn; } }
 
-/* Switching tabs, top-level places or a stepper's period fades through (decided 9 November): the old view fades out over motion-quick, then
-   the new one fades in and grows from 96% over motion-base, so two pages never show at once. Apps mark these navigations ls-switch. The rules
-   are unscoped, so a browser without view transition types (Safari 18.0 and 18.1) fades through on every view transition, and reduced
-   motion makes it 0ms there too; ls-drill and ls-back override them where types work. */
+/* Navigation moves only the page (decided 9 November): main.ls-main is captured on its own as ls-page and carries every page motion below.
+   Everything outside it is the shell (the sidebar with its brand, nav and account, the tab bar, toasts, and anything else an app puts
+   there) and stays still with no naming, so an app can't leave part of its frame moving by accident. The shell's snapshot swaps at once,
+   so a new current place in the nav or tab bar shows straight away. The page paints its own background, so a page sliding over another
+   hides the one beneath.
+   Switching places fades the page through: the old page fades out over motion-quick, then the new one fades in and grows from 96% over
+   motion-base, so two pages never show at once. These rules are unscoped, so a browser without view transition types (Safari 18.0 and
+   18.1) fades through on every view transition, and reduced motion makes it 0ms there too; ls-tab, ls-drill and ls-back override them. */
 @keyframes ls-fade-out { to { opacity: 0; } }
 @keyframes ls-fade-through { from { opacity: 0; scale: 0.96; } }
-::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
-::view-transition-new(root) { animation: ls-fade-through var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
+.ls-main { view-transition-name: ls-page; background: var(--bg); }
+::view-transition-group(root) { animation: none; }
+::view-transition-old(root) { animation: none; opacity: 0; }
+::view-transition-new(root) { animation: none; }
+::view-transition-old(ls-page) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
+::view-transition-new(ls-page) { animation: ls-fade-through var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
 /* The group ends with the fade in, so the page takes the next tap after 270ms rather than whenever the browser's default ends. */
-::view-transition-group(root) { animation-duration: calc(var(--motion-quick) + var(--motion-base)); }
-
-/* The sidebar, tab bar and toasts are captured on their own, so they stay still while the page changes under them. */
-.ls-nav { view-transition-name: ls-nav; }
-.ls-tabbar { view-transition-name: ls-tabbar; }
-.ls-toasts { view-transition-name: ls-toasts; }
-::view-transition-group(ls-nav), ::view-transition-group(ls-tabbar), ::view-transition-group(ls-toasts),
-::view-transition-old(ls-nav), ::view-transition-new(ls-nav),
-::view-transition-old(ls-tabbar), ::view-transition-new(ls-tabbar),
-::view-transition-old(ls-toasts), ::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
+::view-transition-group(ls-page) { animation-duration: calc(var(--motion-quick) + var(--motion-base)); }
 
 /* Within a place (a page's tabs, the board's column tabs, a stepper's period), apps mark the navigation ls-tab and wrap the part that
-   changes in ls-tab-panel. The header and tabs stay put; only the panel fades through, with no scale. The panel is named only during an
+   changes in ls-tab-panel. The page header and tabs stay put; only the panel fades through, with no scale. The panel is named only during an
    ls-tab transition, so between places it fades with the page. Without a panel the page swaps at once. */
 html:active-view-transition-type(ls-tab) .ls-tab-panel { view-transition-name: ls-tab-panel; }
-html:active-view-transition-type(ls-tab)::view-transition-old(root) { animation: none; opacity: 0; }
-html:active-view-transition-type(ls-tab)::view-transition-new(root) { animation: none; }
-html:active-view-transition-type(ls-tab)::view-transition-group(root) { animation: none; }
+html:active-view-transition-type(ls-tab)::view-transition-old(ls-page) { animation: none; opacity: 0; }
+html:active-view-transition-type(ls-tab)::view-transition-new(ls-page) { animation: none; }
+html:active-view-transition-type(ls-tab)::view-transition-group(ls-page) { animation: none; }
 ::view-transition-group(ls-tab-panel) { animation: none; } /* takes the new panel's size at once; the old one fades out over it */
 ::view-transition-old(ls-tab-panel) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
 ::view-transition-new(ls-tab-panel) { animation: ls-fade var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
 
-/* Opening something one level down (ls-drill) and Back (ls-back). On wider screens the content moves 8px, the same distance a dialog rises:
-   drilling in, the new view fades in from 8px right; Back, the old view fades out 8px to the right as the parent fades in. */
-@keyframes ls-nudge-in { from { opacity: 0; translate: 8px 0; } }
-@keyframes ls-nudge-out { to { opacity: 0; translate: 8px 0; } }
+/* Opening something one level down (ls-drill) and Back (ls-back), the same at every width (decided 9 November): the new page slides over
+   the old one from the right edge in motion-travel, and Back slides it off again in motion-base to show the parent underneath. Only the
+   page moves; the sidebar and tab bar sit outside ls-main and stay put. */
 @keyframes ls-slide-in { from { translate: 100% 0; } }
 @keyframes ls-slide-out { to { translate: 100% 0; } }
-html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-nudge-in var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-back)::view-transition-old(root) { animation: ls-nudge-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: ls-fade var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-drill, ls-back)::view-transition-group(root) { animation-duration: var(--motion-base); }
-/* On a phone the new screen slides over the old one from the right edge, and Back slides it off again to show the parent underneath. */
-@media (max-width: 640px) {
-  html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-slide-in var(--motion-travel) var(--ease-enter) both; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-drill)::view-transition-group(root) { animation-duration: var(--motion-travel); }
-  html:active-view-transition-type(ls-back)::view-transition-old(root) { z-index: 1; animation: ls-slide-out var(--motion-base) var(--ease-exit) both; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-}
+html:active-view-transition-type(ls-drill)::view-transition-old(ls-page) { animation: none; }
+html:active-view-transition-type(ls-drill)::view-transition-new(ls-page) { animation: ls-slide-in var(--motion-travel) var(--ease-enter) both; }
+html:active-view-transition-type(ls-drill)::view-transition-group(ls-page) { animation-duration: var(--motion-travel); }
+html:active-view-transition-type(ls-back)::view-transition-old(ls-page) { z-index: 1; animation: ls-slide-out var(--motion-base) var(--ease-exit) both; }
+html:active-view-transition-type(ls-back)::view-transition-new(ls-page) { animation: none; }
+html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { animation-duration: var(--motion-base); }
 
 /* A new row or item appearing in place, and the same item leaving: it fades and drops 8px, then the app removes it after afterLeaving(). */
 .ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }
