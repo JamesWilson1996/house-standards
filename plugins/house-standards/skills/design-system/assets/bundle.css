@@ -734,56 +734,47 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-pulse { 50% { opacity: 0.45; } }
 @keyframes ls-spin { to { rotate: 1turn; } }
 
-/* Switching tabs, top-level places or a stepper's period fades through (decided 9 November): the old view fades out over motion-quick, then
-   the new one fades in and grows from 96% over motion-base, so two pages never show at once. Apps mark these navigations ls-switch. The rules
-   are unscoped, so a browser without view transition types (Safari 18.0 and 18.1) fades through on every view transition, and reduced
-   motion makes it 0ms there too; ls-drill and ls-back override them where types work. */
+/* Navigation moves only the page (decided 9 November): main.ls-main is captured on its own as ls-page and carries every page motion below.
+   Everything outside it is the shell (the sidebar with its brand, nav and account, the tab bar, toasts, and anything else an app puts
+   there) and stays still with no naming, so an app can't leave part of its frame moving by accident. The shell's snapshot swaps at once,
+   so a new current place in the nav or tab bar shows straight away. The page paints its own background, so a page sliding over another
+   hides the one beneath.
+   Switching places fades the page through: the old page fades out over motion-quick, then the new one fades in and grows from 96% over
+   motion-base, so two pages never show at once. These rules are unscoped, so a browser without view transition types (Safari 18.0 and
+   18.1) fades through on every view transition, and reduced motion makes it 0ms there too; ls-tab, ls-drill and ls-back override them. */
 @keyframes ls-fade-out { to { opacity: 0; } }
 @keyframes ls-fade-through { from { opacity: 0; scale: 0.96; } }
-::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
-::view-transition-new(root) { animation: ls-fade-through var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
+.ls-main { view-transition-name: ls-page; background: var(--bg); }
+::view-transition-group(root) { animation: none; }
+::view-transition-old(root) { animation: none; opacity: 0; }
+::view-transition-new(root) { animation: none; }
+::view-transition-old(ls-page) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
+::view-transition-new(ls-page) { animation: ls-fade-through var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
 /* The group ends with the fade in, so the page takes the next tap after 270ms rather than whenever the browser's default ends. */
-::view-transition-group(root) { animation-duration: calc(var(--motion-quick) + var(--motion-base)); }
-
-/* The sidebar, tab bar and toasts are captured on their own, so they stay still while the page changes under them. */
-.ls-nav { view-transition-name: ls-nav; }
-.ls-tabbar { view-transition-name: ls-tabbar; }
-.ls-toasts { view-transition-name: ls-toasts; }
-::view-transition-group(ls-nav), ::view-transition-group(ls-tabbar), ::view-transition-group(ls-toasts),
-::view-transition-old(ls-nav), ::view-transition-new(ls-nav),
-::view-transition-old(ls-tabbar), ::view-transition-new(ls-tabbar),
-::view-transition-old(ls-toasts), ::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
+::view-transition-group(ls-page) { animation-duration: calc(var(--motion-quick) + var(--motion-base)); }
 
 /* Within a place (a page's tabs, the board's column tabs, a stepper's period), apps mark the navigation ls-tab and wrap the part that
-   changes in ls-tab-panel. The header and tabs stay put; only the panel fades through, with no scale. The panel is named only during an
+   changes in ls-tab-panel. The page header and tabs stay put; only the panel fades through, with no scale. The panel is named only during an
    ls-tab transition, so between places it fades with the page. Without a panel the page swaps at once. */
 html:active-view-transition-type(ls-tab) .ls-tab-panel { view-transition-name: ls-tab-panel; }
-html:active-view-transition-type(ls-tab)::view-transition-old(root) { animation: none; opacity: 0; }
-html:active-view-transition-type(ls-tab)::view-transition-new(root) { animation: none; }
-html:active-view-transition-type(ls-tab)::view-transition-group(root) { animation: none; }
+html:active-view-transition-type(ls-tab)::view-transition-old(ls-page) { animation: none; opacity: 0; }
+html:active-view-transition-type(ls-tab)::view-transition-new(ls-page) { animation: none; }
+html:active-view-transition-type(ls-tab)::view-transition-group(ls-page) { animation: none; }
 ::view-transition-group(ls-tab-panel) { animation: none; } /* takes the new panel's size at once; the old one fades out over it */
 ::view-transition-old(ls-tab-panel) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
 ::view-transition-new(ls-tab-panel) { animation: ls-fade var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
 
-/* Opening something one level down (ls-drill) and Back (ls-back). On wider screens the content moves 8px, the same distance a dialog rises:
-   drilling in, the new view fades in from 8px right; Back, the old view fades out 8px to the right as the parent fades in. */
-@keyframes ls-nudge-in { from { opacity: 0; translate: 8px 0; } }
-@keyframes ls-nudge-out { to { opacity: 0; translate: 8px 0; } }
+/* Opening something one level down (ls-drill) and Back (ls-back), the same at every width (decided 9 November): the new page slides over
+   the old one from the right edge in motion-travel, and Back slides it off again in motion-base to show the parent underneath. Only the
+   page moves; the sidebar and tab bar sit outside ls-main and stay put. */
 @keyframes ls-slide-in { from { translate: 100% 0; } }
 @keyframes ls-slide-out { to { translate: 100% 0; } }
-html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-nudge-in var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-back)::view-transition-old(root) { animation: ls-nudge-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: ls-fade var(--motion-base) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-drill, ls-back)::view-transition-group(root) { animation-duration: var(--motion-base); }
-/* On a phone the new screen slides over the old one from the right edge, and Back slides it off again to show the parent underneath. */
-@media (max-width: 640px) {
-  html:active-view-transition-type(ls-drill)::view-transition-old(root) { animation: none; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-drill)::view-transition-new(root) { animation: ls-slide-in var(--motion-travel) var(--ease-enter) both; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-drill)::view-transition-group(root) { animation-duration: var(--motion-travel); }
-  html:active-view-transition-type(ls-back)::view-transition-old(root) { z-index: 1; animation: ls-slide-out var(--motion-base) var(--ease-exit) both; mix-blend-mode: normal; }
-  html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
-}
+html:active-view-transition-type(ls-drill)::view-transition-old(ls-page) { animation: none; }
+html:active-view-transition-type(ls-drill)::view-transition-new(ls-page) { animation: ls-slide-in var(--motion-travel) var(--ease-enter) both; }
+html:active-view-transition-type(ls-drill)::view-transition-group(ls-page) { animation-duration: var(--motion-travel); }
+html:active-view-transition-type(ls-back)::view-transition-old(ls-page) { z-index: 1; animation: ls-slide-out var(--motion-base) var(--ease-exit) both; }
+html:active-view-transition-type(ls-back)::view-transition-new(ls-page) { animation: none; }
+html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { animation-duration: var(--motion-base); }
 
 /* A new row or item appearing in place, and the same item leaving: it fades and drops 8px, then the app removes it after afterLeaving(). */
 .ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }

@@ -682,6 +682,7 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 - Above 640px: `ls-nav` (`nav-width`, 220px) on the left, sticky so it stays in view, then `main.ls-main`. The page is left-aligned beside the sidebar and capped at `content-width` (1040px), so list rows and lines stay readable. A board or wide table uses `ls-main ls-main--wide` for the full width.
 - 640px and below: one column with `page-gutter` (16px) plus the safe area on each side. With an `ls-tabbar`, the sidebar is hidden and the bar takes over.
 - `main.ls-main` has `id="main"` and `tabindex="-1"`, as the skip link's target.
+- Page motion (decided 9 November): when the page changes, only `main.ls-main` moves. The bundle captures it on its own (`view-transition-name: ls-page`) and runs every navigation motion on it: fade through, the tab panel's fade, and the drill slide. Everything outside it is the shell and stays still with nothing to add: the sidebar with the app's name, `ls-nav` and the account, the `ls-tabbar`, `ls-toasts`, and anything else the app puts beside them. The current place in the sidebar or tab bar changes at once. Keep the whole page, page header included, inside `ls-main`; content outside it changes at once with no motion. `ls-main` paints `--bg`, so a sliding page covers the one beneath. Dialogs, sheets, popovers and toasts keep their own motion.
 
 ```html
 <body>
@@ -747,8 +748,8 @@ Each route says where it sits in `staticData`: its top-level `place` (`"budget"`
 | From → to | Type | Seen as |
 | --- | --- | --- |
 | Another place, at any depth (the tab bar, Today's "All bills", a shopping item's meal, Back from any of them) | `ls-switch` | Fade through |
-| Deeper in the same place | `ls-drill` | Slides in from the right on a phone, nudges in on wider screens |
-| Shallower in the same place (the page header's back link, Back) | `ls-back` | The reverse |
+| Deeper in the same place | `ls-drill` | Slides in over the old page from the right |
+| Shallower in the same place (the page header's back link, Back) | `ls-back` | Slides off to the right, showing the parent |
 | Another of the place's own pages (its tabs) | `ls-tab` | Only the `ls-tab-panel` fades through |
 | Another page at the same depth below them (one bill to the next) | `ls-switch` | Fade through |
 
@@ -812,9 +813,9 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs fades through (brand book Motion pattern 4, decided 9 November): the old view fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. Each tab keeps its own scroll position and state where the router allows.
+- Switching tabs fades the page through (brand book Motion pattern 4, decided 9 November): the old page fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. The tab bar itself never moves; its current item changes at once. Each tab keeps its own scroll position and state where the router allows.
 - Within a place (a page's `ls-tabs`, the board's column tabs, a stepper's period) the page holds still and only the content below the tabs fades through, with no scale (decided 9 November, since fading the whole screen to change Overview to Bills was jarring). Wrap that content in `div.ls-tab-panel`, once per page, and mark the navigation `ls-tab`. The bundle names the panel only during an `ls-tab` transition. Without a panel the page swaps at once.
-- The router marks these navigations with the `ls-switch` view transition type, and an `ls-tab` within a place, from each route's place and depth (see Navigation motion in App shell); the bundle animates only those. Without a router, use `switchView` and `switchPanel`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. The bundle gives `ls-nav`, `ls-tabbar` and `ls-toasts` their own `view-transition-name`, so they stay still while the page changes; each appears once per page.
+- The router marks these navigations with the `ls-switch` view transition type, and an `ls-tab` within a place, from each route's place and depth (see Navigation motion in App shell); the bundle animates only those. Without a router, use `switchView` and `switchPanel`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. Only `main.ls-main` moves (see Page motion in App shell), so the tab bar, sidebar and toasts stay still with nothing to add.
 
 ```ts
 // Fades through to the next tab; update swaps the content. Falls back to an instant swap.
@@ -1225,7 +1226,7 @@ The top of every page, laid out the same everywhere: the area name or a back lin
 `header.ls-page-header` holds `div.ls-page-header__main` (with `div.ls-page-header__heading` and `div.ls-page-header__actions`) and optional tabs, `div.ls-tabs.ls-page-header__tabs`.
 
 - Area: `span.ls-page-header__area` with the top-level place ("Budget"), or `a.ls-page-header__area` with a 16px Lucide `chevron-left` and the parent's name ("Projects") on a page one level down.
-- Going one level down and back (brand book Motion pattern 4): the link into the page moves with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. The router picks them from each route's depth (see Navigation motion in App shell), so a link arriving from another place fades through instead. On a phone the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base`; on wider screens the new page fades in from 8px right over `motion-base` and Back fades it out 8px to the right in `motion-quick`. The sidebar, tab bar and toasts stay still. Without a router, use `drillView`.
+- Going one level down and back (brand book Motion pattern 4): the link into the page moves with the `ls-drill` view transition type and the back link, and the browser's Back to that parent, with `ls-back`. The router picks them from each route's depth (see Navigation motion in App shell), so a link arriving from another place fades through instead. At every width the new page slides over the old from the right in `motion-travel` and Back slides it off in `motion-base` (decided 9 November); only `ls-main` moves, so the sidebar and tab bar stay put beside it. Without a router, use `drillView`.
 
 ```ts
 // Moves to a page one level down ("in") or back to its parent ("back"); update swaps the content. Falls back to an instant swap.
