@@ -62,7 +62,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-field > .ls-btn { align-self: flex-start; }
 /* Input and action on one line, aligned to the input; label above and help below stay outside the row. */
 .ls-field__row { display: flex; align-items: flex-start; gap: var(--space-2); }
-.ls-field__row > :is(.ls-input, .ls-select) { flex: 1; min-width: 0; }
+.ls-field__row > :is(.ls-input, .ls-select, .ls-file) { flex: 1; min-width: 0; }
 .ls-field__row > .ls-btn { flex: none; }
 .ls-label { font: 600 13px/16px var(--font-sans); color: var(--ink); }
 .ls-input, .ls-select, .ls-textarea { height: 36px; padding: 0 var(--space-3); font: 400 15px/22px var(--font-sans); color: var(--ink);
@@ -334,7 +334,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-nav__item svg { width: 18px; height: 18px; flex: none; }
 
 /* ---------- Tab bar (phone navigation along the bottom edge) ---------- */
-/* Shown at 640px and below only; wider screens use ls-nav. A tab switch crossfades the page (ls-switch below); the bar itself doesn't animate. */
+/* Shown at 640px and below only; wider screens use ls-nav. A tab switch fades the page through (ls-switch below); the bar itself doesn't animate. */
 .ls-tabbar { display: none; }
 @media (max-width: 640px) {
   .ls-tabbar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; gap: var(--space-1); height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
@@ -710,27 +710,25 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 @keyframes ls-pulse { 50% { opacity: 0.45; } }
 @keyframes ls-spin { to { rotate: 1turn; } }
 
-/* Switching tabs, top-level places or a stepper's period: the old view fades out as the new one fades in over motion-quick, with no movement.
-   Only navigations started with the ls-switch view transition type use it; other view transitions keep their own animation. */
+/* Switching tabs, top-level places or a stepper's period fades through (decided 9 November): the old view fades out over motion-quick, then
+   the new one fades in and grows from 96% over motion-base, so two pages never show at once. Apps mark these navigations ls-switch. The rules
+   are unscoped, so a browser without view transition types (Safari 18.0 and 18.1) fades through on every view transition, and reduced
+   motion makes it 0ms there too; ls-drill and ls-back override them where types work. */
 @keyframes ls-fade-out { to { opacity: 0; } }
-html:active-view-transition-type(ls-switch)::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; mix-blend-mode: plus-lighter; }
-html:active-view-transition-type(ls-switch)::view-transition-new(root) { animation: ls-fade var(--motion-quick) var(--ease-enter) both; mix-blend-mode: plus-lighter; }
-/* The group ends with the fade, so the page takes the next tap after 120ms rather than the browser's 250ms. */
-html:active-view-transition-type(ls-switch)::view-transition-group(root) { animation-duration: var(--motion-quick); }
+@keyframes ls-fade-through { from { opacity: 0; scale: 0.96; } }
+::view-transition-old(root) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
+::view-transition-new(root) { animation: ls-fade-through var(--motion-base) var(--ease-enter) var(--motion-quick) both; }
+/* The group ends with the fade in, so the page takes the next tap after 270ms rather than whenever the browser's default ends. */
+::view-transition-group(root) { animation-duration: calc(var(--motion-quick) + var(--motion-base)); }
 
-/* The sidebar, tab bar and toasts are captured on their own, so they stay still while the page moves under them. */
+/* The sidebar, tab bar and toasts are captured on their own, so they stay still while the page changes under them. */
 .ls-nav { view-transition-name: ls-nav; }
 .ls-tabbar { view-transition-name: ls-tabbar; }
 .ls-toasts { view-transition-name: ls-toasts; }
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-nav),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-tabbar),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-group(ls-toasts) { animation-duration: var(--motion-quick); }
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-nav),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-nav),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-tabbar),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-tabbar),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-old(ls-toasts),
-html:active-view-transition-type(ls-switch, ls-drill, ls-back)::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
+::view-transition-group(ls-nav), ::view-transition-group(ls-tabbar), ::view-transition-group(ls-toasts),
+::view-transition-old(ls-nav), ::view-transition-new(ls-nav),
+::view-transition-old(ls-tabbar), ::view-transition-new(ls-tabbar),
+::view-transition-old(ls-toasts), ::view-transition-new(ls-toasts) { animation-duration: var(--motion-quick); }
 
 /* Opening something one level down (ls-drill) and Back (ls-back). On wider screens the content moves 8px, the same distance a dialog rises:
    drilling in, the new view fades in from 8px right; Back, the old view fades out 8px to the right as the parent fades in. */
@@ -752,13 +750,15 @@ html:active-view-transition-type(ls-drill, ls-back)::view-transition-group(root)
   html:active-view-transition-type(ls-back)::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 }
 
-/* A new row or item appearing in place. */
+/* A new row or item appearing in place, and the same item leaving: it fades and drops 8px, then the app removes it after afterLeaving(). */
 .ls-enter { animation: ls-fade var(--motion-base) var(--ease-enter); }
+.ls-leave { animation: ls-leave var(--motion-quick) var(--ease-exit) forwards; pointer-events: none; } /* never blocks the next tap */
 
-/* The row a link pointed at: lilac that fades over 1.2s. Re-add the class to flash it again. */
-.ls-flash { animation: ls-flash var(--motion-flash) ease-out; }
+/* The row a link pointed at: lilac that fades over 1.2s. Re-add the class to flash it again.
+   A table row's cells flash too, since they paint over the row (a sticky hover on a phone gives them a background). */
+.ls-flash, .ls-table tr.ls-flash > td { animation: ls-flash var(--motion-flash) ease-out; }
 @media (prefers-reduced-motion: reduce) {
-  .ls-flash { animation-timing-function: step-end; } /* holds the mark, then clears it without fading */
+  .ls-flash, .ls-table tr.ls-flash > td { animation-timing-function: step-end; } /* holds the mark, then clears it without fading */
 }
 
 /* Drag and drop. The app sets left, top and width on the held item from its rect, then translate as the pointer moves. */

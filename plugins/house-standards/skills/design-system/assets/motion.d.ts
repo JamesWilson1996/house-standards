@@ -1,4 +1,4 @@
-// Types for motion.js, the Lilac & Sage drag helpers (brand book Motion pattern 1).
+// Types for motion.js, the Lilac & Sage motion helpers (brand book Motion patterns 1 and 3).
 
 export interface Point {
   x: number;
@@ -34,3 +34,6 @@ export declare function scrollNearEdge(scroller: Element, pointer: Point): boole
 
 /** Runs scrollNearEdge on every animation frame with the pointer's last position; `onScroll` places the slot again. Returns a stop function. */
 export declare function scrollWhileHeld(scrollers: Element[], pointer: () => Point, onScroll: (pointer: Point) => void): () => void;
+
+/** Resolves once `el`'s exit animations (its ::backdrop included) have finished; call after close(), hidePopover() or adding ls-leave, then remove it. */
+export declare function afterLeaving(el: Element): Promise<void>;
