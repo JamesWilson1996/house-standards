@@ -29,11 +29,20 @@ export declare function settle(held: HTMLElement, drop: () => void): Animation |
 /** Mouse lifts at once; touch lifts after LIFT_DELAY_MS unless the finger moves first. Returns a cleanup function. */
 export declare function pressToLift(card: HTMLElement, lift: (down: PointerEvent) => void): () => void;
 
-/** Scrolls `scroller` (document.scrollingElement for the page) while `pointer` is near its edge. Returns whether it scrolled. */
-export declare function scrollNearEdge(scroller: Element, pointer: Point): boolean;
+/** Space a bar of the app's own covers at the top or bottom of the viewport, in px. */
+export interface EdgeInsets {
+  top?: number;
+  bottom?: number;
+}
+
+/**
+ * Scrolls `scroller` (document.scrollingElement for the page) while `pointer` is near its edge. The zones start above a fixed
+ * ls-tabbar, below a stuck page header tab row, and inside `insets`. Returns whether it scrolled.
+ */
+export declare function scrollNearEdge(scroller: Element, pointer: Point, insets?: EdgeInsets): boolean;
 
 /** Runs scrollNearEdge on every animation frame with the pointer's last position; `onScroll` places the slot again. Returns a stop function. */
-export declare function scrollWhileHeld(scrollers: Element[], pointer: () => Point, onScroll: (pointer: Point) => void): () => void;
+export declare function scrollWhileHeld(scrollers: Element[], pointer: () => Point, onScroll: (pointer: Point) => void, insets?: EdgeInsets): () => void;
 
 /** Resolves once `el`'s exit animations (its ::backdrop included) have finished; call after close(), hidePopover() or adding ls-leave, then remove it. */
 export declare function afterLeaving(el: Element): Promise<void>;

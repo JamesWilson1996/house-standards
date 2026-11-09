@@ -53,13 +53,22 @@ const pointer = (type, props) => Object.assign(new Event(type), props);
 
 let motionBase;
 let page;
+// The bars on screen, by selector: the tab bar and the page header's tab row.
+let bars;
 beforeEach(() => {
   motionBase = `${BASE_MS}ms`;
   page = new FakeElement({ width: VIEWPORT.width, height: VIEWPORT.height, scrollHeight: VIEWPORT.height * 3 });
   globalThis.innerWidth = VIEWPORT.width;
   globalThis.innerHeight = VIEWPORT.height;
-  globalThis.document = { scrollingElement: page, documentElement: page };
-  globalThis.getComputedStyle = () => ({
+  bars = {};
+  globalThis.document = {
+    scrollingElement: page,
+    documentElement: page,
+    querySelector: (selector) => bars[selector] ?? null,
+    querySelectorAll: (selector) => (bars[selector] ? [bars[selector]] : []),
+  };
+  globalThis.getComputedStyle = (el) => ({
+    position: el?.position ?? "static",
     getPropertyValue: (name) => ({ "--motion-base": motionBase, "--ease-enter": EASING })[name] ?? "",
   });
 });
@@ -251,6 +260,56 @@ test("scrollNearEdge uses the viewport's edges for the page", () => {
   assert.equal(scrollNearEdge(page, { x: 200, y: VIEWPORT.height - 1 }), true);
   assert.ok(page.scrollTop > 0);
   assert.equal(scrollNearEdge(page, { x: 200, y: VIEWPORT.height / 2 }), false);
+});
+
+const TABBAR_HEIGHT = 98; // 64px plus a 34px home indicator
+const TAB_ROW_HEIGHT = 44;
+const tabBar = () => new FakeElement({ top: VIEWPORT.height - TABBAR_HEIGHT, width: VIEWPORT.width, height: TABBAR_HEIGHT });
+const tabRow = (top) => Object.assign(new FakeElement({ top, width: VIEWPORT.width, height: TAB_ROW_HEIGHT }), { position: "sticky" });
+
+test("scrollNearEdge starts the page's bottom zone above the tab bar (#83)", () => {
+  bars[".ls-tabbar"] = tabBar();
+  const barTop = VIEWPORT.height - TABBAR_HEIGHT;
+  // Just above the bar is inside the zone, so the held row scrolls the page before it reaches the bar.
+  assert.equal(scrollNearEdge(page, { x: 200, y: barTop - 1 }), true);
+  page.scrollTop = 0;
+  assert.equal(scrollNearEdge(page, { x: 200, y: barTop - EDGE_ZONE_PX - 1 }), false);
+});
+
+test("scrollNearEdge ignores a tab bar that is hidden above 640px", () => {
+  bars[".ls-tabbar"] = new FakeElement({ top: 0, width: 0, height: 0 });
+  assert.equal(scrollNearEdge(page, { x: 200, y: VIEWPORT.height - EDGE_ZONE_PX - 1 }), false);
+  assert.equal(scrollNearEdge(page, { x: 200, y: VIEWPORT.height - 1 }), true);
+});
+
+test("scrollNearEdge starts the page's top zone below a stuck tab row, so holding over a tab doesn't scroll", () => {
+  bars[".ls-page-header__tabs"] = tabRow(0);
+  page.scrollTop = VIEWPORT.height;
+  assert.equal(scrollNearEdge(page, { x: 200, y: TAB_ROW_HEIGHT / 2 }), false);
+  assert.equal(scrollNearEdge(page, { x: 200, y: TAB_ROW_HEIGHT + 1 }), true);
+  assert.ok(page.scrollTop < VIEWPORT.height);
+});
+
+test("scrollNearEdge measures from the viewport's top while the tab row is further down the page, or not sticky", () => {
+  bars[".ls-page-header__tabs"] = tabRow(200);
+  page.scrollTop = VIEWPORT.height;
+  assert.equal(scrollNearEdge(page, { x: 200, y: 1 }), true);
+  bars[".ls-page-header__tabs"] = Object.assign(tabRow(0), { position: "static" });
+  assert.equal(scrollNearEdge(page, { x: 200, y: 1 }), true);
+});
+
+test("scrollNearEdge keeps the zones inside insets the app passes", () => {
+  const insets = { top: 60, bottom: 80 };
+  page.scrollTop = VIEWPORT.height;
+  assert.equal(scrollNearEdge(page, { x: 200, y: 30 }, insets), false);
+  assert.equal(scrollNearEdge(page, { x: 200, y: 61 }, insets), true);
+  assert.equal(scrollNearEdge(page, { x: 200, y: VIEWPORT.height - 81 }, insets), true);
+});
+
+test("scrollNearEdge keeps a tall column's bottom zone above the tab bar too", () => {
+  bars[".ls-tabbar"] = tabBar();
+  const column = new FakeElement({ top: 0, height: VIEWPORT.height * 2, scrollHeight: VIEWPORT.height * 4 });
+  assert.equal(scrollNearEdge(column, { x: 50, y: VIEWPORT.height - TABBAR_HEIGHT - 1 }), true);
 });
 
 test("scrollNearEdge uses the visible edge of a scroller that runs below the viewport", () => {
