@@ -12,6 +12,11 @@ export const MOVE_TOLERANCE_PX = 8;
 export const EDGE_ZONE_PX = 48;
 /** The most a container scrolls in one animation frame, reached at the very edge. */
 export const MAX_SCROLL_STEP_PX = 16;
+/**
+ * The motion-wait token in ms: how long a navigation holds the current page for the next page's data before it moves on to
+ * placeholders. For the router's defaultPendingMs, which can't read CSS. A test keeps it equal to tokens.json.
+ */
+export const MOTION_WAIT_MS = 400;
 
 const SLIDE_DURATION_TOKEN = "--motion-base";
 const SLIDE_EASING_TOKEN = "--ease-enter";

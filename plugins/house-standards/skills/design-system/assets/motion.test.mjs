@@ -1,6 +1,7 @@
 // Tests for motion.js against a small DOM shim: Node has no layout, so each fake element reports the rect it is given.
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   capture,
   slideFrom,
@@ -16,6 +17,7 @@ import {
   MOVE_TOLERANCE_PX,
   EDGE_ZONE_PX,
   MAX_SCROLL_STEP_PX,
+  MOTION_WAIT_MS,
 } from "./motion.js";
 
 const VIEWPORT = { width: 400, height: 800 };
@@ -424,4 +426,10 @@ test("navigationMotion drills in and back within a place", () => {
 test("navigationMotion fades only the panel between a place's own tabs, and the page between siblings below them", () => {
   assert.equal(navigationMotion({ place: "budget", depth: 0 }, { place: "budget", depth: 0 }), "ls-tab");
   assert.equal(navigationMotion({ place: "projects", depth: 1 }, { place: "projects", depth: 1 }), "ls-switch");
+});
+
+test("MOTION_WAIT_MS is the motion-wait token, for the router's pending wait (#99)", () => {
+  const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
+  const wait = tokens.motion.tokens.find((t) => t.name === "motion-wait").value;
+  assert.equal(`${MOTION_WAIT_MS}ms`, wait);
 });
