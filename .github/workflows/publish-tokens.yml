@@ -15,6 +15,7 @@ jobs:
           node-version: 22
           registry-url: https://npm.pkg.github.com
       - run: node scripts/build.mjs && git diff --exit-code
+      - run: npm ci && node scripts/check-css.mjs
       - run: npm publish
         working-directory: packages/ui-tokens
         env:
