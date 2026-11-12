@@ -51,6 +51,8 @@
   --sage: var(--sage-200);
   --sage-hover: var(--sage-300);
   --on-sage: var(--sage-800);
+  --mark-lilac: var(--lilac-600);
+  --mark-sage: var(--sage-600);
   --focus-ring: var(--lilac-500);
   --success-soft: var(--sage-100);
   --success-ink: var(--sage-800);
@@ -105,6 +107,8 @@
   --sage: var(--sage-300);
   --sage-hover: var(--sage-200);
   --on-sage: var(--sage-900);
+  --mark-lilac: var(--lilac-300);
+  --mark-sage: var(--sage-300);
   --focus-ring: var(--lilac-400);
   --success-soft: #1c3326;
   --success-ink: #93d3ae;

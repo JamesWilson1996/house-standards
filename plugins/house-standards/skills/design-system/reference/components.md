@@ -761,7 +761,46 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 
 - `viewport-fit=cover` makes `env(safe-area-inset-*)` real, so the tab bar, toasts and sheets clear the system bars on Android gesture navigation and the iPhone home indicator. `interactive-widget=resizes-content` keeps sheets above the Android keyboard.
 - `theme-color` colours the phone's browser bar and the installed app's title bar. Set it from `--bg` after the theme is applied (see Appearance), so it matches in both themes and follows the Appearance choice.
-- Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape. Until a logo exists, the app's initial in `on-accent` on an `accent` square.
+- Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape.
+- Every icon comes from `appIcons()` in `@jameswilson1996/ui-tokens/icons.js` (#97): the mark on an `accent-soft` tile, or the app's Lucide glyph in its place. Don't draw icons by hand. The favicon is used as SVG and follows a dark OS theme; render the others to PNG at their size (`APP_ICONS` lists each file's size) with the app's own SVG rasteriser, in the build script that writes them. The maskable icon keeps its art inside the middle 52%, within Android's 80% safe circle.
+
+```js
+// scripts/icons.mjs: writes the app's icons into public/; render the PNGs from these with the app's rasteriser.
+import { writeFileSync } from "node:fs";
+import { appIcons } from "@jameswilson1996/ui-tokens/icons.js";
+
+for (const [file, svg] of Object.entries(appIcons())) writeFileSync(`public/${file}`, svg);
+// An app beside other house apps on one home screen passes its glyph: appIcons({ glyph: '<path d="…"/>' })
+```
+
+```json
+{
+  "name": "Hearth", "short_name": "Hearth", "display": "standalone", "start_url": "/",
+  "background_color": "#fbfafd", "theme_color": "#fbfafd",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+```
+
+The manifest is JSON, so its colours are the light `--bg` written out; it is the one place outside tokens.css a colour value appears.
+
+### Brand
+
+The mark and the app's name together (brand book Iconography). `a.ls-brand` (the app's home) or `div.ls-brand` holds `svg.ls-brand__mark` (`viewBox="0 0 32 32"`, `aria-hidden="true"`, the two paths from `MARK_LEAVES` with classes `ls-mark-lilac` and `ls-mark-sage`) and the name as text. The bundle fills the paths from `mark-lilac` and `mark-sage`, so the mark follows the theme.
+
+- Sidebar: the first child of `ls-nav`, linking home, at 24px.
+- Signed-out pages: `ls-brand ls-brand--lg` (40px) above the card, not a link.
+- The name is the app's name as text, never an image, so it is read and translated.
+
+```html
+<nav class="ls-nav" aria-label="Main">
+<a class="ls-brand" href="/"><svg class="ls-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path class="ls-mark-lilac" d="M15.5 27C9 25.5 4.5 19.5 5 8.5c7 .5 12 6.5 10.5 18.5z"/><path class="ls-mark-sage" d="M16.5 27c-1.5-12 3.5-18 11-21 1 11.5-4 19.5-11 21z"/></svg>Hearth</a>
+<a class="ls-nav__item" href="/" aria-current="page">…Today</a>
+</nav>
+```
 
 ### After navigation
 
@@ -870,6 +909,44 @@ export const router = createRouter({
       fromLocation && pathChanged ? [navigationMotion(pageAt(fromLocation), pageAt(toLocation))] : false,
   },
 });
+```
+
+## Signed-out pages
+
+The pages outside the shell: sign in and what can stop it (decided 12 November, #98). No sidebar, no tab bar and no page header; the brand, then one card in the middle of the screen.
+
+`main.ls-auth` (`id="main"`, `tabindex="-1"`) holds `div.ls-auth__panel`: an `ls-brand ls-brand--lg`, then an `ls-card` with `h1.ls-auth__title` (`tabindex="-1"`), an optional `ls-alert` for the state, `p.ls-auth__text`, and one full-width button. An optional `p.ls-auth__foot` under the card holds a line of help.
+
+- Layout: the panel is `dialog-sm` (400px) wide at most, centred on the screen with `page-gutter` and the safe areas around it, and `100dvh` tall at least, so the phone's browser bars never push the button off screen. Taller than the screen, it scrolls.
+- Theme: the head's Appearance script runs here too, so the page follows this device's choice or the OS. Appearance itself is in the app (Settings › This device); a signed-out page has no settings.
+- Title "Sign in · Hearth" for every state. Focus starts on the `h1` after a redirect inside the app (a session that ended, a sign out); on a fresh load the browser's own start is right. The state's alert sits under the title, so a screen reader reads it next.
+- `returnTo`: a session that ends sends the user here with the page they were on as a same-origin path (`?returnTo=/budget/bills`, Zod-validated to start with one `/`). After signing in they land there; otherwise on the app's home.
+- Motion (brand book Motion pattern 4): `ls-auth` is captured as the page, like `ls-main`, so signing out or a session ending inside the app fades through (`ls-switch`), and the shell appears or goes at once with the root snapshot. Arriving back from the identity provider is a fresh page load, with no motion.
+
+States and their copy:
+
+| State | Alert | Text | Button |
+| --- | --- | --- | --- |
+| Sign in | None | "Use the Google account your household invited." | "Continue with Google" |
+| Not invited (the API refused the account) | `ls-alert--danger`: "That Google account isn't invited to Hearth." | "Ask someone in your household to invite it, or use another account." | "Use another account" |
+| Signed out on another device | `ls-alert--info`: "You signed out on another device." | "Sign in to carry on." | "Continue with Google" |
+| Session ended, with `returnTo` | `ls-alert--info`: "Your session ended." | "Sign in to go back to Bills." (the `returnTo` page's title) | "Continue with Google" |
+
+After the user signs out themself, the plain Sign in state shows, with no alert: they know what they did.
+
+```html
+<main class="ls-auth" id="main" tabindex="-1">
+<div class="ls-auth__panel">
+<div class="ls-brand ls-brand--lg"><svg class="ls-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path class="ls-mark-lilac" d="M15.5 27C9 25.5 4.5 19.5 5 8.5c7 .5 12 6.5 10.5 18.5z"/><path class="ls-mark-sage" d="M16.5 27c-1.5-12 3.5-18 11-21 1 11.5-4 19.5-11 21z"/></svg>Hearth</div>
+<section class="ls-card" aria-labelledby="auth-title">
+<h1 class="ls-auth__title" id="auth-title" tabindex="-1">Sign in</h1>
+<div class="ls-alert ls-alert--danger"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>That Google account isn't invited to Hearth.</div></div>
+<p class="ls-auth__text">Ask someone in your household to invite it, or use another account.</p>
+<a class="ls-btn ls-btn--primary" href="/auth/google?prompt=select_account">Use another account</a>
+</section>
+<p class="ls-auth__foot">Hearth is for invited households only.</p>
+</div>
+</main>
 ```
 
 ## Nav
