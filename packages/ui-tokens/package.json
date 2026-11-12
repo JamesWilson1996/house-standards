@@ -4,7 +4,7 @@
   "description": "Lilac & Sage design tokens, ls- component styles, motion helpers, day helpers and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "icons.js", "icons.d.ts"],
+  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "icons.js", "icons.d.ts", "icons/"],
   "exports": {
     "./tokens.css": "./tokens.css",
     "./bundle.css": "./bundle.css",
@@ -20,7 +20,8 @@
     "./icons.js": {
       "types": "./icons.d.ts",
       "default": "./icons.js"
-    }
+    },
+    "./icons/*": "./icons/*"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

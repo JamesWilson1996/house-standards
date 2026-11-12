@@ -64,3 +64,11 @@ test("a glyph replaces the mark, drawn as a Lucide stroke", () => {
   assert.match(icon, /stroke-width="2"/);
   assert.doesNotMatch(icon, new RegExp(MARK_LEAVES.lilac.slice(0, 12)));
 });
+
+test("the shipped PNGs were rendered from today's icons (run npm run render-icons after changing the mark)", async () => {
+  const { createHash } = await import("node:crypto");
+  const rendered = JSON.parse(readFileSync(new URL("./Logos/icons/rendered.json", import.meta.url), "utf8"));
+  for (const [file, svg] of Object.entries(appIcons())) {
+    assert.equal(rendered[file], createHash("sha256").update(svg).digest("hex"), `${file} is stale`);
+  }
+});

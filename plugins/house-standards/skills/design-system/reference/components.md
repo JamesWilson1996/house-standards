@@ -762,15 +762,21 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 - `viewport-fit=cover` makes `env(safe-area-inset-*)` real, so the tab bar, toasts and sheets clear the system bars on Android gesture navigation and the iPhone home indicator. `interactive-widget=resizes-content` keeps sheets above the Android keyboard.
 - `theme-color` colours the phone's browser bar and the installed app's title bar. Set it from `--bg` after the theme is applied (see Appearance), so it matches in both themes and follows the Appearance choice.
 - Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape.
-- Every icon comes from `appIcons()` in `@jameswilson1996/ui-tokens/icons.js` (#97): the mark on an `accent-soft` tile, or the app's Lucide glyph in its place. Don't draw icons by hand. The favicon is used as SVG and follows a dark OS theme; render the others to PNG at their size (`APP_ICONS` lists each file's size) with the app's own SVG rasteriser, in the build script that writes them. The maskable icon keeps its art inside the middle 52%, within Android's 80% safe circle.
+- Every icon comes from `appIcons()` in `@jameswilson1996/ui-tokens/icons.js` (#97): the mark on an `accent-soft` tile, or the app's Lucide glyph in its place. Don't draw icons by hand. The favicon is used as SVG and follows a dark OS theme; the others are PNGs at their size (`APP_ICONS` lists each). The maskable icon keeps its art inside the middle 52%, within Android's 80% safe circle.
+- An app that uses the mark copies the ready-made set from the package's `icons/` folder (`favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) into `public/`. A bump of the package brings any change to the mark.
+- An app with its own glyph renders its set with `@resvg/resvg-js` (a dev dependency), as house-standards renders the default one:
 
 ```js
-// scripts/icons.mjs: writes the app's icons into public/; render the PNGs from these with the app's rasteriser.
+// scripts/icons.mjs: writes this app's icons into public/. Run it after changing the glyph or bumping ui-tokens.
 import { writeFileSync } from "node:fs";
-import { appIcons } from "@jameswilson1996/ui-tokens/icons.js";
+import { Resvg } from "@resvg/resvg-js";
+import { appIcons, APP_ICONS } from "@jameswilson1996/ui-tokens/icons.js";
 
-for (const [file, svg] of Object.entries(appIcons())) writeFileSync(`public/${file}`, svg);
-// An app beside other house apps on one home screen passes its glyph: appIcons({ glyph: '<path d="…"/>' })
+const GLYPH = '<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>'; // the app's Lucide icon (here: house)
+for (const [file, svg] of Object.entries(appIcons({ glyph: GLYPH }))) {
+  if (file === "favicon.svg") writeFileSync(`public/${file}`, svg); // stays SVG, so it follows a dark OS theme
+  else writeFileSync(`public/${file.replace(/\.svg$/, ".png")}`, new Resvg(svg, { fitTo: { mode: "width", value: APP_ICONS[file].size } }).render().asPng());
+}
 ```
 
 ```json
