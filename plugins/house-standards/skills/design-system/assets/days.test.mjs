@@ -35,6 +35,25 @@ test("parseDay without a year takes the next such day on or after today", () => 
   assert.equal(parseDay("29 Feb", TODAY), "2028-02-29");
 });
 
+test("parseDay reads yesterday", () => {
+  assert.equal(parseDay("yesterday", TODAY), "2026-11-07");
+  assert.equal(parseDay("Yesterday", TODAY, { towards: "past" }), "2026-11-07");
+});
+
+test("parseDay towards the past takes the latest such day on or before today (#95)", () => {
+  const PAST = { towards: "past" };
+  assert.equal(parseDay("20 Oct", "2026-10-26", PAST), "2026-10-20");
+  assert.equal(parseDay("8 Nov", TODAY, PAST), TODAY);
+  assert.equal(parseDay("1 Dec", TODAY, PAST), "2025-12-01");
+  assert.equal(parseDay("1/12", TODAY, PAST), "2025-12-01");
+  assert.equal(parseDay("Mon 1 Dec", TODAY, PAST), "2025-12-01");
+  assert.equal(parseDay("29 Feb", TODAY, PAST), "2024-02-29");
+  // A typed year is kept either way, and the default stays the future.
+  assert.equal(parseDay("1 Dec 2026", TODAY, PAST), "2026-12-01");
+  assert.equal(parseDay("20 Oct", "2026-10-26"), "2027-10-20");
+  assert.equal(parseDay("20 Oct", "2026-10-26", { towards: "future" }), "2027-10-20");
+});
+
 test("parseDay refuses what isn't a day", () => {
   assert.equal(parseDay("31/4/2026", TODAY), null);
   assert.equal(parseDay("1 Decx", TODAY), null);
