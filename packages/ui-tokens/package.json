@@ -1,10 +1,10 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.8.1",
-  "description": "Lilac & Sage design tokens, ls- component styles, motion helpers, day helpers and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
+  "version": "1.9.0",
+  "description": "Lilac & Sage design tokens, ls- component styles, motion helpers, day helpers, combobox helpers and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "icons.js", "icons.d.ts", "icons/"],
+  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "icons.js", "icons.d.ts", "icons/"],
   "exports": {
     "./tokens.css": "./tokens.css",
     "./bundle.css": "./bundle.css",
@@ -16,6 +16,10 @@
     "./days.js": {
       "types": "./days.d.ts",
       "default": "./days.js"
+    },
+    "./combobox.js": {
+      "types": "./combobox.d.ts",
+      "default": "./combobox.js"
     },
     "./icons.js": {
       "types": "./icons.d.ts",
