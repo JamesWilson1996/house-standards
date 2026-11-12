@@ -516,7 +516,9 @@ Example markup:
 
 A section heading that folds its section: a card on an overview, a settings group, the "Picked up" list under a shopping list (#79). The same control as a board column's toggle, on any heading.
 
-`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id`.
+`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id` and `ls-fold__body`.
+
+- In a plain `ls-card`, the head's own margin spaces it from the body. In a section spaced by a gap (`section.ls-card.ls-stack`, #90), the head has no margin, so the stack's gap alone spaces them, and an open `ls-fold__body` is `display: contents`, so its children are spaced by the same gap as the rest of the section. Don't add a stack inside the body for that.
 
 - The button has `type="button"`, `aria-expanded` and `aria-controls` pointing at the body, and holds a 16px Lucide `chevron-down` (`aria-hidden="true"`) before the heading text. The heading keeps its level, so the page's outline and screen reader heading lists stay right; the button takes the heading's font and sits flush with where the text would start.
 - Folded: `aria-expanded="false"` and `hidden` on the body. The chevron turns -90deg over `motion-quick`, so reduced motion shows no turn; the body shows and hides at once.
@@ -550,11 +552,11 @@ Example markup:
 ```html
 <section class="ls-card" aria-labelledby="due-title">
 <div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="due-title"><button class="ls-fold" type="button" aria-expanded="true" aria-controls="due-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Due in the next 30 days</button></h2><a href="#">All bills</a></div>
-<div id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
+<div class="ls-fold__body" id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
 </section>
-<section class="ls-card" aria-labelledby="picked-title">
+<section class="ls-card ls-stack" aria-labelledby="picked-title">
 <div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="picked-title"><button class="ls-fold" type="button" aria-expanded="false" aria-controls="picked-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Picked up</button></h2><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button">Clear</button></div>
-<div id="picked-body" hidden><p>Milk, Bread</p></div>
+<div class="ls-fold__body" id="picked-body" hidden><ul class="ls-list">…</ul><p class="ls-help">Picked up items clear after a week.</p></div>
 </section>
 ```
 
@@ -668,11 +670,13 @@ Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-
 
 - Consumer provides: tab labels and the panels. Each tab is a route segment or search param (TanStack Router) so it survives reload and can be linked.
 - Switching tabs fades through (see Tab bar), never slides.
+- A tab that is its own route is a link: `a.ls-tab` with `role="tab"` and `aria-selected`. The bundle takes the link underline off, as for `a.ls-btn` (#88).
 
 Example markup:
 
 ```html
 <div class="ls-tabs" role="tablist"><button class="ls-tab" role="tab" aria-selected="true">Overview</button><button class="ls-tab" role="tab">Activity</button><button class="ls-tab" role="tab">Members</button><button class="ls-tab" role="tab">Settings</button></div>
+<div class="ls-tabs" role="tablist" aria-label="Budget"><a class="ls-tab" role="tab" href="/budget" aria-selected="true">Overview</a><a class="ls-tab" role="tab" href="/budget/bills">Bills</a><a class="ls-tab" role="tab" href="/budget/spending">Spending</a></div>
 ```
 
 ## App shell
@@ -900,19 +904,22 @@ After a failed add:
 
 The one row of controls above a list, on every screen size: the scope (which month, which week), search, the filters in use as removable chips, a Filter chip that holds every other filter, and the result count. It replaces rows of selects and checkboxes, which push the first result below the first screen on a phone.
 
-`div.ls-filterbar` holds `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`. The row holds, in order:
+`div.ls-filterbar` holds, in order, `div.ls-filterbar__scope` if the list has a scope, `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`.
 
-1. Scope, if the list has one: an `ls-stepper` (see Stepper). Its short label on a phone leaves room for search.
-2. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
-3. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
-4. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
+The scope is an `ls-stepper` (see Stepper) in `ls-filterbar__scope`, before the row and outside its sideways scroll, so the stepper and its way back to now are never cut off (#96). On desktop it sits at the start of the bar's line; on a phone it takes a line of its own above the row, and its now link wraps onto two lines if it must, so it fits a 320px screen.
+
+The row holds, in order:
+
+1. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
+2. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
+3. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
 Then, after the row: the Filter chip, `button.ls-chip.ls-filterbar__filter` with a 16px Lucide `sliders-horizontal` icon, the word "Filter" and, when filters are in use, `span.ls-chip__count` with how many.
 
 - One row, always. When the row is wider than the screen it scrolls sideways; it never wraps. The Filter chip stays outside the scrolling part, so it is always in view, and its count shows how many filters are in use when some have scrolled away. A filter that doesn't earn a place in the row lives behind the Filter chip.
 - The Filter chip opens the full set of filters as an `ls-form`: in an `ls-popover ls-popover--panel` (320px) below the chip on desktop, and in an `ls-dialog--sheet` on a phone. The same form component goes in either. Each change applies at once and updates the URL, so the list behind updates while the panel is open; the sheet's foot has "Show 3 bills" (closes it) and "Clear all".
 - Count: `p.ls-filterbar__count` with `aria-live="polite"`, the result count in words ("3 of 12 bills"). It sits at the right end on desktop and under the row on a phone.
 - Filter state lives in the URL search params (Zod-validated), so a filtered list can be linked and survives reload. The sheet's open state follows the dialog rules; the popover's does not go in the URL.
-- Chips are 32px tall with a 44px hit area. Pressed and active chips use `accent-soft` with `on-accent-soft`.
+- Chips are 32px tall with a 44px hit area. Pressed and active chips use `accent-soft` with `on-accent-soft`. The search is 32px with 13px text with a pointer, and 44px with 16px text on a phone or touch screen like every field (#92), so iOS doesn't zoom on focus.
 - Lists with no filters have no filter bar. A list with only a search has a bar with just the search and the count.
 
 ```ts
@@ -929,6 +936,7 @@ Example markup:
 
 ```html
 <div class="ls-filterbar">
+<div class="ls-filterbar__scope"><div class="ls-stepper" role="group" aria-label="Month"><button class="ls-stepper__step" type="button" aria-label="Previous month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">December 2026</span><span class="ls-stepper__short" aria-hidden="true">Dec 2026</span></span><button class="ls-stepper__step" type="button" aria-label="Next month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button class="ls-stepper__now" type="button">This month</button></div></div>
 <div class="ls-filterbar__row">
 <input class="ls-input ls-filterbar__search" type="search" aria-label="Search bills" placeholder="Search bills">
 <button class="ls-chip ls-chip--active" type="button" aria-label="Remove filter Category: Home">Category: Home<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -955,8 +963,8 @@ Moves a list through time one period at a time: Budget's month, Meals' week. Pre
 - Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
 - The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
 - Changing period fades only the content below through (`ls-tab` with an `ls-tab-panel`, see Tab bar), with no slide. The stepper stays still.
-- In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
-- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
+- In a list's filter bar it is the scope and goes in `ls-filterbar__scope`, before the scrolling row (see Filter bar). On a page without filters it can sit alone above the content.
+- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone. On a phone `ls-stepper__now` wraps onto two lines when the stepper would be wider than its line, so a long "This budget month" still fits 288px (#96). Keep it to three words.
 
 Example markup:
 
@@ -973,7 +981,7 @@ Columns of numbered cards that move between stages: a project's To do, In progre
 
 - Column: `div.ls-column__head` with `h2.ls-column__title` wrapping a `button.ls-column__toggle` (`aria-expanded`, `aria-controls` on the cards, a 16px Lucide `chevron-down` that turns when folded) and `span.ls-column__count`; then `ol.ls-column__cards`. A folded column gets `ls-column--folded` and shows only its head. Fold state is per device (local storage), not on the server.
 - Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL. Cards hold no other buttons.
-- Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit.
+- Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit. The board is `position: relative`, so everything in it, a count's `ls-sr-only` text included, stays inside its scroll and never widens the page (#93).
 - Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
 - Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls (`pressToLift`). The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
 - When the tab hold switches columns on a phone, the card's own column stops being current. The bundle keeps a non-current column that holds `ls-lifted` as a zero-height box (`:has(.ls-lifted)`), so the fixed card stays drawn under the finger. Drag code that measures drop targets skips columns whose height is 0.
