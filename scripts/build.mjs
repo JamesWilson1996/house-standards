@@ -66,8 +66,8 @@ assertBalancedBraces("bundle.css");
 mkdirSync(PACKAGE_DIR, { recursive: true });
 writeFileSync(join(SOURCE_DIR, "tokens.css"), css);
 writeFileSync(join(PACKAGE_DIR, "tokens.css"), css);
-// The motion, day and icon helpers ship as-is; their tests stay beside the source.
-for (const file of ["tokens.json", "bundle.css", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "icons.js", "icons.d.ts"]) {
+// The motion, day, combobox and icon helpers ship as-is; their tests stay beside the source.
+for (const file of ["tokens.json", "bundle.css", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "icons.js", "icons.d.ts"]) {
   writeFileSync(join(PACKAGE_DIR, file), readFileSync(join(SOURCE_DIR, file)));
 }
 // The mark as files, for READMEs and anything that can't draw it inline (brand book Iconography).
@@ -84,4 +84,4 @@ mkdirSync(join(PACKAGE_DIR, "icons"), { recursive: true });
 for (const file of readdirSync(ICONS_DIR).filter((f) => f !== "rendered.json")) {
   writeFileSync(join(PACKAGE_DIR, "icons", file), readFileSync(join(ICONS_DIR, file)));
 }
-console.log(`built tokens.css (${themedFamilies.length} themed, ${staticFamilies.length} static tokens), the mark, and synced packages/ui-tokens (with motion.js, days.js and icons.js)`);
+console.log(`built tokens.css (${themedFamilies.length} themed, ${staticFamilies.length} static tokens), the mark, and synced packages/ui-tokens (with motion.js, days.js, combobox.js and icons.js)`);

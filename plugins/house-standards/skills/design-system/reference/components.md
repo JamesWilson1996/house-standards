@@ -287,7 +287,10 @@ Which control, by the number and length of the options (decided 8 November, #52)
 | 2 to 4, each a word or two ("Alex", "Sam", "Split") | `ls-segmented` |
 | 5 or more, a known short list (how often a bill repeats) | `ls-select` |
 | Each needs a line of help to choose well | `ls-check` radios in a `fieldset` |
-| Long, growing or searched (meals, payees) | A picker: see below |
+| A list of names people add to from the field (a category, an account, a tag) | `ls-combobox`: see below |
+| Long or searched, or each option needs more than its name (meals with a photo, hundreds of payees) | A picker: see below |
+
+A list that can't grow from the field stays an `ls-select` or `ls-segmented`, however long: a bill's Paid by lists the household's people, who are added in Settings. Never use `<datalist>`: each browser draws it differently, it can't be styled, and on Android it lists nothing until you type (#105).
 
 ### Segmented control
 
@@ -302,9 +305,74 @@ Which control, by the number and length of the options (decided 8 November, #52)
 <div class="ls-segmented" role="radiogroup" aria-labelledby="paid-label"><label class="ls-segmented__option"><input type="radio" name="paidBy" value="alex" checked>Alex</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="sam">Sam</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="split">Split</label></div></div>
 ```
 
+### Combobox
+
+Choose one, or add a new one (#105). An `ls-input` drawn like an `ls-select`, empty or filled, with its list in an `ls-popover--listbox`. Typing filters the list, and where the field can add, the last option is Add "<typed text>". It follows the WAI-ARIA 1.2 combobox pattern with a listbox, list autocomplete and manual selection.
+
+- Field: `div.ls-combobox` in the `ls-field` holds `input.ls-input` with `role="combobox"`, `aria-expanded`, `aria-controls` (the list's id), `aria-autocomplete="list"`, `autocomplete="off"` and `aria-describedby` for any help, then `svg.ls-combobox__icon` (a 16px Lucide `chevron-down`, `aria-hidden="true"`), which turns over while the list is open. The input shows the current entry's name.
+- Optional: the label carries "(optional)" and the empty input has `placeholder="None"`, drawn in ink as a select shows its value. While nothing is typed the list starts with a None row, which empties the field. A required field has no None and no placeholder; set `required` on the input.
+- List: `div.ls-popover.ls-popover--listbox` (`popover="manual"`, so a tap in the input doesn't close it) holding `ul.ls-combobox__list` with `role="listbox"`, `aria-label` set to the field's label, and one `li.ls-combobox__option` with `role="option"` and an id per row. Show it with `showPopover({ source: input })`, so it anchors below the input and is at least as wide. Where `position-area` is missing (Safari), place it with `placePopover(popover, input)` from Popover and set `--ls-combobox-width` on it to the input's width.
+- Rows: the entries matching the text, those starting with it first, then Add "Gym" (`ls-combobox__option--add`, a 16px Lucide `plus` before the text) when the text isn't already an entry. The current entry has `data-current` and a 16px Lucide `check` as `svg.ls-combobox__tick` at the row's end. Rows are 36px with a pointer and 44px with 16px text on a phone or touch screen; the list scrolls past `listbox-height` (296px). When nothing matches and the field can't add, the list holds `p.ls-combobox__empty` instead: "No accounts match "Bark"".
+- Focus stays in the input. The active row has `aria-selected="true"` (filled `accent-soft`), the input's `aria-activedescendant` names it, and it scrolls into view with `scrollIntoView({ block: "nearest" })`. Typing clears the active row.
+- Pointer and touch: a click or tap in the input opens the list with every entry, a tap on a row picks it, and a tap outside settles the field.
+- Keyboard: Down opens the list on its first row (Alt+Down opens it with none active) and Up on its last; with the list open they move and wrap. Enter picks the active row. Escape and Alt+Up close the list and put the text back to the current value; Escape never closes a dialog the field sits in. Tab settles the field and moves on. Home, End and the other keys edit the text. `comboboxKey(event, { open, active, count })` turns a key into what to do.
+- Picking a row closes the list and fills the input with the entry's name, or empties it for None. Leaving the field without a pick settles it with `settle`: text naming an entry exactly ("gym", "Gym ") picks that entry, an optional field left blank is None, and anything else goes back to the current value. A new entry is only added by choosing Add, never by typing a name and moving on.
+- Add: the backend creates the entry. Either the form's command takes the new name (`categoryName: "Gym"` in place of `categoryId`), or picking Add sends the create command (`POST /categories` with an `Idempotency-Key`) and the field holds the new id once it succeeds, with the row `aria-busy="true"` meanwhile. A failure shows in the field's help, as any field error does. The client never decides the name is free or valid; the backend's problem+json says.
+- Screen readers hear how many rows the list has after each change, from an `ls-sr-only` live region in the field: "4 categories", "No categories match "Bark"".
+- Where to use it, and where not: see the table in Choosing one option. A fixed list is an `ls-select`; a list whose options need more than a name is a Picker.
+
+The helpers ship in `@jameswilson1996/ui-tokens/combobox.js`, with types. Import them; don't copy them into the app. Entries are `{ value, label }`: the id the API sends and the name people see.
+
+| Export | Does |
+| --- | --- |
+| `comboboxOptions(entries, text, { optional, canAdd })` | The rows for the typed text: None, the matching entries, then Add |
+| `matchEntries(entries, text)`, `findEntry(entries, text)` | Entries containing the text, those starting with it first; the entry named exactly. Case and accents are ignored ("cafe" finds "Café") |
+| `comboboxKey(event, { open, active, count })` | `{ type: "open", active }`, `{ type: "move", active }`, `{ type: "pick", active }`, `{ type: "close" }`, `{ type: "settle" }` or null |
+| `settle(entries, text, current, { optional })` | The value when focus leaves without a pick |
+| `NONE_LABEL`, `addLabel(text)`, `OPTION_NONE`, `OPTION_ENTRY`, `OPTION_ADD` | "None", Add "Gym", and each row's `type` |
+
+The input's key handler, in React:
+
+```tsx
+import { comboboxKey, comboboxOptions, settle } from "@jameswilson1996/ui-tokens/combobox.js";
+
+const options = comboboxOptions(entries, text, { optional, canAdd });
+const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const action = comboboxKey(e, { open, active, count: options.length });
+  if (!action) return;
+  if (action.type === "settle") return finish(settle(entries, text, current, { optional })); // Tab still moves focus on
+  e.preventDefault();
+  if (action.type === "open") show(action.active);
+  if (action.type === "move") setActive(action.active);
+  if (action.type === "pick") choose(options[action.active]); // an Add row sends the create command
+  if (action.type === "close") {
+    e.stopPropagation(); // so a dialog round the field stays open
+    hide();
+    setText(current?.label ?? "");
+  }
+};
+```
+
+The package's tests cover the order of matches, "cafe" finding "Café", None only while nothing is typed, Add only for text that isn't an entry, every key, and settling an exact name, a blank optional field and unknown text.
+
+Example markup (a bill's Category, optional, "g" typed, Groceries the current value and Gym active):
+
+```html
+<div class="ls-field"><label class="ls-label" for="cat">Category <span class="ls-label__optional">(optional)</span></label>
+<div class="ls-combobox"><input class="ls-input" id="cat" value="g" placeholder="None" role="combobox" aria-expanded="true" aria-controls="cat-list" aria-autocomplete="list" aria-activedescendant="cat-gym" autocomplete="off"><svg class="ls-combobox__icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+<p class="ls-sr-only" aria-live="polite">3 categories</p></div>
+<div class="ls-popover ls-popover--listbox" id="cat-pop" popover="manual">
+<ul class="ls-combobox__list" id="cat-list" role="listbox" aria-label="Category">
+<li class="ls-combobox__option" id="cat-groceries" role="option" aria-selected="false" data-current>Groceries<svg class="ls-combobox__tick" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></li>
+<li class="ls-combobox__option" id="cat-gym" role="option" aria-selected="true">Gym</li>
+<li class="ls-combobox__option" id="cat-energy" role="option" aria-selected="false">Energy</li>
+<li class="ls-combobox__option ls-combobox__option--add" id="cat-add" role="option" aria-selected="false"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>Add "g"</li>
+</ul></div>
+```
+
 ### Picker
 
-For a long or growing list, a button in the field shows the current value ("Chilli" or "Choose a meal") and opens an `ls-dialog` (an `ls-dialog--sheet` on a phone) with the open state in the URL. The dialog holds an `ls-input` search at the top, then an `ls-list` of options, recent ones first. Typing filters the list; picking one closes the dialog, fills the field and returns focus to its button. When nothing matches, the list's place shows "No meals match "chill"" and, where the user may add one, an Add button for what they typed. No new classes: it is built from Field, Dialog, Sheet and List.
+For a long or searched list, or options that need more than a name, a button in the field shows the current value ("Chilli" or "Choose a meal") and opens an `ls-dialog` (an `ls-dialog--sheet` on a phone) with the open state in the URL. The dialog holds an `ls-input` search at the top, then an `ls-list` of options, recent ones first. Typing filters the list; picking one closes the dialog, fills the field and returns focus to its button. When nothing matches, the list's place shows "No meals match "chill"" and, where the user may add one, an Add button for what they typed. No new classes: it is built from Field, Dialog, Sheet and List.
 
 ## Appearance
 

@@ -170,6 +170,7 @@
   --tooltip-width: 240px;
   --overlay-margin: var(--space-4);
   --popover-offset: var(--space-2);
+  --listbox-height: 296px;
   --toast-width: 440px;
   --toast-min-height: 52px;
   --tabbar-height: 64px;

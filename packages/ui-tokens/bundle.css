@@ -62,7 +62,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-field > .ls-btn { align-self: flex-start; }
 /* Input and action on one line, aligned to the input; label above and help below stay outside the row. */
 .ls-field__row { display: flex; align-items: flex-start; gap: var(--space-2); }
-.ls-field__row > :is(.ls-input, .ls-select, .ls-file) { flex: 1; min-width: 0; }
+.ls-field__row > :is(.ls-input, .ls-select, .ls-file, .ls-combobox) { flex: 1; min-width: 0; }
 .ls-field__row > .ls-btn { flex: none; }
 .ls-label { font: 600 13px/16px var(--font-sans); color: var(--ink); }
 .ls-input, .ls-select, .ls-textarea { height: 36px; padding: 0 var(--space-3); font: 400 15px/22px var(--font-sans); color: var(--ink);
@@ -96,6 +96,39 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   @media (max-width: 640px), (pointer: coarse) {
     .ls-select option { min-height: 44px; font-size: 16px; }
   }
+}
+
+/* ---------- Combobox (choose one, or add a new one: an ls-input drawn like ls-select, its list an ls-popover--listbox) ---------- */
+.ls-combobox { position: relative; display: flex; }
+.ls-combobox > .ls-input { flex: 1; min-width: 0; padding-right: calc(2 * var(--space-3) + 16px); text-overflow: ellipsis; cursor: pointer; }
+.ls-combobox > .ls-input:focus { cursor: text; }
+/* "None" is the empty field's value, as a select shows its first option, so it reads in ink. */
+.ls-combobox > .ls-input::placeholder { color: var(--ink); opacity: 1; }
+.ls-combobox__icon { position: absolute; top: 50%; right: var(--space-3); width: 16px; height: 16px; translate: 0 -50%; color: var(--ink-muted); pointer-events: none;
+  transition: rotate var(--motion-quick) var(--ease-enter); }
+.ls-combobox > .ls-input[aria-expanded="true"] ~ .ls-combobox__icon { rotate: 180deg; }
+.ls-combobox > .ls-input:disabled ~ .ls-combobox__icon { color: var(--on-disabled); }
+/* The list: as wide as the field at least, scrolling past listbox-height. Focus stays in the input; aria-activedescendant names the active row. */
+.ls-popover--listbox { min-width: var(--ls-combobox-width, 220px); max-height: min(var(--listbox-height), calc(100vh - 2 * var(--overlay-margin))); overflow-y: auto; padding: var(--space-1); overscroll-behavior: contain; }
+.ls-combobox__list { margin: 0; padding: 0; list-style: none; }
+.ls-combobox__option { display: flex; align-items: center; gap: var(--space-2); min-height: 36px; padding: 0 var(--space-3); border-radius: var(--radius-sm);
+  font: 500 15px/22px var(--font-sans); color: var(--ink); cursor: pointer; scroll-margin-block: var(--space-1); }
+.ls-combobox__option svg { flex: none; width: 16px; height: 16px; }
+/* aria-selected marks the active row, as the WAI-ARIA combobox pattern sets it; data-current marks the field's value, with a tick. */
+.ls-combobox__option[aria-selected="true"] { background: var(--accent-soft); color: var(--on-accent-soft); }
+@media (hover: hover) { .ls-combobox__option:hover { background: var(--accent-soft); color: var(--on-accent-soft); } }
+.ls-combobox__option[data-current] { font-weight: 600; }
+.ls-combobox__tick { margin-left: auto; color: var(--accent); }
+.ls-combobox__option[aria-selected="true"] .ls-combobox__tick { color: inherit; }
+.ls-combobox__option--add { color: var(--link); }
+.ls-combobox__option--add + .ls-combobox__option, .ls-combobox__option + .ls-combobox__option--add { margin-top: var(--space-1); }
+.ls-combobox__empty { margin: 0; padding: var(--space-2) var(--space-3); font: 400 13px/18px var(--font-sans); color: var(--ink-muted); }
+@supports (position-area: block-end) {
+  .ls-popover--listbox { min-width: anchor-size(width); }
+}
+/* Touch: 44px rows with 16px text, like a select's open list. */
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-combobox__option { min-height: 44px; font-size: 16px; }
 }
 
 /* ---------- File picker (native input, themed picker button) ---------- */
@@ -858,9 +891,9 @@ html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { anim
    Each such state is redrawn here with system colours: SelectedItem for what is chosen or current, Highlight for a fill or ring,
    CanvasText for marks. forced-color-adjust: none keeps these exact colours, on elements whose children carry no colour of their own. */
 @media (forced-colors: active) {
-  /* Chosen and current: segmented option, sidebar and tab bar place, pressed chip, chosen calendar day. */
+  /* Chosen and current: segmented option, sidebar and tab bar place, pressed chip, chosen calendar day, a combobox's active row. */
   .ls-segmented__option:has(input:checked), .ls-nav__item[aria-current="page"], .ls-tabbar__item[aria-current="page"],
-  .ls-chip:is([aria-pressed="true"], .ls-chip--active), .ls-calendar__day[aria-selected="true"] {
+  .ls-chip:is([aria-pressed="true"], .ls-chip--active), .ls-calendar__day[aria-selected="true"], .ls-combobox__option[aria-selected="true"] {
     forced-color-adjust: none; background: SelectedItem; color: SelectedItemText; border-color: SelectedItem; }
   /* A row or day that holds other content keeps the palette and gets a ring instead. */
   .ls-table tr[aria-selected="true"] td { outline: 2px solid Highlight; outline-offset: -2px; }
