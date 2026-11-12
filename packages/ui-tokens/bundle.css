@@ -796,7 +796,7 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-toasts { view-transition-name: ls-toasts; }
 ::view-transition-group(ls-tabbar), ::view-transition-new(ls-tabbar), ::view-transition-group(ls-toasts), ::view-transition-new(ls-toasts) { animation: none; }
 ::view-transition-old(ls-tabbar), ::view-transition-old(ls-toasts) { animation: none; opacity: 0; }
-   Switching places fades the page through: the old page fades out over motion-quick, then the new one fades in and grows from 96% over
+/* Switching places fades the page through: the old page fades out over motion-quick, then the new one fades in and grows from 96% over
    motion-base, so two pages never show at once. These rules are unscoped, so a browser without view transition types (Safari 18.0 and
    18.1) fades through on every view transition, and reduced motion makes it 0ms there too; ls-tab, ls-drill and ls-back override them. */
 @keyframes ls-fade-out { to { opacity: 0; } }

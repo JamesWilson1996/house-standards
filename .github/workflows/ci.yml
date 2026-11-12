@@ -15,6 +15,9 @@ jobs:
         run: |
           node scripts/build.mjs
           git diff --exit-code || { echo "::error::Generated files are stale. Run node scripts/build.mjs and commit."; exit 1; }
+      - run: npm ci
+      - name: Shipped CSS parses with PostCSS
+        run: node scripts/check-css.mjs
       - name: Hook rules pass their tests
         run: node --test "plugins/house-standards/hooks/**/*.test.mjs"
       - name: Drag helpers pass their tests
