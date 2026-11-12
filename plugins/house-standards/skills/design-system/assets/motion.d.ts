@@ -13,6 +13,8 @@ export declare const LIFT_VIBRATION_MS: 15;
 export declare const MOVE_TOLERANCE_PX: 8;
 export declare const EDGE_ZONE_PX: 48;
 export declare const MAX_SCROLL_STEP_PX: 16;
+/** The motion-wait token in ms, for the router's defaultPendingMs: how long a navigation waits for the next page's data. */
+export declare const MOTION_WAIT_MS: 400;
 
 /** Measures a list's children (minus `exclude`), or the given elements, before the DOM changes. */
 export declare function capture(elements: HTMLElement | Iterable<HTMLElement>, exclude?: HTMLElement): Captured;

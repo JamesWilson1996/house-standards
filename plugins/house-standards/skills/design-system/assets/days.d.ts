@@ -44,5 +44,13 @@ export declare function isOutside(day: Day, range?: DayRange): boolean;
 /** What a key on the calendar's focused day does, or null for keys the calendar leaves alone. Call preventDefault() when it isn't null. */
 export declare function calendarKey(event: { key: string; shiftKey?: boolean }, day: Day, range?: DayRange): CalendarAction | null;
 
-/** A typed date (day first, as in the UK, with or without the field's weekday) as "YYYY-MM-DD", or null when it isn't one. */
-export declare function parseDay(text: string, today: Day): Day | null;
+export declare const TOWARDS_FUTURE: "future";
+export declare const TOWARDS_PAST: "past";
+/** Which way a day typed without a year resolves: "future" (the default) for a due date, "past" for the date of something already done. */
+export type Towards = typeof TOWARDS_FUTURE | typeof TOWARDS_PAST;
+
+/**
+ * A typed date (day first, as in the UK, with or without the field's weekday) as "YYYY-MM-DD", or null when it isn't one.
+ * Without a year it is the next such day on or after today, or with { towards: "past" } the latest on or before today.
+ */
+export declare function parseDay(text: string, today: Day, options?: { towards?: Towards }): Day | null;

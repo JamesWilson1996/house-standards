@@ -244,6 +244,10 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Fold (a section heading that folds its section; the board's column toggle on any heading) ---------- */
 .ls-fold__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-3); }
 .ls-fold__head:has(.ls-fold[aria-expanded="false"]) { margin-bottom: 0; }
+/* In a section spaced by a gap (ls-card ls-stack), the gap alone spaces the head from the body (#90), and an open ls-fold__body steps aside
+   so its children keep the section's spacing. Only while open: display: contents would override hidden. */
+.ls-stack > .ls-fold__head { margin-bottom: 0; }
+.ls-stack > .ls-fold__body:not([hidden]) { display: contents; }
 /* The heading keeps its own level and size (h2.h3, h3.ls-card__title); only its margin goes. */
 .ls-fold__title { margin: 0; min-width: 0; }
 /* Flush with the heading text: the padding the hover fill needs is taken back with a negative margin. */
@@ -315,7 +319,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- Tabs ---------- */
 .ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
-  color: var(--ink-muted); border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
+  color: var(--ink-muted); text-decoration: none; /* a tab that is a link (a route per tab) loses the underline, as ls-btn does (#88) */ border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
   transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
 @media (hover: hover) { .ls-tab:hover { color: var(--ink); background: var(--surface-sunken); } }
 .ls-tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -329,21 +333,50 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   padding-block: var(--space-5) var(--space-7);
   padding-left: max(var(--space-6), env(safe-area-inset-left)); padding-right: max(var(--space-6), env(safe-area-inset-right)); }
 .ls-app > .ls-nav { position: sticky; top: var(--space-5); }
-.ls-main { min-width: 0; max-width: var(--content-width); }
+/* The page fills the frame's height at every width (#87), so its snapshot covers the page beneath when a shorter one slides over a longer one. */
+.ls-main { align-self: stretch; min-width: 0; max-width: var(--content-width); }
 .ls-main:focus { outline: none; } /* focus lands here only as a skip-link target */
 .ls-main--wide { max-width: none; } /* boards and wide tables use the full width */
 @media (max-width: 640px) {
-  .ls-app { display: block; padding-block: var(--space-4) var(--space-6);
+  .ls-app { display: flex; flex-direction: column; padding-block: var(--space-4) var(--space-6);
     padding-left: calc(var(--page-gutter) + env(safe-area-inset-left)); padding-right: calc(var(--page-gutter) + env(safe-area-inset-right)); }
+  .ls-app > .ls-main { flex: 1 0 auto; }
   .ls-app > .ls-nav { position: static; width: auto; margin-bottom: var(--space-4); }
 }
-/* Hidden until it takes focus, then the first thing on screen; jumps past the navigation to the page. */
+/* Hidden until it takes focus, then the first thing on screen; jumps past the navigation to the page.
+   The shadow shows only with the link (#89): at rest it would reach 24px below the hidden box, onto the page. */
 .ls-skip-link { position: fixed; z-index: 50; top: var(--space-2); left: max(var(--space-2), env(safe-area-inset-left)); translate: 0 calc(-100% - var(--space-4));
   display: inline-flex; align-items: center; height: 44px; padding: 0 var(--space-4); border-radius: var(--radius-md); background: var(--accent); color: var(--on-accent);
-  font: 600 15px/22px var(--font-sans); text-decoration: none; box-shadow: var(--shadow-md); }
-.ls-skip-link:focus-visible { translate: none; }
+  font: 600 15px/22px var(--font-sans); text-decoration: none; }
+.ls-skip-link:focus-visible { translate: none; box-shadow: var(--shadow-md); }
 /* A page's h1 takes focus after navigation (tabindex="-1"), so screen readers start there; it shows no ring for that. */
 .ls-page-header__title:focus { outline: none; }
+
+/* ---------- Brand (the mark and the app's name: the sidebar's head and the signed-out pages) ---------- */
+/* The mark is inline SVG with ls-mark-lilac and ls-mark-sage paths (MARK_LEAVES in icons.js), so it follows the theme. */
+.ls-brand { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; padding: 0 var(--space-1); font: 600 17px/24px var(--font-sans);
+  letter-spacing: -0.01em; color: var(--ink); text-decoration: none; }
+.ls-brand__mark { flex: none; width: 24px; height: 24px; }
+.ls-brand__mark .ls-mark-lilac { fill: var(--mark-lilac); }
+.ls-brand__mark .ls-mark-sage { fill: var(--mark-sage); }
+.ls-brand--lg { gap: var(--space-3); font-size: 22px; line-height: 28px; }
+.ls-brand--lg .ls-brand__mark { width: 40px; height: 40px; }
+.ls-nav > .ls-brand { margin: 0 0 var(--space-2); padding: 0 var(--space-2); }
+@media (forced-colors: active) {
+  .ls-brand__mark :is(.ls-mark-lilac, .ls-mark-sage) { fill: CanvasText; }
+}
+
+/* ---------- Signed-out pages (sign in and its states, outside the shell) ---------- */
+/* The page in the middle of the screen: the brand, then one card. Taller than the screen, it scrolls from the top. */
+.ls-auth { display: grid; place-items: center; min-height: 100dvh; padding: var(--space-6) max(var(--page-gutter), env(safe-area-inset-right)) calc(var(--space-6) + env(safe-area-inset-bottom)) max(var(--page-gutter), env(safe-area-inset-left)); }
+.ls-auth:focus { outline: none; }
+.ls-auth__panel { display: flex; flex-direction: column; align-items: center; gap: var(--space-5); width: min(100%, var(--dialog-sm)); }
+.ls-auth__panel > .ls-card { align-self: stretch; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-5); }
+.ls-auth__title { margin: 0; font: 700 22px/28px var(--font-sans); color: var(--ink); }
+.ls-auth__title:focus { outline: none; }
+.ls-auth__text { margin: 0; color: var(--ink-muted); }
+.ls-auth__panel .ls-card > .ls-btn { align-self: stretch; }
+.ls-auth__foot { margin: 0; font: 400 13px/18px var(--font-sans); color: var(--ink-muted); text-align: center; }
 
 /* ---------- Nav (app sidebar) ---------- */
 .ls-nav { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2); background: var(--surface-sunken); border-radius: var(--radius-lg); width: var(--nav-width); }
@@ -359,8 +392,12 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 @media (max-width: 640px) {
   .ls-tabbar { position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; gap: var(--space-1); height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
     padding: var(--space-1) var(--space-1) calc(var(--space-1) + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line); }
-  /* The page's last line scrolls clear of the bar, and the sidebar gives way to it. */
-  :root:has(.ls-tabbar) body { padding-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom)); }
+  /* The page's last line scrolls clear of the bar, and of a floating primary action above it (#94); the sidebar gives way to the bar.
+     The frame is the screen less that space, so a page that fits doesn't scroll by the bar's height (#87). */
+  :root:has(.ls-tabbar) { --ls-shell-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom)); }
+  :root:has(.ls-tabbar):has(.ls-page-header__primary) { --ls-shell-bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-4) + var(--fab-height)); }
+  :root:has(.ls-tabbar) body { padding-bottom: var(--ls-shell-bottom); }
+  :root:has(.ls-tabbar) .ls-app { min-height: calc(100dvh - var(--ls-shell-bottom)); }
   :root:has(.ls-tabbar) .ls-nav { display: none; }
 }
 .ls-tabbar__item { position: relative; flex: 1 1 0; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
@@ -403,7 +440,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   .ls-page-header__tabs .ls-tab { flex: none; min-height: 44px; }
   /* With a tab bar, the primary action floats above it in thumb reach, and moves up while a toast shows. */
   :root:has(.ls-tabbar) .ls-page-header__primary { position: fixed; z-index: 20; right: var(--space-4); bottom: calc(var(--tabbar-height) + env(safe-area-inset-bottom) + var(--space-4));
-    height: 48px; padding: 0 var(--space-5); border-radius: var(--radius-pill); box-shadow: var(--shadow-md); transition: translate var(--motion-base) var(--ease-enter); }
+    height: var(--fab-height); padding: 0 var(--space-5); border-radius: var(--radius-pill); box-shadow: var(--shadow-md); transition: translate var(--motion-base) var(--ease-enter); }
   :root:has(.ls-tabbar):has(.ls-toast) .ls-page-header__primary { translate: 0 calc(-1 * (var(--toast-min-height) + var(--space-2))); }
 }
 
@@ -441,10 +478,19 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   text-align: center; background: var(--accent); color: var(--on-accent); }
 /* The extra filters behind the Filter chip, on desktop. On a phone the same form goes in an ls-dialog--sheet. */
 .ls-popover--panel { width: var(--popover-width); padding: var(--space-4); }
+/* The scope (a stepper) sits before the scrolling row, so it is never cut off. On a phone it takes a line of its own (#96). */
+.ls-filterbar__scope { flex: none; display: flex; min-width: 0; }
 @media (max-width: 640px) {
   .ls-filterbar { flex-wrap: wrap; }
+  .ls-filterbar__scope { flex-basis: 100%; }
+  .ls-filterbar__scope > .ls-stepper { max-width: 100%; }
   .ls-filterbar__search { width: 140px; }
   .ls-filterbar__count { flex-basis: 100%; margin-left: 0; }
+}
+/* Touch: the search is a field like any other, 44px with 16px text so iOS doesn't zoom (#92). This comes after the 32px rule above,
+   which otherwise wins over the general touch block earlier in the file. */
+@media (max-width: 640px), (pointer: coarse) {
+  .ls-filterbar__search { height: 44px; font-size: 16px; }
 }
 
 /* ---------- Stepper (previous, the period, next, back to now) ---------- */
@@ -461,7 +507,9 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 @media (max-width: 640px) {
   .ls-stepper { height: 44px; }
   .ls-stepper__step { width: 40px; height: 40px; }
-  .ls-stepper__now { height: 40px; }
+  /* The way back to now may wrap onto two lines inside its 40px button, so the whole stepper fits a 288px phone (#96). */
+  .ls-stepper__step, .ls-stepper__label { flex: none; }
+  .ls-stepper__now { height: 40px; min-width: 0; flex: 0 1 auto; white-space: normal; text-align: center; line-height: 15px; }
   .ls-stepper__label { min-width: 8ch; }
   /* The short label shows; the long one stays for screen readers. */
   .ls-stepper__short { display: inline; }
@@ -469,7 +517,9 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 }
 
 /* ---------- Board (columns of numbered cards; one column per tab on a phone) ---------- */
-.ls-board { display: flex; align-items: flex-start; gap: var(--space-4); overflow-x: auto; padding-bottom: var(--space-4); }
+/* relative, so the board is the containing block of everything in it: an absolutely positioned child (a count's ls-sr-only text) is
+   clipped by the board's scroll instead of widening the page (#93). */
+.ls-board { position: relative; display: flex; align-items: flex-start; gap: var(--space-4); overflow-x: auto; padding-bottom: var(--space-4); }
 .ls-column { flex: 0 0 var(--board-column-width); display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); background: var(--surface-sunken);
   border: 1px solid var(--line); border-radius: var(--radius-lg); transition: border-color var(--motion-quick) ease; }
 .ls-column--folded { flex-basis: auto; }
@@ -736,15 +786,23 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 
 /* Navigation moves only the page (decided 9 November): main.ls-main is captured on its own as ls-page and carries every page motion below.
    Everything outside it is the shell (the sidebar with its brand, nav and account, the tab bar, toasts, and anything else an app puts
-   there) and stays still with no naming, so an app can't leave part of its frame moving by accident. The shell's snapshot swaps at once,
-   so a new current place in the nav or tab bar shows straight away. The page paints its own background, so a page sliding over another
-   hides the one beneath.
+   there) and stays still, so an app can't leave part of its frame moving by accident. The shell's snapshot swaps at once, so a new
+   current place in the nav or tab bar shows straight away. The page paints its own background, so a page sliding over another hides
+   the one beneath.
+   The shell's fixed layers over the page, the tab bar and toasts, are named here too (decided 12 November, #91): every named group paints
+   above root, so a page taller than the screen would cover them for the whole transition. Their own groups paint above ls-page and
+   swap at once, like root. Apps still name nothing. */
+.ls-tabbar { view-transition-name: ls-tabbar; }
+.ls-toasts { view-transition-name: ls-toasts; }
+::view-transition-group(ls-tabbar), ::view-transition-new(ls-tabbar), ::view-transition-group(ls-toasts), ::view-transition-new(ls-toasts) { animation: none; }
+::view-transition-old(ls-tabbar), ::view-transition-old(ls-toasts) { animation: none; opacity: 0; }
    Switching places fades the page through: the old page fades out over motion-quick, then the new one fades in and grows from 96% over
    motion-base, so two pages never show at once. These rules are unscoped, so a browser without view transition types (Safari 18.0 and
    18.1) fades through on every view transition, and reduced motion makes it 0ms there too; ls-tab, ls-drill and ls-back override them. */
 @keyframes ls-fade-out { to { opacity: 0; } }
 @keyframes ls-fade-through { from { opacity: 0; scale: 0.96; } }
-.ls-main { view-transition-name: ls-page; background: var(--bg); }
+/* A signed-out page is the page too, so signing out or a session ending inside the app fades through like any change of place. */
+.ls-main, .ls-auth { view-transition-name: ls-page; background: var(--bg); }
 ::view-transition-group(root) { animation: none; }
 ::view-transition-old(root) { animation: none; opacity: 0; }
 ::view-transition-new(root) { animation: none; }

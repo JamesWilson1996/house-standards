@@ -11,6 +11,9 @@ const MONTH_ABBREVIATION_LENGTH = 3;
 const TWO_DIGIT_YEAR_BASE = 2000;
 // 29 February can be up to 8 years away (2096 to 2104 skips 2100).
 const LEAP_YEAR_SEARCH = 8;
+/** Which way parseDay resolves a day typed without a year: a due date looks ahead, the date of something done looks back. */
+export const TOWARDS_FUTURE = "future";
+export const TOWARDS_PAST = "past";
 // The weekday formatDay puts in front ("Tue 1 Dec", "Fri, 1 Jan 2027"), read back so a filled field still parses.
 // Commas are gone by the time it runs. The weekday itself is ignored: the date wins, and the field then shows the right one.
 const LEADING_WEEKDAY = /^(?:mon(?:day)?|tue(?:s(?:day)?)?|wed(?:nesday)?|thu(?:r(?:s(?:day)?)?)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\.?\s+/;
@@ -108,12 +111,14 @@ export function calendarKey(event, day, range = {}) {
  * A typed date as "YYYY-MM-DD", or null when it isn't one. Day first, as in the UK:
  * "today", "tomorrow", "2026-12-01", "1/12/2026", "1/12/26", "1/12", "1 Dec", "1 December 2026",
  * and the field's own "Tue 1 Dec" and "Fri, 1 Jan 2027", whose weekday is ignored.
- * Without a year it is the next such day on or after today, so "1 Jan" typed in November is next January.
+ * Without a year it is the next such day on or after today, so "1 Jan" typed in November is next January. With
+ * { towards: "past" }, for the date of something already done, it is the latest such day on or before today instead.
  */
-export function parseDay(text, today) {
+export function parseDay(text, today, { towards = TOWARDS_FUTURE } = {}) {
   const t = text.trim().toLowerCase().replace(/,/g, "").replace(LEADING_WEEKDAY, "");
   if (t === "today") return today;
   if (t === "tomorrow") return addDays(today, 1);
+  if (t === "yesterday") return addDays(today, -1);
   let y, m, d;
   let match = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (match) [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
@@ -126,10 +131,13 @@ export function parseDay(text, today) {
     [d, m, y] = [Number(match[1]), month, match[3] ? Number(match[3]) : undefined];
   } else return null;
   if (y === undefined) {
-    // The first year from this one in which that day exists and isn't past.
+    // The nearest year, from this one onwards (or backwards towards the past), in which that day exists on the right side of today.
     const thisYear = Number(today.slice(0, 4));
-    for (let year = thisYear; year <= thisYear + LEAP_YEAR_SEARCH; year++) {
-      if (isRealDay(year, m, d) && `${year}-${pad(m)}-${pad(d)}` >= today) return `${year}-${pad(m)}-${pad(d)}`;
+    const past = towards === TOWARDS_PAST;
+    for (let step = 0; step <= LEAP_YEAR_SEARCH; step++) {
+      const year = past ? thisYear - step : thisYear + step;
+      const day = `${year}-${pad(m)}-${pad(d)}`;
+      if (isRealDay(year, m, d) && (past ? day <= today : day >= today)) return day;
     }
     return null;
   }

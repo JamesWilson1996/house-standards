@@ -1,0 +1,12 @@
+{
+  "name": "house-standards",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "render-icons": "node scripts/render-icons.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "2.6.2"
+  }
+}

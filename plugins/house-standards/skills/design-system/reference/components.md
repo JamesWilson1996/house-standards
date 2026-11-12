@@ -204,7 +204,7 @@ Tests pin the clock and cover both clock-change days, as the time rules say: `da
 Every app picks a calendar day the same way, with Lilac & Sage's own calendar in place of the browser's, which looks different in each browser and ignores the theme (decided 8 November, #57). Typing stays the fastest route; the calendar is beside it.
 
 - Field: an `ls-input` (not `type="date"`) in an `ls-field__row` with a calendar button: `ls-btn` holding a 16px Lucide `calendar` icon, `aria-label="Choose a date"` and `aria-haspopup="dialog"`. Help text says what to type: "Type a date like 1 Dec, or pick one."
-- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow"). Without a year it is the next such day on or after today. It also reads the field's own form back ("Tue 1 Dec", "Fri, 1 Jan 2027"), so tabbing through a filled field or changing only the number keeps it valid (#81). The weekday is ignored, so "Tue 3 Dec" is the 3rd and the field then shows "Thu 3 Dec": the number is what someone just typed, and refusing it would be an error for a change they meant. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
+- Typing: `parseDay` reads it on blur and Enter, day first as in the UK ("1 Dec", "1/12", "1/12/2026", "2026-12-01", "today", "tomorrow", "yesterday"). Without a year it is the next such day on or after today. A field for the date of something already done (paid on, received on) passes `{ towards: "past" }` (`TOWARDS_PAST`), so a day without a year is the latest one on or before today: "20 Oct" typed on 26 October is this 20 October (#95). Such a field usually has a `max` of today too. It also reads the field's own form back ("Tue 1 Dec", "Fri, 1 Jan 2027"), so tabbing through a filled field or changing only the number keeps it valid (#81). The weekday is ignored, so "Tue 3 Dec" is the 3rd and the field then shows "Thu 3 Dec": the number is what someone just typed, and refusing it would be an error for a change they meant. The field then shows the day as `formatDay(day, today, { weekday: true })` ("Tue 1 Dec"). When `parseDay` returns null, the field gets `data-invalid` and its help says "Enter a date like 1 Dec 2026."; the value sent to the API stays the last good one.
 - Calendar: the button opens it in an `ls-popover ls-popover--calendar` (`popover="auto"`, `role="dialog"`, `aria-label="Choose a date"`) below the field on desktop, and in an `ls-dialog--sheet` on a phone, with no URL param, as it belongs to its field. It opens on the field's month, or today's. Where `position-area` is missing (Safari), place it with `placePopover(popover, button)` from Popover, on `toggle` and on scroll and resize while open, as for any popover; it goes below the button and flips above when there's no room.
 - Month: `div.ls-calendar` holds `div.ls-calendar__head` (previous month, `h2.ls-calendar__title` with `aria-live="polite"`, next month; the steps are `ls-btn ls-btn--ghost ls-calendar__step` with Lucide `chevron-left` and `chevron-right` and labels "Previous month" and "Next month") and `table.ls-calendar__grid` with `role="grid"`, `aria-labelledby` on the title, one `th` per weekday from Monday ("M" with `abbr="Monday"`), and a `td.ls-calendar__day` per day from `monthGrid`. Blank cells are empty `td`s.
 - Days: each day cell carries `data-day`, `aria-label` from `dayLabel` ("Tuesday, 1 December 2026"), `aria-selected="true"` on the chosen one (filled `accent`), `aria-current="date"` on today (an `accent` ring), and `aria-disabled="true"` outside a min or max (`on-disabled`, not chosen). Only one day has `tabindex="0"`: the chosen day, else today, else the 1st; the rest have `tabindex="-1"`.
@@ -216,7 +216,7 @@ The helpers ship in `@jameswilson1996/ui-tokens/days.js`, with types (#82). Impo
 
 | Export | Does |
 | --- | --- |
-| `parseDay(text, today)` | A typed date as a plain date, or null |
+| `parseDay(text, today, { towards })` | A typed date as a plain date, or null; `towards: "past"` reads a yearless day back from today |
 | `formatDay(day, today, { weekday })` | "1 Dec", "Tue 1 Dec", "Fri, 1 Jan 2027" |
 | `monthGrid("2026-12")` | The month's weeks, Monday first, null for blank cells |
 | `dayLabel(day)`, `monthLabel(month)` | "Tuesday, 1 December 2026", "December 2026" |
@@ -372,6 +372,47 @@ osDark.addEventListener("change", () => applyAppearance());
 <p class="ls-help" id="appearance-help">Saved on this device only.</p></div>
 ```
 
+## Settings
+
+How an app with several areas lays out its settings, and where each setting lives (decided 12 November, #101). Nav says to group extras under Settings; this is what Settings is.
+
+Layout:
+
+- Settings is one place, in the sidebar and in the account menu on a phone, with the page header's tabs: **Household** first (the household, its people and invites), then one tab per area that has settings, in the nav's order ("Budget", "Meals", "Shopping"), then **This device** last (Appearance, then Sign out). Each tab is its own route (`/settings/budget`), so an area can link straight to its settings and Back returns there.
+- An app with 6 cards or fewer in all uses one page with no tabs, in the same order. Past 6 cards, or once two areas have settings, it uses the tabs. A tab that would hold one switch goes in Household instead.
+- Each tab is a column of `ls-card`s, one per group, each with an `h2` and an `ls-form`. A tab holds 5 cards at most; a sixth means the area needs splitting or a setting belongs elsewhere (below).
+- Switching tabs is `ls-tab`: only the `ls-tab-panel` fades through (Navigation motion).
+
+Where each setting lives:
+
+| Setting | Where |
+| --- | --- |
+| Household-wide (name, time zone, people) | Settings › Household |
+| One area's own (Budget's pay day, Meals' week start) | Settings › that area |
+| One record's own (a board's columns, a bill's reminders) | A page one level below the record ("Board settings", `ls-drill`), linked from the record's More menu |
+| This device only (Appearance, folds) | Settings › This device |
+| A quick setting used while working (the week's start day on the Meals page) | A sheet over the page that changes the same value as the Settings tab; no second copy of the setting |
+
+- An area's More menu has "Budget settings", a link to `/settings/budget`. Following it fades through, as any link to another place does (Navigation motion), and Back fades through to the area again.
+- A one-off action (an import, a restore from a backup, a reset) sits in its own card at the end of its area's tab, with a default button that opens a dialog. It shows while it can run: an import from another app hides once something has been imported, and comes back if the API says it may run again (`allowedActions`). It is never a panel that appears only during the action.
+
+Saving:
+
+- A card of fields has one Save button in its `ls-form__actions` ("Save budget settings"). The toast names what was saved: "Budget settings saved." Unsaved changes follow Unsaved changes in Dialog.
+- Switches and `ls-segmented` controls that stand alone in a card save on change, with no button, each change its own command; a toast confirms only when the change isn't visible where it was made. A card mixes neither: a switch in a card with a Save button is a checkbox (Checkbox and Switch).
+- Appearance saves on change, on the device only (see Appearance).
+
+```html
+<header class="ls-page-header">
+<div class="ls-page-header__main"><div class="ls-page-header__heading"><h1 class="ls-page-header__title" tabindex="-1">Settings</h1></div></div>
+<div class="ls-tabs ls-page-header__tabs" role="tablist" aria-label="Settings"><a class="ls-tab" role="tab" href="/settings" aria-selected="false">Household</a><a class="ls-tab" role="tab" href="/settings/budget" aria-selected="true">Budget</a><a class="ls-tab" role="tab" href="/settings/meals" aria-selected="false">Meals</a><a class="ls-tab" role="tab" href="/settings/device" aria-selected="false">This device</a></div>
+</header>
+<div class="ls-tab-panel ls-stack">
+<section class="ls-card" aria-labelledby="pay-title"><h2 class="ls-card__title" id="pay-title">Pay day</h2><form class="ls-form">…<div class="ls-form__actions"><button class="ls-btn ls-btn--primary" type="submit">Save budget settings</button></div></form></section>
+<section class="ls-card" aria-labelledby="import-title"><h2 class="ls-card__title" id="import-title">Import from a spreadsheet</h2><p class="ls-card__meta">Bring in last year's bills from a CSV file.</p><div class="ls-card__foot"><button class="ls-btn" type="button">Import bills</button></div></section>
+</div>
+```
+
 ## Badge
 
 A one- or two-word status beside an item. Tones: neutral (default), `--accent`, `--success`, `--warning`, `--danger`, `--info`. Add `span.ls-dot` for live states.
@@ -516,7 +557,9 @@ Example markup:
 
 A section heading that folds its section: a card on an overview, a settings group, the "Picked up" list under a shopping list (#79). The same control as a board column's toggle, on any heading.
 
-`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id`.
+`div.ls-fold__head` holds the heading (`h2`, `h3` or whatever level the page needs, with `ls-fold__title` and its usual size class) wrapping a `button.ls-fold`, then any action beside the heading. The body follows with an `id` and `ls-fold__body`.
+
+- In a plain `ls-card`, the head's own margin spaces it from the body. In a section spaced by a gap (`section.ls-card.ls-stack`, #90), the head has no margin, so the stack's gap alone spaces them, and an open `ls-fold__body` is `display: contents`, so its children are spaced by the same gap as the rest of the section. Don't add a stack inside the body for that.
 
 - The button has `type="button"`, `aria-expanded` and `aria-controls` pointing at the body, and holds a 16px Lucide `chevron-down` (`aria-hidden="true"`) before the heading text. The heading keeps its level, so the page's outline and screen reader heading lists stay right; the button takes the heading's font and sits flush with where the text would start.
 - Folded: `aria-expanded="false"` and `hidden` on the body. The chevron turns -90deg over `motion-quick`, so reduced motion shows no turn; the body shows and hides at once.
@@ -550,11 +593,11 @@ Example markup:
 ```html
 <section class="ls-card" aria-labelledby="due-title">
 <div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="due-title"><button class="ls-fold" type="button" aria-expanded="true" aria-controls="due-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Due in the next 30 days</button></h2><a href="#">All bills</a></div>
-<div id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
+<div class="ls-fold__body" id="due-body"><p>Council tax · £164.00 · 1 Dec</p></div>
 </section>
-<section class="ls-card" aria-labelledby="picked-title">
+<section class="ls-card ls-stack" aria-labelledby="picked-title">
 <div class="ls-fold__head"><h2 class="h3 ls-fold__title" id="picked-title"><button class="ls-fold" type="button" aria-expanded="false" aria-controls="picked-body"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>Picked up</button></h2><button class="ls-btn ls-btn--ghost ls-btn--sm" type="button">Clear</button></div>
-<div id="picked-body" hidden><p>Milk, Bread</p></div>
+<div class="ls-fold__body" id="picked-body" hidden><ul class="ls-list">…</ul><p class="ls-help">Picked up items clear after a week.</p></div>
 </section>
 ```
 
@@ -574,7 +617,7 @@ Actions (decided 8 November, #23): every row shows its one main action as a visi
 - The list is a size container, so it takes its width from where it sits and never from its rows: in a flex row or grid give it a width (`flex: 1`, a column), or it collapses.
 - Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
 - Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
-- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities. A toast with Undo confirms the change.
+- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities, and a row that moves after a command slides there (A row that moves, in Motion utilities). A toast with Undo confirms the change.
 - Consumer provides: the rows from the API, each row's `allowedActions` deciding which main action shows.
 
 ```ts
@@ -668,11 +711,13 @@ Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-
 
 - Consumer provides: tab labels and the panels. Each tab is a route segment or search param (TanStack Router) so it survives reload and can be linked.
 - Switching tabs fades through (see Tab bar), never slides.
+- A tab that is its own route is a link: `a.ls-tab` with `role="tab"` and `aria-selected`. The bundle takes the link underline off, as for `a.ls-btn` (#88).
 
 Example markup:
 
 ```html
 <div class="ls-tabs" role="tablist"><button class="ls-tab" role="tab" aria-selected="true">Overview</button><button class="ls-tab" role="tab">Activity</button><button class="ls-tab" role="tab">Members</button><button class="ls-tab" role="tab">Settings</button></div>
+<div class="ls-tabs" role="tablist" aria-label="Budget"><a class="ls-tab" role="tab" href="/budget" aria-selected="true">Overview</a><a class="ls-tab" role="tab" href="/budget/bills">Bills</a><a class="ls-tab" role="tab" href="/budget/spending">Spending</a></div>
 ```
 
 ## App shell
@@ -682,7 +727,9 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 - Above 640px: `ls-nav` (`nav-width`, 220px) on the left, sticky so it stays in view, then `main.ls-main`. The page is left-aligned beside the sidebar and capped at `content-width` (1040px), so list rows and lines stay readable. A board or wide table uses `ls-main ls-main--wide` for the full width.
 - 640px and below: one column with `page-gutter` (16px) plus the safe area on each side. With an `ls-tabbar`, the sidebar is hidden and the bar takes over.
 - `main.ls-main` has `id="main"` and `tabindex="-1"`, as the skip link's target.
-- Page motion (decided 9 November): when the page changes, only `main.ls-main` moves. The bundle captures it on its own (`view-transition-name: ls-page`) and runs every navigation motion on it: fade through, the tab panel's fade, and the drill slide. Everything outside it is the shell and stays still with nothing to add: the sidebar with the app's name, `ls-nav` and the account, the `ls-tabbar`, `ls-toasts`, and anything else the app puts beside them. The current place in the sidebar or tab bar changes at once. Keep the whole page, page header included, inside `ls-main`; content outside it changes at once with no motion. `ls-main` paints `--bg`, so a sliding page covers the one beneath. Dialogs, sheets, popovers and toasts keep their own motion.
+- `ls-main` fills the frame below the sidebar's top or the phone's top row, down to the bottom of the screen, however short the page (#87). With an `ls-tabbar`, the frame is the screen less the bar (and less a floating primary action, see Page header), so a page that fits doesn't scroll.
+- Page motion (decided 9 November): when the page changes, only `main.ls-main` moves. The bundle captures it on its own (`view-transition-name: ls-page`) and runs every navigation motion on it: fade through, the tab panel's fade, and the drill slide. Everything outside it is the shell and stays still with nothing to add: the sidebar with the app's name, `ls-nav` and the account, the `ls-tabbar`, `ls-toasts`, and anything else the app puts beside them. The current place in the sidebar or tab bar changes at once. Keep the whole page, page header included, inside `ls-main`; content outside it changes at once with no motion. `ls-main` paints `--bg` and is at least as tall as the screen, so a sliding page covers the one beneath.
+- The tab bar and toast region get their own view transition names from the bundle (`ls-tabbar`, `ls-toasts`; decided 12 November, #91), with no animation, so they paint above the page and stay in view while a page taller than the screen changes under them. They are the only shell parts named; apps name nothing. Another fixed layer an app adds over the page needs the same, through a PR here. Dialogs, sheets, popovers and toasts keep their own motion.
 
 ```html
 <body>
@@ -714,7 +761,52 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 
 - `viewport-fit=cover` makes `env(safe-area-inset-*)` real, so the tab bar, toasts and sheets clear the system bars on Android gesture navigation and the iPhone home indicator. `interactive-widget=resizes-content` keeps sheets above the Android keyboard.
 - `theme-color` colours the phone's browser bar and the installed app's title bar. Set it from `--bg` after the theme is applied (see Appearance), so it matches in both themes and follows the Appearance choice.
-- Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape. Until a logo exists, the app's initial in `on-accent` on an `accent` square.
+- Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape.
+- Every icon comes from `appIcons()` in `@jameswilson1996/ui-tokens/icons.js` (#97): the mark on an `accent-soft` tile, or the app's Lucide glyph in its place. Don't draw icons by hand. The favicon is used as SVG and follows a dark OS theme; the others are PNGs at their size (`APP_ICONS` lists each). The maskable icon keeps its art inside the middle 52%, within Android's 80% safe circle.
+- An app that uses the mark copies the ready-made set from the package's `icons/` folder (`favicon.svg`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) into `public/`. A bump of the package brings any change to the mark.
+- An app with its own glyph renders its set with `@resvg/resvg-js` (a dev dependency), as house-standards renders the default one:
+
+```js
+// scripts/icons.mjs: writes this app's icons into public/. Run it after changing the glyph or bumping ui-tokens.
+import { writeFileSync } from "node:fs";
+import { Resvg } from "@resvg/resvg-js";
+import { appIcons, APP_ICONS } from "@jameswilson1996/ui-tokens/icons.js";
+
+const GLYPH = '<path d="M3 11 12 4l9 7v9h-6v-6H9v6H3z"/>'; // the app's Lucide icon (here: house)
+for (const [file, svg] of Object.entries(appIcons({ glyph: GLYPH }))) {
+  if (file === "favicon.svg") writeFileSync(`public/${file}`, svg); // stays SVG, so it follows a dark OS theme
+  else writeFileSync(`public/${file.replace(/\.svg$/, ".png")}`, new Resvg(svg, { fitTo: { mode: "width", value: APP_ICONS[file].size } }).render().asPng());
+}
+```
+
+```json
+{
+  "name": "Hearth", "short_name": "Hearth", "display": "standalone", "start_url": "/",
+  "background_color": "#fbfafd", "theme_color": "#fbfafd",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+```
+
+The manifest is JSON, so its colours are the light `--bg` written out; it is the one place outside tokens.css a colour value appears.
+
+### Brand
+
+The mark and the app's name together (brand book Iconography). `a.ls-brand` (the app's home) or `div.ls-brand` holds `svg.ls-brand__mark` (`viewBox="0 0 32 32"`, `aria-hidden="true"`, the two paths from `MARK_LEAVES` with classes `ls-mark-lilac` and `ls-mark-sage`) and the name as text. The bundle fills the paths from `mark-lilac` and `mark-sage`, so the mark follows the theme.
+
+- Sidebar: the first child of `ls-nav`, linking home, at 24px.
+- Signed-out pages: `ls-brand ls-brand--lg` (40px) above the card, not a link.
+- The name is the app's name as text, never an image, so it is read and translated.
+
+```html
+<nav class="ls-nav" aria-label="Main">
+<a class="ls-brand" href="/"><svg class="ls-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path class="ls-mark-lilac" d="M15.5 27C9 25.5 4.5 19.5 5 8.5c7 .5 12 6.5 10.5 18.5z"/><path class="ls-mark-sage" d="M16.5 27c-1.5-12 3.5-18 11-21 1 11.5-4 19.5-11 21z"/></svg>Hearth</a>
+<a class="ls-nav__item" href="/" aria-current="page">…Today</a>
+</nav>
+```
 
 ### After navigation
 
@@ -758,6 +850,43 @@ Each route says where it sits in `staticData`: its top-level `place` (`"budget"`
 - Changes to the search params only (a dialog's param, a filter, a stepper's period) take no page motion from the router: dialogs and filters have their own, and the stepper's links pass `viewTransition={{ types: ["ls-tab"] }}` themselves.
 - Without a router, call `switchView`, `switchPanel` or `drillView` with the type `navigationMotion` gives.
 
+#### While the next page loads
+
+A navigation's motion lands on the finished page, or on its placeholders, never on a page that fills in afterwards (decided 12 November, #99; brand book Motion pattern 4). Arriving twice (a slide into a page holding only its header, then the board appearing; a fade from November to November, then December swapping in) is the page-load sequence the brand book rules out.
+
+- Hold: the current page stays on screen while the next page's main query loads, for up to `motion-wait` (400ms). The tapped link or tab shows it was pressed at once (`:active`, and the sidebar or tab bar's current place changes straight away); nothing else changes.
+- Answered in time: the motion runs to the finished page.
+- Past `motion-wait`: the motion runs to the page with its placeholders (the route's pending component, the page's real header and components holding `ls-placeholder`s), and the content then replaces them in place with no second motion.
+- Search params (a stepper's period, a filter, the board's column on a phone) follow the same rule for the `ls-tab-panel`: the route's loader depends on them, so the panel holds its old content up to `motion-wait`, then fades to the new period or to placeholders. Don't keep the old figures on screen with `placeholderData: keepPreviousData` for a query a navigation waits on: the fade would run to the old period and the new one would swap in after it. A search box's results, which change as you type, keep the old rows instead, with no motion.
+- Preload on intent (hover, focus, touch start), so the wait is rare.
+- A dialog's param opens the dialog at once, with its own placeholders; the hold is for pages and panels.
+
+The wiring, with TanStack Router and Query: a loader per route that warms the page's main query, `defaultPendingMs` from the token, and preloading on intent. `MOTION_WAIT_MS` comes from `motion.js`, kept equal to the token by a test. The pending component renders the page with its placeholders; it skips `ls-loading`'s own wait, since the router has already waited.
+
+```ts
+import { MOTION_WAIT_MS } from "@jameswilson1996/ui-tokens/motion.js";
+
+export const router = createRouter({
+  routeTree,
+  context: { queryClient },
+  scrollRestoration: true,
+  defaultPreload: "intent",
+  defaultPreloadStaleTime: 0, // Query decides what is fresh; the router always asks it
+  defaultPendingMs: MOTION_WAIT_MS, // hold the current page this long, then show the pending component
+  defaultViewTransition: { /* types from navigationMotion, as above */ },
+});
+
+// A route: the loader waits for the page's main query; search params it reads are loaderDeps, so a new period waits too.
+export const Route = createFileRoute("/budget/bills")({
+  staticData: { title: "Bills", place: "budget", depth: 0 },
+  validateSearch: billsSearch, // Zod
+  loaderDeps: ({ search }) => ({ month: search.month }),
+  loader: ({ context, deps }) => context.queryClient.ensureQueryData(billsQuery(deps.month)),
+  pendingComponent: BillsPending, // the page header and the list with ls-placeholder rows
+  component: BillsPage, // reads the same query with useSuspenseQuery, so it never renders half-loaded
+});
+```
+
 ```ts
 import { createRouter, type ParsedLocation } from "@tanstack/react-router";
 import { navigationMotion, type PagePlace } from "@jameswilson1996/ui-tokens/motion.js";
@@ -788,12 +917,50 @@ export const router = createRouter({
 });
 ```
 
+## Signed-out pages
+
+The pages outside the shell: sign in and what can stop it (decided 12 November, #98). No sidebar, no tab bar and no page header; the brand, then one card in the middle of the screen.
+
+`main.ls-auth` (`id="main"`, `tabindex="-1"`) holds `div.ls-auth__panel`: an `ls-brand ls-brand--lg`, then an `ls-card` with `h1.ls-auth__title` (`tabindex="-1"`), an optional `ls-alert` for the state, `p.ls-auth__text`, and one full-width button. An optional `p.ls-auth__foot` under the card holds a line of help.
+
+- Layout: the panel is `dialog-sm` (400px) wide at most, centred on the screen with `page-gutter` and the safe areas around it, and `100dvh` tall at least, so the phone's browser bars never push the button off screen. Taller than the screen, it scrolls.
+- Theme: the head's Appearance script runs here too, so the page follows this device's choice or the OS. Appearance itself is in the app (Settings › This device); a signed-out page has no settings.
+- Title "Sign in · Hearth" for every state. Focus starts on the `h1` after a redirect inside the app (a session that ended, a sign out); on a fresh load the browser's own start is right. The state's alert sits under the title, so a screen reader reads it next.
+- `returnTo`: a session that ends sends the user here with the page they were on as a same-origin path (`?returnTo=/budget/bills`, Zod-validated to start with one `/`). After signing in they land there; otherwise on the app's home.
+- Motion (brand book Motion pattern 4): `ls-auth` is captured as the page, like `ls-main`, so signing out or a session ending inside the app fades through (`ls-switch`), and the shell appears or goes at once with the root snapshot. Arriving back from the identity provider is a fresh page load, with no motion.
+
+States and their copy:
+
+| State | Alert | Text | Button |
+| --- | --- | --- | --- |
+| Sign in | None | "Use the Google account your household invited." | "Continue with Google" |
+| Not invited (the API refused the account) | `ls-alert--danger`: "That Google account isn't invited to Hearth." | "Ask someone in your household to invite it, or use another account." | "Use another account" |
+| Signed out on another device | `ls-alert--info`: "You signed out on another device." | "Sign in to carry on." | "Continue with Google" |
+| Session ended, with `returnTo` | `ls-alert--info`: "Your session ended." | "Sign in to go back to Bills." (the `returnTo` page's title) | "Continue with Google" |
+
+After the user signs out themself, the plain Sign in state shows, with no alert: they know what they did.
+
+```html
+<main class="ls-auth" id="main" tabindex="-1">
+<div class="ls-auth__panel">
+<div class="ls-brand ls-brand--lg"><svg class="ls-brand__mark" viewBox="0 0 32 32" aria-hidden="true"><path class="ls-mark-lilac" d="M15.5 27C9 25.5 4.5 19.5 5 8.5c7 .5 12 6.5 10.5 18.5z"/><path class="ls-mark-sage" d="M16.5 27c-1.5-12 3.5-18 11-21 1 11.5-4 19.5-11 21z"/></svg>Hearth</div>
+<section class="ls-card" aria-labelledby="auth-title">
+<h1 class="ls-auth__title" id="auth-title" tabindex="-1">Sign in</h1>
+<div class="ls-alert ls-alert--danger"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg><div>That Google account isn't invited to Hearth.</div></div>
+<p class="ls-auth__text">Ask someone in your household to invite it, or use another account.</p>
+<a class="ls-btn ls-btn--primary" href="/auth/google?prompt=select_account">Use another account</a>
+</section>
+<p class="ls-auth__foot">Hearth is for invited households only.</p>
+</div>
+</main>
+```
+
 ## Nav
 
 The app's primary sidebar. `nav.ls-nav > a.ls-nav__item`, an 18px Lucide icon then the label; the current page has `aria-current="page"`.
 
 - Consumer provides: the links (TanStack Router `<Link>` sets `aria-current` via `activeProps`).
-- Five to seven items; group extras under Settings rather than growing the list.
+- Five to seven items; group extras under Settings rather than growing the list. Settings is laid out as Settings above describes.
 - At 640px and below, when the page also has an `ls-tabbar`, the sidebar is hidden and the tab bar takes over.
 
 Example markup:
@@ -812,8 +979,8 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 - Labels: one word where possible ("Today", "Budget", "Shopping"). A label that doesn't fit is cut with an ellipsis, so keep them short rather than relying on it.
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
-- While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar.
-- Switching tabs fades the page through (brand book Motion pattern 4, decided 9 November): the old page fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. The tab bar itself never moves; its current item changes at once. Each tab keeps its own scroll position and state where the router allows.
+- While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar; with a floating primary the padding also clears the button (`fab-height` plus `space-4`, #94).
+- Switching tabs fades the page through (brand book Motion pattern 4, decided 9 November): the old page fades out over `motion-quick`, then the new one fades in and grows from 96% over `motion-base`, so two pages never show at once. Nothing slides. The sidebar does the same. The tab bar itself never moves and stays above the page throughout, however long the page (#91); its current item changes at once. Each tab keeps its own scroll position and state where the router allows.
 - Within a place (a page's `ls-tabs`, the board's column tabs, a stepper's period) the page holds still and only the content below the tabs fades through, with no scale (decided 9 November, since fading the whole screen to change Overview to Bills was jarring). Wrap that content in `div.ls-tab-panel`, once per page, and mark the navigation `ls-tab`. The bundle names the panel only during an `ls-tab` transition. Without a panel the page swaps at once.
 - The router marks these navigations with the `ls-switch` view transition type, and an `ls-tab` within a place, from each route's place and depth (see Navigation motion in App shell); the bundle animates only those. Without a router, use `switchView` and `switchPanel`. Browsers without View Transitions switch at once, and reduced motion makes the fade 0ms. Browsers with View Transitions but without transition types (Safari 18.0 and 18.1) fade through on every navigation, drill-downs included, since the bundle's fade through is the default for any view transition; apps need no check for them. Only `main.ls-main` moves (see Page motion in App shell), so the tab bar, sidebar and toasts stay still with nothing to add.
 
@@ -898,19 +1065,22 @@ After a failed add:
 
 The one row of controls above a list, on every screen size: the scope (which month, which week), search, the filters in use as removable chips, a Filter chip that holds every other filter, and the result count. It replaces rows of selects and checkboxes, which push the first result below the first screen on a phone.
 
-`div.ls-filterbar` holds `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`. The row holds, in order:
+`div.ls-filterbar` holds, in order, `div.ls-filterbar__scope` if the list has a scope, `div.ls-filterbar__row`, the Filter chip and `p.ls-filterbar__count`.
 
-1. Scope, if the list has one: an `ls-stepper` (see Stepper). Its short label on a phone leaves room for search.
-2. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
-3. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
-4. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
+The scope is an `ls-stepper` (see Stepper) in `ls-filterbar__scope`, before the row and outside its sideways scroll, so the stepper and its way back to now are never cut off (#96). On desktop it sits at the start of the bar's line; on a phone it takes a line of its own above the row, and its now link wraps onto two lines if it must, so it fits a 320px screen.
+
+The row holds, in order:
+
+1. Search: `input.ls-input.ls-filterbar__search[type=search]` with an `aria-label` ("Search bills") and a placeholder.
+2. Active filters: one `button.ls-chip.ls-chip--active` per filter in use, labelled with its value ("Category: Home") and a 16px Lucide `x`. Activating it removes the filter. Its `aria-label` says so: "Remove filter Category: Home".
+3. Quick toggles, at most 2, for filters people flip daily ("Mine", "High priority"): `button.ls-chip[aria-pressed]`.
 Then, after the row: the Filter chip, `button.ls-chip.ls-filterbar__filter` with a 16px Lucide `sliders-horizontal` icon, the word "Filter" and, when filters are in use, `span.ls-chip__count` with how many.
 
 - One row, always. When the row is wider than the screen it scrolls sideways; it never wraps. The Filter chip stays outside the scrolling part, so it is always in view, and its count shows how many filters are in use when some have scrolled away. A filter that doesn't earn a place in the row lives behind the Filter chip.
 - The Filter chip opens the full set of filters as an `ls-form`: in an `ls-popover ls-popover--panel` (320px) below the chip on desktop, and in an `ls-dialog--sheet` on a phone. The same form component goes in either. Each change applies at once and updates the URL, so the list behind updates while the panel is open; the sheet's foot has "Show 3 bills" (closes it) and "Clear all".
 - Count: `p.ls-filterbar__count` with `aria-live="polite"`, the result count in words ("3 of 12 bills"). It sits at the right end on desktop and under the row on a phone.
 - Filter state lives in the URL search params (Zod-validated), so a filtered list can be linked and survives reload. The sheet's open state follows the dialog rules; the popover's does not go in the URL.
-- Chips are 32px tall with a 44px hit area. Pressed and active chips use `accent-soft` with `on-accent-soft`.
+- Chips are 32px tall with a 44px hit area. Pressed and active chips use `accent-soft` with `on-accent-soft`. The search is 32px with 13px text with a pointer, and 44px with 16px text on a phone or touch screen like every field (#92), so iOS doesn't zoom on focus.
 - Lists with no filters have no filter bar. A list with only a search has a bar with just the search and the count.
 
 ```ts
@@ -927,6 +1097,7 @@ Example markup:
 
 ```html
 <div class="ls-filterbar">
+<div class="ls-filterbar__scope"><div class="ls-stepper" role="group" aria-label="Month"><button class="ls-stepper__step" type="button" aria-label="Previous month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><span class="ls-stepper__label" aria-live="polite"><span class="ls-stepper__long">December 2026</span><span class="ls-stepper__short" aria-hidden="true">Dec 2026</span></span><button class="ls-stepper__step" type="button" aria-label="Next month"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button><button class="ls-stepper__now" type="button">This month</button></div></div>
 <div class="ls-filterbar__row">
 <input class="ls-input ls-filterbar__search" type="search" aria-label="Search bills" placeholder="Search bills">
 <button class="ls-chip ls-chip--active" type="button" aria-label="Remove filter Category: Home">Category: Home<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -953,8 +1124,8 @@ Moves a list through time one period at a time: Budget's month, Meals' week. Pre
 - Back to now: `ls-stepper__now` in `link` colour, "This month" or "This week". Render it only when the stepper is away from now.
 - The period lives in the URL search params (`?month=2026-11`, Zod-validated), so Back steps back and a link opens the same period. A month is a plain calendar month with no time zone; "now" comes from the app's `Clock` in the household's zone.
 - Changing period fades only the content below through (`ls-tab` with an `ls-tab-panel`, see Tab bar), with no slide. The stepper stays still.
-- In a list's filter bar it is the scope and goes first in `ls-filterbar__row`. On a page without filters it can sit alone above the content.
-- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone.
+- In a list's filter bar it is the scope and goes in `ls-filterbar__scope`, before the scrolling row (see Filter bar). On a page without filters it can sit alone above the content.
+- 36px tall with 30px buttons on desktop; 44px tall with 40px buttons on a phone. On a phone `ls-stepper__now` wraps onto two lines when the stepper would be wider than its line, so a long "This budget month" still fits 288px (#96). Keep it to three words.
 
 Example markup:
 
@@ -971,7 +1142,7 @@ Columns of numbered cards that move between stages: a project's To do, In progre
 
 - Column: `div.ls-column__head` with `h2.ls-column__title` wrapping a `button.ls-column__toggle` (`aria-expanded`, `aria-controls` on the cards, a 16px Lucide `chevron-down` that turns when folded) and `span.ls-column__count`; then `ol.ls-column__cards`. A folded column gets `ls-column--folded` and shows only its head. Fold state is per device (local storage), not on the server.
 - Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL. Cards hold no other buttons.
-- Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit.
+- Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit. The board is `position: relative`, so everything in it, a count's `ls-sr-only` text included, stays inside its scroll and never widens the page (#93).
 - Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
 - Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls (`pressToLift`). The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
 - When the tab hold switches columns on a phone, the card's own column stops being current. The bundle keeps a non-current column that holds `ls-lifted` as a zero-height box (`:has(.ls-lifted)`), so the fixed card stays drawn under the finger. Drag code that measures drop targets skips columns whose height is 0.
@@ -1242,7 +1413,7 @@ export function drillView(direction: "in" | "back", update: () => void) {
 - Account: `button.ls-page-header__account` holding an `ls-avatar` with the member's initial, opening an `ls-popover--menu` with their name, Settings and Sign out. It shows on a phone; where the page has an `ls-nav` sidebar, the sidebar holds the account and the button hides above 640px.
 - Tabs: an `ls-tabs` row of the page's views (Overview, Bills, Yearly costs), each a route. The row scrolls sideways if the tabs don't fit.
 - Desktop shows everything in this order with nothing sticky.
-- Phone (640px and below): only the tab row is sticky, 44px tall, at the top of the screen; the area, title, state and actions scroll away once read. A page without tabs has no sticky row. With an `ls-tabbar`, the primary action floats above the bar at the bottom right as a 48px pill, in thumb reach, and moves up while a toast shows. Header buttons are 44px.
+- Phone (640px and below): only the tab row is sticky, 44px tall, at the top of the screen; the area, title, state and actions scroll away once read. A page without tabs has no sticky row. With an `ls-tabbar`, the primary action floats above the bar at the bottom right as a `fab-height` (48px) pill, in thumb reach, and moves up while a toast shows. The bundle then pads the page's end by the button's height and `space-4` as well as the bar's, so the last line and its links scroll clear of it (#94). Header buttons are 44px.
 - The sticky row needs the header's parent to be the scrolling page content, with no `overflow` set on the elements between them.
 
 Menus (`ls-popover ls-popover--menu`, `popover="auto"`, opened by a `popovertarget` button) hold `p.ls-menu__label` and `p.ls-menu__meta` for a heading, `a.ls-menu__item` or `button.ls-menu__item` rows (44px on a phone or touch screen), `hr.ls-menu__sep` between groups, and `ls-menu__item--danger` for Sign out or Delete. They are plain links and buttons reached with Tab, so they take no `role="menu"`. The popover rules apply: Escape and a click outside close it and focus returns to the button.
@@ -1521,6 +1692,53 @@ export function useLeaving<T extends HTMLElement>(open: boolean, leave: (el: T) 
 }
 // const { ref, shown } = useLeaving<HTMLDialogElement>(Boolean(bill), (d) => d.open && d.close());
 // return shown ? <dialog ref={ref} className="ls-dialog">…</dialog> : null;
+```
+
+### A row that moves
+
+A row that stays in its list but lands somewhere else after a command slides to its new place instead of jumping (decided 12 November, #100; brand book Motion pattern 2). The same `capture` and `slideFrom` the drag uses do it, with no drag.
+
+| What changed | Motion |
+| --- | --- |
+| One row, after its own command (a bill marked paid moves down a date-sorted list; an item added again goes back to To get's place) | The row and the rows between slide to their new places over `motion-base` |
+| One row, changed on another device while the list is on screen | The same slide |
+| The whole list re-sorted (a column header, a filter, a search) | No slide: it changes at once, or its `ls-tab-panel` fades when the change is a navigation (Navigation motion) |
+| A row moves from one list on the page to another (To get to Picked up) | It leaves the first as a ticked row does (`ls-list__row--leaving`) and enters the second with `ls-enter` |
+
+- Capture every row before the change and slide them all after it, so the rows between slide aside as the moved one passes. Rows already in place don't move.
+- If the moved row lands outside the screen, add `ls-flash` to it and leave the scroll where it is; the toast says where it went ("Council tax paid. Next due 1 Dec."). Don't scroll to it: the user is still working where they were.
+- Several rows changed at once (a refetch after reconnecting) is a re-sort: no slide.
+- Under reduced motion `slideFrom` does nothing, so the rows swap at once.
+
+In React, key the rows by id so React keeps each element, capture in the command's handler before the cache changes, and slide in a layout effect once the new order has rendered:
+
+```tsx
+import { capture, slideFrom, type Captured } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Slides the list's rows from where they were to their new places after one row moves; null skips the slide (a re-sort).
+export function useRowMove(list: React.RefObject<HTMLElement>, rows: unknown[]) {
+  const before = useRef<Captured | null>(null);
+  useLayoutEffect(() => {
+    if (!before.current) return;
+    slideFrom(before.current);
+    before.current = null;
+  }, [rows]);
+  return () => { if (list.current) before.current = capture(list.current); }; // call just before the one row's change lands
+}
+
+// const beforeMove = useRowMove(listRef, bills);
+// markPaid.mutate(bill.id, { onSuccess: (next) => { beforeMove(); queryClient.setQueryData(billsKey, next); } });
+```
+
+The row that left the screen:
+
+```ts
+// After the slide: a moved row outside the viewport is marked, not scrolled to.
+const landedOutside = (row: HTMLElement) => {
+  const { top, bottom } = row.getBoundingClientRect();
+  return bottom < 0 || top > innerHeight;
+};
+if (landedOutside(row)) row.classList.add("ls-flash");
 ```
 
 ### Drag helpers
