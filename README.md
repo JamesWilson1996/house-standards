@@ -34,7 +34,7 @@ house-standards (this repo, the only copy)
 | Engineering detail | `plugins/house-standards/skills/engineering-standards/reference/*.md` | merge |
 | Colours, type, spacing | `plugins/house-standards/skills/design-system/assets/tokens.json` | `node scripts/build.mjs`, commit, tag `ui-tokens-vX.Y.Z` |
 | Component styles | `plugins/house-standards/skills/design-system/assets/bundle.css` | same as above |
-| Drag helpers | `plugins/house-standards/skills/design-system/assets/motion.js` (+ `motion.d.ts`, tests in `motion.test.mjs`) | same as above |
+| Motion helpers | `plugins/house-standards/skills/design-system/assets/motion.js` (+ `motion.d.ts`, tests in `motion.test.mjs`) | same as above |
 | Day helpers (date picker) | `plugins/house-standards/skills/design-system/assets/days.js` (+ `days.d.ts`, tests in `days.test.mjs`) | same as above |
 | Combobox helpers | `plugins/house-standards/skills/design-system/assets/combobox.js` (+ `combobox.d.ts`, tests in `combobox.test.mjs`) | same as above |
 | Mark and app icons | `plugins/house-standards/skills/design-system/assets/icons.js` (+ `icons.d.ts`, tests in `icons.test.mjs`); `assets/Logos/` is generated | `npm install`, `npm run render-icons` (the PNGs), then same as above |

@@ -1,5 +1,5 @@
 // Tests for motion.js against a small DOM shim: Node has no layout, so each fake element reports the rect it is given.
-import { test, beforeEach } from "node:test";
+import { test, beforeEach, mock } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
@@ -12,6 +12,12 @@ import {
   scrollWhileHeld,
   afterLeaving,
   navigationMotion,
+  placeMarker,
+  toastTimer,
+  staggerIn,
+  openFrom,
+  closeTo,
+  TOAST_MS,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -432,4 +438,233 @@ test("MOTION_WAIT_MS is the motion-wait token, for the router's pending wait (#9
   const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
   const wait = tokens.motion.tokens.find((t) => t.name === "motion-wait").value;
   assert.equal(`${MOTION_WAIT_MS}ms`, wait);
+});
+
+// ---------- #107: marker, toast countdown, stagger, opening from the tapped row ----------
+// A plain fake for these helpers: a rect, a style that records custom properties, a class list and listeners.
+class FakeNode extends EventTarget {
+  constructor({ left = 0, top = 0, width = 100, height = 40 } = {}) {
+    super();
+    Object.assign(this, { left, top, width, height, clientLeft: 0, clientTop: 0, parentElement: null, isConnected: true, inside: [] });
+    this.reflows = [];
+    const props = {};
+    this.style = { transition: "", viewTransitionName: "", props, setProperty: (name, value) => (props[name] = value) };
+    const classes = new Set();
+    this.classList = {
+      add: (name) => classes.add(name),
+      remove: (name) => classes.delete(name),
+      contains: (name) => classes.has(name),
+      toggle: (name, force) => (force ? classes.add(name) : classes.delete(name), force),
+    };
+  }
+  getBoundingClientRect() {
+    const { left, top, width, height } = this;
+    return { left, top, right: left + width, bottom: top + height, width, height };
+  }
+  // Reading offsetWidth forces style, so the test records which transition was in force at that moment.
+  get offsetWidth() { this.reflows.push(this.style.transition); return this.width; }
+  contains(node) { return node === this || this.inside.includes(node); }
+}
+
+const control = () => {
+  const box = new FakeNode({ left: 20, top: 100, width: 300, height: 36 });
+  box.clientLeft = 1;
+  box.clientTop = 1;
+  const marker = new FakeNode();
+  marker.parentElement = box;
+  const options = [0, 1, 2].map((i) => new FakeNode({ left: 23 + i * 98, top: 103, width: 96, height: 30 }));
+  return { box, marker, options };
+};
+
+test("placeMarker puts the marker on the current option, measured inside the control's border", () => {
+  const { marker, options } = control();
+  placeMarker(marker, options[1]);
+  assert.deepEqual(marker.style.props, {
+    "--ls-marker-x": "100px", "--ls-marker-y": "2px", "--ls-marker-w": "96px", "--ls-marker-h": "30px", "--ls-marker-scale": "96",
+  });
+  assert.equal(marker.classList.contains("ls-marker--placed"), true);
+});
+
+test("placeMarker jumps on its first placement, so the marker never slides in from the control's corner", () => {
+  const { marker, options } = control();
+  placeMarker(marker, options[0]);
+  assert.deepEqual(marker.reflows, ["none"]);
+  assert.equal(marker.style.transition, "");
+});
+
+test("placeMarker slides once placed, and jumps when asked (a resize)", () => {
+  const { marker, options } = control();
+  placeMarker(marker, options[0]);
+  placeMarker(marker, options[2]);
+  assert.deepEqual(marker.reflows, ["none"]);
+  placeMarker(marker, options[1], { animate: false });
+  assert.deepEqual(marker.reflows, ["none", "none"]);
+});
+
+test("placeMarker does nothing without a current option", () => {
+  const { marker } = control();
+  placeMarker(marker, null);
+  assert.equal(marker.classList.contains("ls-marker--placed"), false);
+});
+
+const toastPointer = (type, pointerType = "mouse") => Object.assign(new Event(type), { pointerType });
+const toastFocus = (type, relatedTarget = null) => Object.assign(new Event(type), { relatedTarget });
+const withClock = (body) => () => {
+  mock.timers.enable({ apis: ["setTimeout", "Date"] });
+  try { body(); } finally { mock.timers.reset(); }
+};
+
+test("toastTimer ends the toast after TOAST_MS", withClock(() => {
+  const toast = new FakeNode();
+  let ended = 0;
+  toastTimer(toast, () => ended++);
+  mock.timers.tick(TOAST_MS - 1);
+  assert.equal(ended, 0);
+  mock.timers.tick(1);
+  assert.equal(ended, 1);
+}));
+
+test("toastTimer holds the toast and its line while a mouse is over it, then runs on with the time left", withClock(() => {
+  const toast = new FakeNode();
+  let ended = 0;
+  toastTimer(toast, () => ended++);
+  mock.timers.tick(2000);
+  toast.dispatchEvent(toastPointer("pointerenter"));
+  assert.equal(toast.classList.contains("ls-toast--held"), true);
+  mock.timers.tick(10000);
+  assert.equal(ended, 0);
+  toast.dispatchEvent(toastPointer("pointerleave"));
+  assert.equal(toast.classList.contains("ls-toast--held"), false);
+  mock.timers.tick(TOAST_MS - 2000 - 1);
+  assert.equal(ended, 0);
+  mock.timers.tick(1);
+  assert.equal(ended, 1);
+}));
+
+test("toastTimer ignores a finger, since a touch has no hover to end it", withClock(() => {
+  const toast = new FakeNode();
+  let ended = 0;
+  toastTimer(toast, () => ended++);
+  toast.dispatchEvent(toastPointer("pointerenter", "touch"));
+  assert.equal(toast.classList.contains("ls-toast--held"), false);
+  mock.timers.tick(TOAST_MS);
+  assert.equal(ended, 1);
+}));
+
+test("toastTimer holds while focus is inside, and only lets go when focus leaves the toast", withClock(() => {
+  const toast = new FakeNode();
+  const undo = new FakeNode();
+  toast.inside.push(undo);
+  let ended = 0;
+  toastTimer(toast, () => ended++);
+  toast.dispatchEvent(toastFocus("focusin"));
+  toast.dispatchEvent(toastFocus("focusout", undo));
+  mock.timers.tick(TOAST_MS * 2);
+  assert.equal(ended, 0);
+  toast.dispatchEvent(toastFocus("focusout", null));
+  mock.timers.tick(TOAST_MS);
+  assert.equal(ended, 1);
+}));
+
+test("toastTimer's stop function cancels it, so a replaced toast never ends the new one", withClock(() => {
+  const toast = new FakeNode();
+  let ended = 0;
+  const stop = toastTimer(toast, () => ended++);
+  stop();
+  toast.dispatchEvent(toastPointer("pointerleave"));
+  mock.timers.tick(TOAST_MS * 2);
+  assert.equal(ended, 0);
+}));
+
+test("TOAST_MS is the motion-toast token", () => {
+  const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
+  assert.equal(`${TOAST_MS}ms`, tokens.motion.tokens.find((t) => t.name === "motion-toast").value);
+});
+
+test("staggerIn marks the list, then unmarks it once every row has landed, so a re-sort never replays it", async () => {
+  const list = new FakeNode();
+  const rows = [fakeAnimation(), fakeAnimation()];
+  list.getAnimations = () => rows;
+  const done = staggerIn(list);
+  assert.equal(list.classList.contains("ls-stagger"), true);
+  rows[0].end();
+  assert.equal(await settled(done), false);
+  rows[1].end();
+  assert.equal(await settled(done), true);
+  assert.equal(list.classList.contains("ls-stagger"), false);
+});
+
+// A view transition that runs its update at once and records what was named before and after it.
+const fakeTransitions = (origin, dialog) => {
+  const runs = [];
+  globalThis.ViewTransition = class { get types() { return null; } };
+  document.startViewTransition = ({ update, types }) => {
+    const run = { types, namedBefore: { origin: origin.style.viewTransitionName, dialog: dialog.style.viewTransitionName }, skipped: false };
+    let finish;
+    run.finished = new Promise((resolve) => (finish = resolve));
+    run.updateCallbackDone = Promise.resolve().then(update).then(() => {
+      run.namedAfter = { origin: origin.style.viewTransitionName, dialog: dialog.style.viewTransitionName };
+    });
+    run.skipTransition = () => { run.skipped = true; finish(); };
+    run.end = finish;
+    runs.push(run);
+    return run;
+  };
+  return runs;
+};
+const onScreenRow = () => new FakeNode({ left: 16, top: 200, width: 360, height: 56 });
+
+test("openFrom names the row, then the dialog, so the dialog grows out of the row", async () => {
+  const row = onScreenRow();
+  const dialog = new FakeNode();
+  const runs = fakeTransitions(row, dialog);
+  let opened = false;
+  await openFrom(row, () => { opened = true; }, () => dialog);
+  assert.equal(opened, true);
+  assert.deepEqual(runs[0].types, ["ls-origin"]);
+  assert.deepEqual(runs[0].namedBefore, { origin: "ls-origin", dialog: "" });
+  assert.deepEqual(runs[0].namedAfter, { origin: "", dialog: "ls-origin" });
+  runs[0].end();
+  await settled(runs[0].finished);
+  assert.equal(dialog.style.viewTransitionName, "");
+});
+
+test("closeTo names the dialog, then the row it came from, and shrinks back over the ls-origin-back type", async () => {
+  const row = onScreenRow();
+  const dialog = new FakeNode();
+  const runs = fakeTransitions(row, dialog);
+  await closeTo(row, () => {}, () => dialog);
+  assert.deepEqual(runs[0].types, ["ls-origin-back"]);
+  assert.deepEqual(runs[0].namedBefore, { origin: "", dialog: "ls-origin" });
+  assert.deepEqual(runs[0].namedAfter, { origin: "ls-origin", dialog: "" });
+  runs[0].end();
+  await settled(runs[0].finished);
+  assert.equal(row.style.viewTransitionName, "");
+});
+
+test("openFrom and closeTo just open and close when the row is off screen or gone, or the browser has no transition types", async () => {
+  const dialog = new FakeNode();
+  const offScreen = new FakeNode({ top: VIEWPORT.height + 10 });
+  const gone = onScreenRow();
+  gone.isConnected = false;
+  const runs = fakeTransitions(offScreen, dialog);
+  let changes = 0;
+  await openFrom(offScreen, () => changes++, () => dialog);
+  await closeTo(gone, () => changes++, () => dialog);
+  delete globalThis.ViewTransition;
+  await openFrom(onScreenRow(), () => changes++, () => dialog);
+  assert.equal(changes, 3);
+  assert.equal(runs.length, 0);
+});
+
+test("closing while the dialog is still growing skips to the end of the growth, so every transition can be interrupted", async () => {
+  const row = onScreenRow();
+  const dialog = new FakeNode();
+  const runs = fakeTransitions(row, dialog);
+  await openFrom(row, () => {}, () => dialog);
+  await closeTo(row, () => {}, () => dialog);
+  assert.equal(runs[0].skipped, true);
+  await settled(runs[0].finished);
+  // The skipped growth must not clear the name the shrink is using.
+  assert.equal(row.style.viewTransitionName, "ls-origin");
 });

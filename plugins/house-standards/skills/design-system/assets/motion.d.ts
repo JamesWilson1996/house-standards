@@ -1,4 +1,4 @@
-// Types for motion.js, the Lilac & Sage motion helpers (brand book Motion patterns 1, 3 and 4).
+// Types for motion.js, the Lilac & Sage motion helpers (brand book Motion patterns 1 to 4).
 
 export interface Point {
   x: number;
@@ -60,3 +60,20 @@ export type NavigationMotion = "ls-switch" | "ls-tab" | "ls-drill" | "ls-back";
 
 /** The view transition type for a navigation, chosen by where it lands: another place fades through, deeper drills, shallower goes back, a sibling tab fades the panel. */
 export declare function navigationMotion(from: PagePlace, to: PagePlace): NavigationMotion;
+/** How long a toast stays, in ms: the motion-toast token. */
+export declare const TOAST_MS: number;
+
+/** Places a control's span.ls-marker on its current option (ls-segmented, ls-tabs). Slides over motion-base; jumps the first time and when `animate` is false. */
+export declare function placeMarker(marker: HTMLElement, current: Element | null, options?: { animate?: boolean }): void;
+
+/** Calls `onTimeout` after TOAST_MS, holding the timer and the countdown line (ls-toast--held) while a mouse is over the toast or focus is inside. Returns a stop function. */
+export declare function toastTimer(toast: HTMLElement, onTimeout: () => void): () => void;
+
+/** Fades a list's first six rows in motion-stagger apart (ls-stagger) on its first render with data, and takes the class off once they land. */
+export declare function staggerIn(list: Element): Promise<void>;
+
+/** Opens a dialog by growing it from the tapped row over motion-travel. Falls back to `open` alone without view transition types or when the row is off screen. */
+export declare function openFrom(origin: HTMLElement, open: () => void | Promise<void>, dialog: () => HTMLElement | null): Promise<void>;
+
+/** Closes a dialog by shrinking it back into its row over motion-base. Falls back to `close` alone when the row has gone or is off screen. */
+export declare function closeTo(origin: HTMLElement, close: () => void | Promise<void>, dialog: () => HTMLElement | null): Promise<void>;

@@ -47,6 +47,7 @@
   --on-accent: var(--mist-0);
   --accent-soft: var(--lilac-100);
   --on-accent-soft: var(--lilac-700);
+  --accent-soft-pressed: var(--lilac-200);
   --link: var(--lilac-600);
   --sage: var(--sage-200);
   --sage-hover: var(--sage-300);
@@ -62,6 +63,7 @@
   --danger-ink: #9e2f43;
   --danger: #b3394f;
   --on-danger: var(--mist-0);
+  --danger-pressed: #9e2f43;
   --info-soft: #e1eefa;
   --info-ink: #245b8a;
   --disabled-fill: var(--mist-100);
@@ -103,6 +105,7 @@
   --on-accent: var(--lilac-900);
   --accent-soft: #2e2645;
   --on-accent-soft: var(--lilac-200);
+  --accent-soft-pressed: #3a3058;
   --link: var(--lilac-300);
   --sage: var(--sage-300);
   --sage-hover: var(--sage-200);
@@ -118,6 +121,7 @@
   --danger-ink: #f4a9b6;
   --danger: #e88a9b;
   --on-danger: #2a1016;
+  --danger-pressed: #f4a9b6;
   --info-soft: #192c3d;
   --info-ink: #a9cdee;
   --disabled-fill: var(--mist-1000);
@@ -182,7 +186,9 @@
   --motion-quick: 120ms;
   --motion-base: 150ms;
   --motion-travel: 200ms;
+  --motion-stagger: 30ms;
   --motion-flash: 1200ms;
+  --motion-toast: 6000ms;
   --motion-wait: 400ms;
   --motion-pulse: 1600ms;
   --motion-spin: 800ms;
@@ -197,6 +203,7 @@
     --motion-quick: 0ms;
     --motion-base: 0ms;
     --motion-travel: 0ms;
+    --motion-stagger: 0ms;
   }
 }
 

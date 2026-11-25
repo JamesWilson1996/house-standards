@@ -1,5 +1,6 @@
-// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding), waiting for an exit to finish (pattern 3)
-// and choosing a navigation's motion (pattern 4).
+// Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding), a list's first rows in turn (pattern 2), waiting for an
+// exit to finish, a toast's timer and a dialog growing from its row (pattern 3), and a navigation's motion and the current-place
+// marker (pattern 4).
 // Durations come from the motion tokens, so reduced motion stops the slides with no extra code.
 
 /** How long a touch press must last before a card with no handle lifts. */
@@ -222,11 +223,16 @@ export function scrollWhileHeld(scrollers, pointer, onScroll, insets) {
  * button's spinner, are not waited for. Under reduced motion the exits are 0ms, so it resolves at once.
  */
 export function afterLeaving(el) {
+  return afterMotion(el);
+}
+
+// Resolves when the finite animations and transitions on an element and inside it have finished or been cancelled.
+function afterMotion(el) {
   if (typeof el.getAnimations !== "function") return Promise.resolve();
-  // Reading a style applies the closed state, so its transitions exist before they are listed.
+  // Reading a style applies the new state, so its transitions exist before they are listed.
   void getComputedStyle(el).opacity;
-  const exits = el.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
-  return Promise.allSettled(exits.map((a) => a.finished)).then(() => undefined);
+  const running = el.getAnimations({ subtree: true }).filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+  return Promise.allSettled(running.map((a) => a.finished)).then(() => undefined);
 }
 
 /**
@@ -242,4 +248,149 @@ export function navigationMotion(from, to) {
   if (to.depth > from.depth) return "ls-drill";
   if (to.depth < from.depth) return "ls-back";
   return to.depth === 0 ? "ls-tab" : "ls-switch";
+}
+/** How long a toast stays: the motion-toast token in ms, which its countdown line also uses. A test keeps it equal to tokens.json. */
+export const TOAST_MS = 6000;
+
+const MARKER_PLACED = "ls-marker--placed";
+const TOAST_HELD = "ls-toast--held";
+const STAGGER = "ls-stagger";
+const ORIGIN_NAME = "ls-origin";
+const ORIGIN_OPEN = "ls-origin";
+const ORIGIN_CLOSE = "ls-origin-back";
+const MOUSE = "mouse";
+
+/**
+ * Places a control's span.ls-marker on its current option: the fill in ls-segmented, the underline in ls-tabs. It slides there over
+ * motion-base, except the first time and when `animate` is false (on resize, or when fonts load), when it jumps.
+ */
+export function placeMarker(marker, current, { animate = true } = {}) {
+  const box = marker.parentElement;
+  if (!box || !current) return;
+  const outer = box.getBoundingClientRect();
+  const rect = current.getBoundingClientRect();
+  const jump = !animate || !marker.classList.contains(MARKER_PLACED);
+  if (jump) marker.style.transition = "none";
+  // Absolute positions start inside the control's border.
+  marker.style.setProperty("--ls-marker-x", `${rect.left - outer.left - box.clientLeft}px`);
+  marker.style.setProperty("--ls-marker-y", `${rect.top - outer.top - box.clientTop}px`);
+  marker.style.setProperty("--ls-marker-w", `${rect.width}px`);
+  marker.style.setProperty("--ls-marker-h", `${rect.height}px`);
+  marker.style.setProperty("--ls-marker-scale", String(rect.width));
+  marker.classList.add(MARKER_PLACED);
+  if (jump) {
+    // Applies the jump before the transition comes back.
+    void marker.offsetWidth;
+    marker.style.transition = "";
+  }
+}
+
+/**
+ * Ends a toast after TOAST_MS by calling `onTimeout`. While a mouse is over it or focus is inside, the timer and the countdown line
+ * hold (ls-toast--held), then run on with the time left. A finger doesn't hold it, since a touch has no hover to end.
+ * Returns a function that stops the timer, for a toast that is replaced or dismissed.
+ */
+export function toastTimer(toast, onTimeout) {
+  let left = TOAST_MS;
+  let started = 0;
+  let timer = 0;
+  let stopped = false;
+  let pointer = false;
+  let focus = false;
+  const run = () => {
+    started = Date.now();
+    timer = setTimeout(() => { stop(); onTimeout(); }, left);
+  };
+  const sync = () => {
+    if (stopped) return;
+    const held = pointer || focus;
+    toast.classList.toggle(TOAST_HELD, held);
+    if (held && timer) {
+      clearTimeout(timer);
+      timer = 0;
+      left -= Date.now() - started;
+    } else if (!held && !timer) {
+      run();
+    }
+  };
+  const listeners = {
+    pointerenter: (e) => { if (e.pointerType === MOUSE) { pointer = true; sync(); } },
+    pointerleave: (e) => { if (e.pointerType === MOUSE) { pointer = false; sync(); } },
+    focusin: () => { focus = true; sync(); },
+    focusout: (e) => { focus = toast.contains(e.relatedTarget); sync(); },
+  };
+  function stop() {
+    stopped = true;
+    clearTimeout(timer);
+    timer = 0;
+    for (const [type, listener] of Object.entries(listeners)) toast.removeEventListener(type, listener);
+  }
+  for (const [type, listener] of Object.entries(listeners)) toast.addEventListener(type, listener);
+  run();
+  return stop;
+}
+
+/**
+ * Fades a list's first rows in turn on its first render with data (ls-stagger): six rows, motion-stagger apart. Resolves once they
+ * have landed and takes the class off, so a re-sort, a refetch or a new row never replays it.
+ */
+export function staggerIn(list) {
+  list.classList.add(STAGGER);
+  return afterMotion(list).then(() => list.classList.remove(STAGGER));
+}
+
+let originTransition = null;
+
+// Growing needs view transition types (for the bundle's ls-origin rules) and a row the user can see.
+const canGrowFrom = (origin) => {
+  if (typeof document.startViewTransition !== "function" || !("types" in (globalThis.ViewTransition?.prototype ?? {}))) return false;
+  if (!origin?.isConnected) return false;
+  const { top, right, bottom, left } = origin.getBoundingClientRect();
+  return bottom > 0 && right > 0 && top < innerHeight && left < innerWidth;
+};
+
+const nameOrigin = (el, named) => {
+  if (el) el.style.viewTransitionName = named ? ORIGIN_NAME : "";
+};
+
+// Names `from` in the old state and `to()` in the new one, so the browser morphs one into the other.
+function growBetween(type, from, to, change) {
+  originTransition?.skipTransition();
+  nameOrigin(from, true);
+  const transition = document.startViewTransition({
+    types: [type],
+    update: async () => {
+      nameOrigin(from, false);
+      await change();
+      nameOrigin(to(), true);
+    },
+  });
+  originTransition = transition;
+  transition.finished.catch(() => {}).finally(() => {
+    // A newer transition may already be using the name, so only the latest one clears it.
+    if (originTransition !== transition) return;
+    nameOrigin(to(), false);
+    originTransition = null;
+  });
+  return transition.updateCallbackDone;
+}
+
+/**
+ * Opens a dialog by growing it out of the row or card that was tapped, over motion-travel. `open` shows the dialog (showModal, or a
+ * state change that has rendered it by the time it returns or resolves) and `dialog` returns its element. Where the browser lacks view
+ * transition types or the row is off screen, it only calls `open`, and the dialog rises as usual. Resolves once the dialog is open.
+ */
+export function openFrom(origin, open, dialog) {
+  if (!canGrowFrom(origin)) return Promise.resolve(open()).then(() => undefined);
+  return growBetween(ORIGIN_OPEN, origin, dialog, open);
+}
+
+/**
+ * Closes a dialog by shrinking it back into the row it came from, over motion-base. If the row has gone or is off screen, it only calls
+ * `close`, and the dialog leaves its usual way.
+ */
+export function closeTo(origin, close, dialog) {
+  const el = dialog();
+  if (!el || !canGrowFrom(origin)) return Promise.resolve(close()).then(() => undefined);
+  return growBetween(ORIGIN_CLOSE, el, () => (origin.isConnected ? origin : null), close);
 }
