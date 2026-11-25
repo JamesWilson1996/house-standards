@@ -77,3 +77,25 @@ export declare function openFrom(origin: HTMLElement, open: () => void | Promise
 
 /** Closes a dialog by shrinking it back into its row over motion-base. Falls back to `close` alone when the row has gone or is off screen. */
 export declare function closeTo(origin: HTMLElement, close: () => void | Promise<void>, dialog: () => HTMLElement | null): Promise<void>;
+
+/** The motion-flash token in ms: how long ls-flash marks a row, and how long a button shows ls-btn__done. */
+export declare const MOTION_FLASH_MS: number;
+
+/** The buzz, in ms, when an item is ticked or a list is finished. */
+export declare const TICK_VIBRATION_MS: number;
+
+/** Buzzes for TICK_VIBRATION_MS where supported, never under reduced motion. Returns whether it buzzed. */
+export declare function vibrateTick(): boolean;
+
+/** Applies a theme change as a crossfade over motion-base (view transition type ls-theme), or at once without view transition types. */
+export declare function switchTheme(apply: () => void): Promise<void>;
+
+/** When tooltips show: the first after motion-wait, the next at once while one is showing or just closed, and at once for focus. */
+export interface TooltipTiming {
+  enter(show: () => void): void;
+  focus(show: () => void): void;
+  leave(hide: () => void): void;
+}
+
+/** One shared timing for every tooltip in the app. */
+export declare function tooltipTiming(): TooltipTiming;

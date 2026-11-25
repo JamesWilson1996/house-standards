@@ -379,7 +379,7 @@ For a long or searched list, or options that need more than a name, a button in 
 
 ## Appearance
 
-Each device can follow the OS theme or keep its own (decided 8 November, #50). The setting is an `ls-segmented` with three options, Match device, Light and Dark, with "Saved on this device only." as its help. It applies at once, with no Save.
+Each device can follow the OS theme or keep its own (decided 8 November, #50). The setting is an `ls-segmented` with three options, Match device, Light and Dark, with "Saved on this device only." as its help. It applies at once, with no Save. Apply it through `switchTheme(() => (root.dataset.theme = theme))` from `@jameswilson1996/ui-tokens/motion.js`, so the window crossfades over `motion-base` (#109); a change of the OS theme while the app is open goes through it too.
 
 - The choice lives in `localStorage` on the device, never on the server. Match device stores nothing.
 - The inline script in `<head>` reads it before first paint, so the page never flashes the wrong theme, and sets `theme-color` to match. It goes after the `tokens.css` link. Match device follows the OS live, while the page is open.
@@ -683,6 +683,8 @@ Actions (decided 8 November, #23): every row shows its one main action as a visi
 - The list is a size container, so it takes its width from where it sits and never from its rows: in a flex row or grid give it a width (`flex: 1`, a column), or it collapses.
 - Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
 - Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
+- Changes from the other person (#109): mark the row they added or changed with `ls-flash` when the live update arrives, and show a toast with no action naming them ("Sam added Bread."); several at once share one toast ("Sam made 3 changes."). Changes you made on another device get no toast.
+- On a device with hover, a row whose title opens it tints `surface-sunken`. The first and last rows round to the list's corners.
 - Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. An amount or count that a command changed rolls with `ls-amount` (see Amounts in Motion utilities), and when the last row goes the empty state that replaces the list is `ls-empty--done`. On the list's first render with data, `staggerIn(list)` fades its first six rows in turn. Reordering uses the drag classes in Motion utilities, and a row that moves after a command slides there (A row that moves, in Motion utilities). A toast with Undo confirms the change.
 - Consumer provides: the rows from the API, each row's `allowedActions` deciding which main action shows.
 
@@ -1424,8 +1426,8 @@ A small layer anchored to the element that opened it, built on the Popover API. 
 | Tap | A tap on the trigger shows it; a tap anywhere else hides it | A tap on the trigger toggles it; a tap outside closes it |
 | Escape | Hides it | Closes it and returns focus to the trigger |
 
-- The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`.
-- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing reverses it over `motion-quick` (#54); browsers without `overlay` close at once. As with a dialog, hide it with `hidePopover()` and unmount it only after `afterLeaving` (see Leaving in Motion utilities).
+- The detail card's trigger is a `button` with `popovertarget`, so the browser handles toggling, light dismiss, Escape and focus return. The tooltip needs a small handler: `showPopover({ source: trigger })` on `pointerenter` (after the delay), on `focus` and on a touch `pointerdown`, and `hidePopover()` on `pointerleave` and `blur`. The delay comes from one `tooltipTiming()` (motion.js) shared by the app: call its `enter(show)` on `pointerenter`, `focus(show)` on focus and touch, and `leave(hide)` on `pointerleave` and `blur`. The first tooltip waits `motion-wait`; the next shows at once while one is showing or has just closed (#109).
+- Motion is built in: a detail card, menu or filter panel rises 8px and fades in over `motion-base`, as a dialog does. Above 640px it grows from 96% at the side nearest its trigger instead (top centre, or bottom centre for `ls-popover--top`) and shrinks back over `motion-quick` (#109). A tooltip and a chart's `ls-popover--at` card only fade in, over `motion-quick`, since they follow the pointer. Closing reverses it over `motion-quick` (#54); browsers without `overlay` close at once. As with a dialog, hide it with `hidePopover()` and unmount it only after `afterLeaving` (see Leaving in Motion utilities).
 - A tooltip never holds the only copy of information. An icon-only button keeps its own `aria-label`, and on touch the tooltip appears only when tapped.
 - Placement: below the trigger by default, `ls-popover--top` above. Where the browser supports CSS anchor positioning (`position-area`), the popover anchors to its trigger (the `popovertarget` button, or the `source` passed to `showPopover()`), flips above or below, and shifts sideways to stay `popover-offset` (8px) inside the viewport.
 - Fallback where `position-area` is missing: compute the position from the trigger and set `--ls-popover-x` and `--ls-popover-y`. Run it on the popover's `toggle` event when `newState` is `"open"`, and on scroll and resize while it is open.
@@ -1565,6 +1567,8 @@ Every app shows waiting and failing the same way (decided 8 November, #48). Noth
 
 `aria-busy="true"` on an `ls-btn` (see Button). After `motion-wait` a spinner turns before the label once every `motion-spin` (800ms), three times slower under reduced motion. The side padding gives the spinner its room, so the button keeps its width.
 
+Done (#109): when the command succeeds, remove `aria-busy` and show `span.ls-btn__done` in place of the label for `MOTION_FLASH_MS` (from `motion.js`): a 16px Lucide `check` and the past tense of the label ("Saved", "Added"). Set the button's `min-width` to its width before the swap so it keeps its size, and clear it with the label. The toast still confirms. A command that closes its dialog skips this, since the button leaves with it.
+
 ```html
 <div class="ls-row"><button class="ls-btn ls-btn--primary" type="submit" aria-busy="true">Save changes</button><button class="ls-btn" type="button">Cancel</button></div>
 ```
@@ -1592,7 +1596,7 @@ A page or section whose query failed shows an `ls-empty` in place of the content
 When the API names a field, the error goes on that field (see Field). Otherwise:
 
 - From a form or dialog: an `ls-alert ls-alert--danger` (`role="alert"`) at the top of the form, above the fields, keeping what was typed: "**That didn't save.** The budget service didn't answer. Try again in a minute." Focus moves to the alert, and it clears on the next submit.
-- From a one-tap action (Mark paid, a tick, a drag): an `ls-toast` in place of the success toast, with Try again as its action: "Couldn't mark Council tax paid · Try again". The row goes back to how it was before the tap.
+- From a one-tap action (Mark paid, a tick, a drag): an `ls-toast` in place of the success toast, with Try again as its action: "Couldn't mark Council tax paid · Try again". The row goes back to how it was before the tap and is marked with `ls-flash--failed` (danger-soft that fades over `motion-flash`), so you can see which row went back (#109). Remove the class, read `offsetWidth` and add it again to mark it again.
 
 ```html
 <div class="ls-alert ls-alert--danger" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg><div><strong>That didn't save.</strong> The budget service didn't answer. Try again in a minute.</div></div>
@@ -1611,6 +1615,21 @@ A command sent with `If-Match` comes back `409` when someone saved the same thin
 <div class="ls-alert ls-alert--warning" role="alert"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg><div><strong>Sam changed this bill.</strong> Their amount is shown; yours was £175.00. Save again to use yours.</div></div>
 <div class="ls-field" data-invalid><label class="ls-label" for="amt-c">Amount</label><div class="ls-money"><span class="ls-money__currency" aria-hidden="true">£</span><input class="ls-money__input" id="amt-c" value="189.00" inputmode="decimal" aria-invalid="true" aria-describedby="amt-ch"></div><p class="ls-help" id="amt-ch">Changed by Sam at 14:02</p></div>
 ```
+
+## Keyboard
+
+Three shortcuts on every page (decided 25 November, #109), each with a visible control too:
+
+| Key | Does |
+| --- | --- |
+| `/` | Focuses the page's search or quick add |
+| `n` | Runs the page header's primary action ("Add bill") |
+| `?` | Opens a dialog listing the shortcuts |
+
+- One `keydown` listener at the app root asks `shortcutFor(event)` from `@jameswilson1996/ui-tokens/keyboard.js` which action a key means. It returns null while typing in a field, inside a dialog, with Ctrl, Cmd or Alt held, on a held-down key, and when something else handled the key. Call `preventDefault()` when you act, so `/` isn't typed into the field it focuses.
+- Each page registers its search and primary action; a page without one ignores that key.
+- The primary action's tooltip shows its key ("Add bill · N"), and the search field's placeholder ends with "( / )".
+- The `?` dialog is an `ls-dialog--sm` with a `dl` of `kbd` and what each does, built from `SHORTCUT_KEYS`.
 
 ## Visually hidden text
 
@@ -1655,7 +1674,7 @@ A chart shows a trend or a comparison that one number can't. Apps draw charts as
 - Lines 2px, round joins. Points 8px (`r="4"`) with a 2px `surface` ring. Bars have a 2px `surface` gap between them; their data end has a 4px radius and the baseline end none.
 - Horizontal gridlines only, at 4 or 5 round steps; no vertical gridlines, no chart border. The y-axis starts at 0.
 - Labels 12px, tabular. Money on an axis in whole units, short ("£3k", `Intl.NumberFormat` with `notation: "compact"`); in tooltips and the table in full ("£2,140.00"). Dates as "8 Nov". Mark today on a time axis with the `ls-chart__crosshair` line and the word "Today".
-- No animation: charts draw at once and values change in place. No draw-in, no counting up.
+- Charts draw at once, with no draw-in and no counting up. A bar moves to a new value (#109): draw it at the plot's full height with `ls-chart__bar--scaled` and `style="--ls-bar: 0.42"` (its share of the axis, 0 to 1), and keep the chart mounted across a command or a change of period, so the bar grows or shrinks over `motion-base` from its baseline. The data end's radius scales with it. Lines and points change at once.
 
 ### Tooltip
 
@@ -1733,7 +1752,9 @@ Classes for the patterns in the brand book's Motion section. Their durations com
 - `ls-marker`: the sliding current option in `ls-segmented` and `ls-tabs`, placed by `placeMarker`. See those components.
 - `ls-amount` with `ls-amount__old` and `ls-amount__new`: an amount rolling to its new value. See Amounts below.
 - `ls-stagger`: a list's first six rows fading in `motion-stagger` apart. Add it with `staggerIn(list)`, which takes it off once they land; never add it by hand, or a re-sort replays it.
-- `ls-empty--done`: the done state's check drawing once (Empty state).
+- `ls-empty--done`: the done state's check drawing once (Empty state). Call `vibrateTick()` when it appears, and on each tick (#109).
+- `ls-flash--failed`: the row a failed one-tap command put back (A command failed).
+- A count on `ls-tabbar__badge`, `ls-chip__count` or `ls-tab__count` uses the Amount component below, so it rolls when it changes (#109).
 
 ### Amounts
 

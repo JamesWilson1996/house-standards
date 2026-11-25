@@ -1,10 +1,10 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.10.0",
-  "description": "Lilac & Sage design tokens, ls- component styles, motion helpers (drag, navigation, current-place marker, toast timer, first rows in turn, dialog from its row), day helpers, combobox helpers and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
+  "version": "1.11.0",
+  "description": "Lilac & Sage design tokens, ls- component styles, motion helpers (drag, navigation, current-place marker, toast timer, first rows in turn, dialog from its row), day helpers, combobox helpers, keyboard shortcuts and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",
-  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "icons.js", "icons.d.ts", "icons/"],
+  "files": ["tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "keyboard.js", "keyboard.d.ts", "icons.js", "icons.d.ts", "icons/"],
   "exports": {
     "./tokens.css": "./tokens.css",
     "./bundle.css": "./bundle.css",
@@ -20,6 +20,10 @@
     "./combobox.js": {
       "types": "./combobox.d.ts",
       "default": "./combobox.js"
+    },
+    "./keyboard.js": {
+      "types": "./keyboard.d.ts",
+      "default": "./keyboard.js"
     },
     "./icons.js": {
       "types": "./icons.d.ts",

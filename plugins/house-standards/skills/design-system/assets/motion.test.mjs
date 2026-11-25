@@ -18,6 +18,11 @@ import {
   openFrom,
   closeTo,
   TOAST_MS,
+  vibrateTick,
+  switchTheme,
+  tooltipTiming,
+  TICK_VIBRATION_MS,
+  MOTION_FLASH_MS,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -667,4 +672,103 @@ test("closing while the dialog is still growing skips to the end of the growth, 
   await settled(runs[0].finished);
   // The skipped growth must not clear the name the shrink is using.
   assert.equal(row.style.viewTransitionName, "ls-origin");
+});
+
+// ---------- #109: haptics, theme crossfade, tooltip timing, busy to done ----------
+
+test("vibrateTick buzzes for TICK_VIBRATION_MS", () => {
+  const buzzes = [];
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { vibrate: (ms) => (buzzes.push(ms), true) } });
+  globalThis.matchMedia = () => ({ matches: false });
+  assert.equal(vibrateTick(), true);
+  assert.deepEqual(buzzes, [TICK_VIBRATION_MS]);
+  assert.equal(TICK_VIBRATION_MS, 10);
+});
+
+test("vibrateTick stays still under reduced motion and where the device can't vibrate", () => {
+  const buzzes = [];
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { vibrate: (ms) => (buzzes.push(ms), true) } });
+  globalThis.matchMedia = (query) => ({ matches: query.includes("reduce") });
+  assert.equal(vibrateTick(), false);
+  globalThis.matchMedia = () => ({ matches: false });
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: {} });
+  assert.equal(vibrateTick(), false);
+  assert.deepEqual(buzzes, []);
+});
+
+test("switchTheme crossfades with the ls-theme type where view transition types exist", async () => {
+  const runs = [];
+  globalThis.ViewTransition = class { get types() { return null; } };
+  document.startViewTransition = ({ update, types }) => {
+    runs.push(types);
+    const done = Promise.resolve().then(update);
+    return { updateCallbackDone: done, ready: Promise.reject(new Error("skipped")), finished: done };
+  };
+  let applied = 0;
+  await switchTheme(() => applied++);
+  assert.deepEqual(runs, [["ls-theme"]]);
+  assert.equal(applied, 1);
+});
+
+test("switchTheme just applies the theme without view transition types", async () => {
+  delete globalThis.ViewTransition;
+  let applied = 0;
+  await switchTheme(() => applied++);
+  assert.equal(applied, 1);
+});
+
+test("tooltipTiming waits motion-wait before the first tooltip", withClock(() => {
+  const timing = tooltipTiming();
+  const shown = [];
+  timing.enter(() => shown.push("edit"));
+  mock.timers.tick(MOTION_WAIT_MS - 1);
+  assert.deepEqual(shown, []);
+  mock.timers.tick(1);
+  assert.deepEqual(shown, ["edit"]);
+}));
+
+test("tooltipTiming shows nothing for a pointer sweeping across a toolbar", withClock(() => {
+  const timing = tooltipTiming();
+  const shown = [];
+  for (const name of ["edit", "copy", "share"]) {
+    timing.enter(() => shown.push(name));
+    mock.timers.tick(100);
+    timing.leave(() => {});
+  }
+  mock.timers.tick(MOTION_WAIT_MS * 2);
+  assert.deepEqual(shown, []);
+}));
+
+test("tooltipTiming shows the next tooltip at once while one is showing or has just closed", withClock(() => {
+  const timing = tooltipTiming();
+  const shown = [];
+  timing.enter(() => shown.push("share"));
+  mock.timers.tick(MOTION_WAIT_MS);
+  timing.leave(() => {});
+  mock.timers.tick(MOTION_WAIT_MS - 1);
+  timing.enter(() => shown.push("archive"));
+  assert.deepEqual(shown, ["share", "archive"]);
+}));
+
+test("tooltipTiming waits again once a tooltip has been closed for motion-wait", withClock(() => {
+  const timing = tooltipTiming();
+  const shown = [];
+  timing.enter(() => shown.push("share"));
+  mock.timers.tick(MOTION_WAIT_MS);
+  timing.leave(() => {});
+  mock.timers.tick(MOTION_WAIT_MS);
+  timing.enter(() => shown.push("archive"));
+  assert.deepEqual(shown, ["share"]);
+}));
+
+test("tooltipTiming shows at once for keyboard focus", withClock(() => {
+  const timing = tooltipTiming();
+  const shown = [];
+  timing.focus(() => shown.push("edit"));
+  assert.deepEqual(shown, ["edit"]);
+}));
+
+test("MOTION_FLASH_MS is the motion-flash token, for how long a button says it's done", () => {
+  const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
+  assert.equal(`${MOTION_FLASH_MS}ms`, tokens.motion.tokens.find((t) => t.name === "motion-flash").value);
 });
