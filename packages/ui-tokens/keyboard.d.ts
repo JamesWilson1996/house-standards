@@ -8,3 +8,6 @@ export declare const SHORTCUT_KEYS: Readonly<Record<ShortcutAction, string>>;
 
 /** The action a keydown means, or null while typing, inside a dialog, with Ctrl, Cmd or Alt held, on a repeat, or when already handled. */
 export declare function shortcutFor(event: KeyboardEvent): ShortcutAction | null;
+
+/** Makes Enter move through a form's text fields: Next on every field but the last, which shows `last` and submits. Returns a cleanup. */
+export declare function enterMovesOn(form: HTMLFormElement, options?: { last?: "done" | "go" | "send" }): () => void;

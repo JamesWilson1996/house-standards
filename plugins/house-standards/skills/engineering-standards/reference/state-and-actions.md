@@ -17,6 +17,10 @@ Commands change state. They are explicit intents, not field patches: `POST /orde
 
 Queries never change state. They read from the service's own tables or a read model shaped for the screen. Lists use cursor pagination (`?cursor=&limit=`), and filtering and sorting happen server-side.
 
+- JSON responses are compressed with Brotli, or gzip where the client doesn't accept Brotli. Event streams aren't compressed, since buffering would hold back each event.
+- Every GET carries a strong `ETag` that hashes the body and `Cache-Control: private, no-cache`, and a matching `If-None-Match` gets `304` with no body. The aggregate's `version` isn't the ETag when the body holds fields derived from today's date (due in 3 days), because those change while the version doesn't.
+- A command's `200` returns the resource in the same representation as its read, so the client can write it into its cache instead of fetching it again (`frontend.md`).
+
 ## Events
 
 Events tell other services what happened, in the past tense: `order.placed`, `order.cancelled`.

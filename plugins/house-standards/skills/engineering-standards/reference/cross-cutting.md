@@ -2,7 +2,7 @@
 
 | Area | Standard |
 | --- | --- |
-| Authentication | OIDC through one identity provider. The BFF holds the session in an http-only cookie; services receive a short-lived JWT and verify it themselves |
+| Authentication | OIDC through one identity provider. The BFF holds the session in an http-only cookie; services receive a short-lived JWT and verify it themselves. The details people notice are in Sessions and sign-in below |
 | Authorization | Checked in the application layer of the owning service, never only in the UI. Tenant id comes from the token, never from the request body |
 | Observability | OpenTelemetry traces, metrics and logs from every service and the BFF. Structured JSON logs carrying `traceId` and the operation context (`correlationId`, `causationId`, `tenantId`, `actorId`); no personal data in logs (see below) |
 | Health | `/health/live` and `/health/ready` on every service; ready checks the database and broker |
@@ -11,6 +11,7 @@
 | API versioning | URL major version (`/v1`); additive changes only within a version; deprecations announced with a `Sunset` header |
 | Testing | Domain and use cases: unit tests with in-memory fakes. Adapters: integration tests with Testcontainers Postgres. Contracts: consumer-driven tests (e.g. Pact) between BFF and services. UI: integration tests with Vitest, Testing Library and MSW (`frontend-testing.md`), plus Playwright for the main journeys with an axe accessibility check in light and dark themes |
 | CI gates | Typecheck, lint, dependency-boundary check, tests, OpenAPI and event-schema breaking-change check, migration dry run, container image scan, house-standards verify |
+| Backups | Kept off the machine and encrypted, alerted on, taken before migrations; see `postgres.md`, Operations |
 | Delivery | One container image per service, built once and promoted through environments; trunk-based development with short-lived branches and feature flags |
 
 ## Operation context
@@ -31,3 +32,15 @@ Logs, traces, metrics and error reports hold opaque ids and fields chosen one at
 - An operational need to log personal data is a deviation and needs an ADR. The log statement then carries `// PII logging: docs/adr/<n>-<slug>.md` on the line above, and logs the narrowest value that meets the need. Credentials, tokens and secrets are never logged under any ADR.
 - Error reports are scrubbed once, before any exporter or sink: tag keys come from an allowlist, extra fields drop denylisted keys (`email`, `name`, `token`, `password`), and messages pass through email and phone patterns.
 - Metric names, label keys and span attribute names are constants. Dashboards and alerts depend on them, so renaming one updates those in the same change.
+
+## Sessions and sign-in
+
+Decided 25 November 2026 (#136), from what Hearth's two users noticed.
+
+- **The cookie lasts as long as the session.** The session cookie is persistent: its `Expires` matches the server-side lifetime and moves forward with each sliding renewal (in ASP.NET Core, `IsPersistent = true` at sign-in). A browser closing never signs anyone out early.
+- **Attributes:** a `__Host-` name, `HttpOnly`, `Secure`, `SameSite=Lax`, `Path=/`, no `Domain`.
+- **Lifetime:** 30 days, sliding. A session that ends mid-form keeps what was typed and returns to it after sign-in (Lilac & Sage, Unsaved changes).
+- **Devices:** Settings lists each signed-in device with when it signed in, when it was last used, and Sign out. Signing out ends that session on the server, not only in the browser.
+- **CSRF:** unsafe methods (`POST`, `PUT`, `PATCH`, `DELETE`) are refused unless `Origin` (or, without it, `Referer`) matches the app's own origin. `SameSite=Lax` alone isn't relied on.
+- **Invites** expire after 7 days. The person who invited sees the expiry and can send the invite again.
+- **Sign-in limits:** a rate-limited sign-in answers a page load with the signed-out page saying when to try again, and `429` with `Retry-After`. API calls get problem+json `429`. Nobody sees a bare status code.

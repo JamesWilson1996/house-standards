@@ -70,6 +70,12 @@ writeFileSync(join(PACKAGE_DIR, "tokens.css"), css);
 for (const file of ["tokens.json", "bundle.css", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "keyboard.js", "keyboard.d.ts", "icons.js", "icons.d.ts"]) {
   writeFileSync(join(PACKAGE_DIR, file), readFileSync(join(SOURCE_DIR, file)));
 }
+// The typefaces, served from the app's own origin (#112): fonts.css and its woff2 files and licences.
+writeFileSync(join(PACKAGE_DIR, "fonts.css"), readFileSync(join(SOURCE_DIR, "fonts.css")));
+mkdirSync(join(PACKAGE_DIR, "fonts"), { recursive: true });
+for (const file of readdirSync(join(SOURCE_DIR, "fonts"))) {
+  writeFileSync(join(PACKAGE_DIR, "fonts", file), readFileSync(join(SOURCE_DIR, "fonts", file)));
+}
 // The mark as files, for READMEs and anything that can't draw it inline (brand book Iconography).
 const { markSvg } = await import(pathToFileURL(join(SOURCE_DIR, "icons.js")).href);
 const LOGOS_DIR = join(SOURCE_DIR, "Logos");

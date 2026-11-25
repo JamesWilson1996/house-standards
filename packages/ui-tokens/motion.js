@@ -457,3 +457,27 @@ export function tooltipTiming() {
     },
   };
 }
+/**
+ * Where each top-level place was left, for the tab bar and sidebar (brand book Motion pattern 4, #115). Call `leave(place, href, scrollY)`
+ * as a navigation leaves a place, link each place's item to `target(place, root).href`, and restore `scrollY` once its page has rendered.
+ * `reselect(href, root, scrollY)` says what tapping the current place does: scroll to the top, then go to the place's root.
+ * It lives for the tab's session, in memory; `forget()` on sign-out.
+ */
+export function placeMemory() {
+  const left = new Map();
+  return {
+    leave(place, href, scrollY) {
+      left.set(place, { href, scrollY });
+    },
+    target(place, root) {
+      return left.get(place) ?? { href: root, scrollY: 0 };
+    },
+    reselect(href, root, scrollY) {
+      if (scrollY > 0) return "top";
+      return href === root ? "none" : "root";
+    },
+    forget() {
+      left.clear();
+    },
+  };
+}

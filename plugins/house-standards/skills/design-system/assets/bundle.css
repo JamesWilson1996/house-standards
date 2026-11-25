@@ -1,6 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;650;700&family=JetBrains+Mono:wght@400;500&display=swap");
-
-/* Lilac & Sage — component layer. Reads only tokens from tokens.css; never hard-code a colour here. */
+/* Lilac & Sage — component layer. Reads only tokens from tokens.css; never hard-code a colour here.
+   The typefaces come from fonts.css, imported before tokens.css, so nothing here loads from another origin (#112). */
 
 *, *::before, *::after { box-sizing: border-box; }
 :root, [data-theme="light"] { color-scheme: light; }
@@ -998,6 +997,11 @@ html:active-view-transition-type(ls-origin-back)::view-transition-group(ls-origi
 :where(.ls-btn, .ls-chip, .ls-tabbar__item, .ls-nav__item, .ls-tab, .ls-segmented__option, .ls-list__title, .ls-board__title, .ls-board__card,
   .ls-menu__item, .ls-check, .ls-switch, .ls-toast__action, .ls-column__toggle, .ls-stepper__step, .ls-stepper__now, .ls-page-header__account) {
   -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* The app's own chrome is never selected by a long press or a drag across it (#114). The shell stops Chrome's link menu on the tab bar
+   and sidebar in the installed app (components.md, Tab bar); iOS's callout is stopped here. */
+:where(.ls-tabbar, .ls-nav, .ls-segmented, .ls-tabs, .ls-btn, .ls-chip, .ls-menu__item, .ls-stepper) { -webkit-user-select: none; user-select: none; }
+:where(.ls-tabbar__item, .ls-nav__item) { -webkit-touch-callout: none; }
 
 /* Thin scrollbars in the theme's own colours, so Windows' grey bars match both themes; selected text in the accent's soft pair. */
 :root { scrollbar-color: var(--line-strong) transparent; }

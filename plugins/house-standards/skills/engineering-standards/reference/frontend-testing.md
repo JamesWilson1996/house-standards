@@ -32,6 +32,14 @@ An integration test proves something only when its state is one a user can produ
 - Wait with `await screen.findBy…`. Keep `waitFor` for conditions outside the DOM and for absence with `queryBy…`, with one assertion per `waitFor`.
 - Drive changes with `@testing-library/user-event`. Tests don't call `rerender`.
 
+## One-tap commands
+
+Each one-tap command with Undo has three integration tests (`frontend.md`, One-tap commands):
+
+- The change shows before the command answers: delay the handler with `server.use` and assert the new state straight after the click.
+- A failure puts it back: the handler answers `500`, and the test asserts the old state, the row's `ls-flash--failed` class and the toast's Try again.
+- Try again sends the command again with the same `Idempotency-Key`.
+
 ## Naming
 
 - `it` names read as specifications of what the user sees: `hides the Cancel button`, `shows the field error from the API`.

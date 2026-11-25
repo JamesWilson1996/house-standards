@@ -99,3 +99,17 @@ export interface TooltipTiming {
 
 /** One shared timing for every tooltip in the app. */
 export declare function tooltipTiming(): TooltipTiming;
+
+/** What tapping the current place does: scroll to the top, go to its root, or nothing. */
+export type Reselect = "top" | "root" | "none";
+
+/** Where each top-level place was left, for the tab bar and sidebar. */
+export interface PlaceMemory {
+  leave(place: string, href: string, scrollY: number): void;
+  target(place: string, root: string): { href: string; scrollY: number };
+  reselect(href: string, root: string, scrollY: number): Reselect;
+  forget(): void;
+}
+
+/** Remembers each place's last page and scroll for the session. */
+export declare function placeMemory(): PlaceMemory;
