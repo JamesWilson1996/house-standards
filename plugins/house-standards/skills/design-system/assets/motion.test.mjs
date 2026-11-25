@@ -23,6 +23,7 @@ import {
   tooltipTiming,
   TICK_VIBRATION_MS,
   MOTION_FLASH_MS,
+  placeMemory,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -771,4 +772,38 @@ test("tooltipTiming shows at once for keyboard focus", withClock(() => {
 test("MOTION_FLASH_MS is the motion-flash token, for how long a button says it's done", () => {
   const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
   assert.equal(`${MOTION_FLASH_MS}ms`, tokens.motion.tokens.find((t) => t.name === "motion-flash").value);
+});
+
+// ---------- #115: each place remembers where you were ----------
+
+test("placeMemory sends you back to the page and scroll you left a place at", () => {
+  const places = placeMemory();
+  places.leave("money", "/money/bills/42", 640);
+  assert.deepEqual(places.target("money", "/money"), { href: "/money/bills/42", scrollY: 640 });
+});
+
+test("placeMemory opens a place you haven't visited at its root and its top", () => {
+  assert.deepEqual(placeMemory().target("shopping", "/shopping"), { href: "/shopping", scrollY: 0 });
+});
+
+test("placeMemory keeps each place apart", () => {
+  const places = placeMemory();
+  places.leave("money", "/money/bills/42", 640);
+  places.leave("shopping", "/shopping?list=2", 120);
+  assert.equal(places.target("money", "/money").href, "/money/bills/42");
+  assert.equal(places.target("shopping", "/shopping").href, "/shopping?list=2");
+});
+
+test("placeMemory: tapping the current place scrolls to the top, and a second tap at the top goes to its root", () => {
+  const places = placeMemory();
+  assert.equal(places.reselect("/money/bills/42", "/money", 300), "top");
+  assert.equal(places.reselect("/money/bills/42", "/money", 0), "root");
+  assert.equal(places.reselect("/money", "/money", 0), "none");
+});
+
+test("placeMemory forgets a place when asked, as after signing out", () => {
+  const places = placeMemory();
+  places.leave("money", "/money/bills/42", 640);
+  places.forget();
+  assert.equal(places.target("money", "/money").href, "/money");
 });

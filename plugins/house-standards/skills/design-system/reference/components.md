@@ -86,6 +86,7 @@ Example markup:
 | Sub-section to sub-section | `form-section-gap` | 32px |
 
 - Children: `ls-field`s, or `section.ls-form__section`s that each start with `h3.ls-form__title`, then `div.ls-form__actions` last.
+- On a phone keyboard, Enter moves through the fields (#116): call `enterMovesOn(form)` from `@jameswilson1996/ui-tokens/keyboard.js` once the form renders. Every text field but the last gets `enterkeyhint="next"` and moves focus on; the last gets `done` (or `go` or `send` with `{ last }`) and submits. Textareas, pickers and checkboxes keep their own Enter, and a combobox picking an option isn't overridden. A one-field quick add keeps `done`.
 - A card holds one form. Split a long form into sub-sections inside the card; don't nest cards.
 - The primary button comes first in `ls-form__actions`. Disable it only while the form can't be submitted, and say why in help text.
 - Submitting: the primary gets `aria-busy="true"` (see Loading and errors) and further submits are ignored until the command settles. Fields stay editable and nothing is disabled, so a slow answer never locks the form. On success the form's dialog closes or the toast confirms; on failure the alert or field errors appear and focus moves to the first one.
@@ -1028,6 +1029,7 @@ After the user signs out themself, the plain Sign in state shows, with no alert:
 The app's primary sidebar. `nav.ls-nav > a.ls-nav__item`, an 18px Lucide icon then the label; the current page has `aria-current="page"`.
 
 - Consumer provides: the links (TanStack Router `<Link>` sets `aria-current` via `activeProps`).
+- Each item links to where its place was left, and tapping the current place goes to its top, then its root (see Tab bar, Where you left each place).
 - Five to seven items; group extras under Settings rather than growing the list. Settings is laid out as Settings above describes.
 - At 640px and below, when the page also has an `ls-tabbar`, the sidebar is hidden and the tab bar takes over.
 
@@ -1045,6 +1047,18 @@ The app's top-level navigation on a phone: a bar fixed along the bottom edge wit
 
 - 5 items at most, in the same order as the sidebar. The member's name, Settings and Sign out are not tabs: they go in the account menu opened from the page header's account button (see Page header).
 - Labels: one word where possible ("Today", "Budget", "Shopping"). A label that doesn't fit is cut with an ellipsis, so keep them short rather than relying on it.
+- Long press (#114): the bundle stops the labels being selected. In the installed app, where there is no address bar to open a link in a new tab, the shell also stops Chrome's link menu on the tab bar and the sidebar:
+
+```ts
+// Only in the installed app; a desktop browser keeps right-click, Open in new tab.
+if (matchMedia("(display-mode: standalone)").matches) {
+  document.addEventListener("contextmenu", (e) => {
+    if ((e.target as Element).closest(".ls-tabbar, .ls-nav")) e.preventDefault();
+  });
+}
+```
+
+- Where you left each place (#115): one `placeMemory()` from `motion.js` for the app. When a navigation leaves a place, call `leave(place, href, scrollY)`. Each tab bar and sidebar item links to `target(place, root).href`, and once that page renders, scroll to its `scrollY` (with `behavior: "instant"`, since the page fades through already). Tapping the current place calls `reselect(href, root, scrollY)`: `"top"` scrolls the page to the top (`smooth`, or `instant` under reduced motion), and `"root"` navigates to the place's root. Call `forget()` on sign-out. The memory lasts for the tab's session.
 - Badge: a count that needs attention (7 items on the list), as a number with the unit in `ls-sr-only` text ("7<span class="ls-sr-only"> items</span>"). Hide it at 0. Above 99, show "99+".
 - Each item is at least 44px wide and 56px tall (`tabbar-height` 64px less `space-1` padding), plus `env(safe-area-inset-bottom)` below the bar for the home indicator. The page needs `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">` for the safe area to apply.
 - While the tab bar shows, the bundle pads `body` by the bar's height so the last line scrolls clear of it, and hides `ls-nav`. `ls-toasts` and a floating primary action sit above the bar; with a floating primary the padding also clears the button (`fab-height` plus `space-4`, #94).

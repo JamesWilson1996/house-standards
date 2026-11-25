@@ -17,6 +17,10 @@ A new service or app, or a PR to one, is ready when every applicable item holds.
 - [ ] Comments, docs, commit messages and UI copy follow `writing.md` (plain facts, no "X, not Y" framing or filler)
 - [ ] Existing shared modules reused; duplicated logic extracted, with any efficiency refactor in its own commit
 - [ ] Frontend uses Query for all server data, URL search params for view state, and Lilac & Sage tokens only
+- [ ] One-tap commands with Undo update the screen at once and roll back with `ls-flash--failed` on failure; commands write their returned resource into the cache instead of refetching it
+- [ ] API reads are compressed, carry a body-hash `ETag` with `Cache-Control: private, no-cache`, and answer `304` to a matching `If-None-Match`
+- [ ] Session cookie is persistent and `__Host-`, `HttpOnly`, `Secure`, `SameSite=Lax`; unsafe methods check `Origin`; invites expire; a rate-limited sign-in gets a page; Settings lists devices with Sign out
+- [ ] Backups: a copy off the machine and encrypted, failures alert a person, a backup before every migration, daily/weekly/monthly retention, a restore check that compares row counts, and a restore script that keeps the database it replaces
 - [ ] Search params are `.optional().catch(undefined)` with defaults applied on read; mutations invalidate through `meta.invalidates`
 - [ ] Frontend integration tests run against generated MSW defaults and fixtures, reach state through the UI, and query by role and name
 - [ ] OpenTelemetry, health endpoints and structured logs wired

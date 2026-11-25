@@ -12,7 +12,7 @@ house-standards (this repo, the only copy)
 │     ├── engineering-standards skill → loaded when designing services, DB, APIs, tests
 │     ├── design-system skill         → loaded when building UI
 │     └── adopt-house-standards skill → wires up new repos
-└── @jameswilson1996/ui-tokens npm package  ──►  apps import tokens.css + bundle.css
+└── @jameswilson1996/ui-tokens npm package  ──►  apps import fonts.css + tokens.css + bundle.css
 ```
 
 - **Always-on rules** (`plugins/house-standards/core-rules.md`, under 50 lines) are printed into context at session start, resume, clear and compact.

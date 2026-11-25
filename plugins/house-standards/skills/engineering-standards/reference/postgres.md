@@ -26,3 +26,13 @@ Each service gets its own database (or its own schema and role on a shared clust
 ## Operations
 
 Connection pooling through PgBouncer in transaction mode, `pg_stat_statements` enabled, daily backups with point-in-time recovery, and a restore tested every quarter.
+
+Backups (decided 25 November 2026, #138):
+
+- At least one copy of every backup is kept off the machine, encrypted, with the key stored apart from the backups.
+- A failed backup, or a newest backup older than its schedule allows, alerts a person (a push, a mail or a chat message), not only a log line.
+- A deploy that runs migrations takes a backup first and stops if that backup fails.
+- Retention names daily, weekly and monthly copies (for example 14 daily, 8 weekly, 12 monthly).
+- The restore check compares row counts per table as well as the schema, against the database the backup came from.
+- A restore is a script that renames the database it replaces rather than dropping it, so a wrong restore can be undone.
+- Without point-in-time recovery, an ADR states the most data a failure can lose (a day, for nightly dumps) and why that is acceptable.

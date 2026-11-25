@@ -5,7 +5,7 @@ description: Lilac & Sage, the house design system (pastel lilac and sage, light
 
 # Lilac & Sage design system
 
-Apps consume this system through the `@jameswilson1996/ui-tokens` package (`tokens.css` + `bundle.css`, `motion.js` for the drag, navigation, marker, toast timer, stagger and dialog-from-row helpers, `days.js` for the day helpers, `combobox.js` for the combobox helpers, `keyboard.js` for the shortcuts and `icons.js` for the mark and app icons). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
+Apps consume this system through the `@jameswilson1996/ui-tokens` package (`fonts.css` + `tokens.css` + `bundle.css`, in that order, `motion.js` for the drag, navigation, marker, toast timer, stagger and dialog-from-row helpers, `days.js` for the day helpers, `combobox.js` for the combobox helpers, `keyboard.js` for the shortcuts and `icons.js` for the mark and app icons). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
 
 Before building UI:
 

@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import postcss from "postcss";
 
 const PACKAGE_DIR = join(dirname(fileURLToPath(import.meta.url)), "../packages/ui-tokens");
-const SHIPPED_CSS = ["tokens.css", "bundle.css"];
+const SHIPPED_CSS = ["fonts.css", "tokens.css", "bundle.css"];
 
 let failed = false;
 for (const file of SHIPPED_CSS) {
