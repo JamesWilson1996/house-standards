@@ -24,7 +24,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 36px; padding: 0 var(--space-4);
   font: 600 13px/16px var(--font-sans); text-decoration: none; border-radius: var(--radius-md); border: 1px solid transparent; cursor: pointer;
   background: var(--surface); color: var(--ink); border-color: var(--line-strong);
-  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, color var(--motion-quick) ease; }
+  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, color var(--motion-quick) ease, scale var(--motion-base) var(--ease-enter); }
 @media (hover: hover) { .ls-btn:hover { background: var(--surface-sunken); } }
 .ls-btn--primary { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 @media (hover: hover) { .ls-btn--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); } }
@@ -176,9 +176,16 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 
 /* ---------- Checkbox & Switch ---------- */
 .ls-check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 15px; cursor: pointer; }
-.ls-check input { appearance: none; width: 18px; height: 18px; margin: 0; border: 1.5px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); display: grid; place-content: center; cursor: pointer; }
+.ls-check input { appearance: none; width: 18px; height: 18px; margin: 0; border: 1.5px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); display: grid; place-content: center; cursor: pointer;
+  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
 .ls-check input:checked { background: var(--accent); border-color: var(--accent); }
-.ls-check input:checked::after { content: ""; width: 10px; height: 6px; border-left: 2px solid var(--on-accent); border-bottom: 2px solid var(--on-accent); transform: rotate(-45deg) translate(1px, -1px); }
+/* The tick draws from its short arm to its long one over motion-base by uncovering it left to right (#107); unticking covers it again
+   over motion-quick. It is a mask, so its colour is a background that forced colours can redraw. */
+.ls-check input[type="checkbox"]::after { content: ""; width: 12px; height: 10px; background: var(--on-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1.5 5.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1.5 5.5l3 3 6-7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  clip-path: inset(0 100% 0 0); transition: clip-path var(--motion-quick) var(--ease-exit); }
+.ls-check input[type="checkbox"]:checked::after { clip-path: inset(0); transition: clip-path var(--motion-base) var(--ease-enter); }
 .ls-switch { display: inline-flex; align-items: center; gap: var(--space-2); font-size: 15px; cursor: pointer; }
 .ls-switch input { appearance: none; width: 36px; height: 20px; margin: 0; border-radius: var(--radius-pill); background: var(--surface-sunken); border: 1.5px solid var(--line-strong); position: relative; cursor: pointer; transition: background-color var(--motion-base) ease; }
 .ls-switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 13px; height: 13px; border-radius: var(--radius-pill); background: var(--line-strong); transition: transform var(--motion-base) var(--ease-enter); }
@@ -186,11 +193,11 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-switch input:checked::after { transform: translateX(16px); background: var(--on-accent); }
 /* The same label holds a radio, for a list of choices that each need a line of help. */
 .ls-check input[type="radio"] { border-radius: var(--radius-pill); }
-.ls-check input[type="radio"]:checked::after { width: 8px; height: 8px; border: 0; border-radius: var(--radius-pill); background: var(--on-accent); transform: none; }
+.ls-check input[type="radio"]:checked::after { content: ""; width: 8px; height: 8px; border: 0; border-radius: var(--radius-pill); background: var(--on-accent); transform: none; }
 
 /* ---------- Segmented control (one of up to 4 short options, all in view) ---------- */
 /* Real radio inputs, so the browser gives arrow keys, the group's name and the form value; each input covers its option and stays invisible. */
-.ls-segmented { display: inline-flex; max-width: 100%; height: 36px; padding: 2px; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
+.ls-segmented { position: relative; display: inline-flex; max-width: 100%; height: 36px; padding: 2px; gap: 2px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-md); }
 .ls-field > .ls-segmented { align-self: flex-start; }
 .ls-segmented__option { position: relative; flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; padding: 0 var(--space-3);
   border-radius: var(--radius-sm); font: 600 13px/16px var(--font-sans); color: var(--ink); white-space: nowrap; cursor: pointer;
@@ -295,7 +302,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* ---------- List (rows that act in place: lead, title and meta, value and actions) ---------- */
 .ls-list { margin: 0; padding: 0; list-style: none; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
 .ls-list__row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); min-height: 56px; padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--line); }
+  border-bottom: 1px solid var(--line); transition: background-color var(--motion-quick) ease, scale var(--motion-base) var(--ease-enter); }
 .ls-list__row:last-child { border-bottom: 0; }
 .ls-list__row:not(:has(> .ls-list__lead)) { grid-template-columns: minmax(0, 1fr) auto; }
 .ls-list__lead { display: flex; align-items: center; }
@@ -345,12 +352,18 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-progress__bar::-webkit-progress-bar { background: var(--surface-sunken); border-radius: var(--radius-pill); }
 .ls-progress__bar::-webkit-progress-value { background: var(--ls-progress-fill); border-radius: var(--radius-pill); }
 .ls-progress__bar::-moz-progress-bar { background: var(--ls-progress-fill); border-radius: var(--radius-pill); }
+/* A div bar (#107) moves its fill to the new value over motion-base; <progress> can't animate, so it jumps. The fill slides rather than
+   scales, so its rounded end keeps its shape. A first render shows the value at once, since a transition needs a value to change from. */
+div.ls-progress__bar { position: relative; }
+.ls-progress__fill { position: absolute; inset: 0; border-radius: inherit; background: var(--ls-progress-fill);
+  translate: calc((min(var(--ls-progress-value, 0), 1) - 1) * 100%) 0;
+  transition: translate var(--motion-base) var(--ease-enter), background-color var(--motion-quick) ease; }
 .ls-progress--done .ls-progress__bar { --ls-progress-fill: var(--success-ink); }
 .ls-progress--over .ls-progress__bar { --ls-progress-fill: var(--danger); }
 .ls-progress--over .ls-progress__value { color: var(--danger-ink); }
 
 /* ---------- Tabs ---------- */
-.ls-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
+.ls-tabs { position: relative; display: flex; gap: var(--space-1); border-bottom: 1px solid var(--line); }
 .ls-tab { appearance: none; background: none; border: 0; padding: var(--space-2) var(--space-3); margin-bottom: -1px; font: 600 13px/16px var(--font-sans);
   color: var(--ink-muted); text-decoration: none; /* a tab that is a link (a route per tab) loses the underline, as ls-btn does (#88) */ border-bottom: 2px solid transparent; cursor: pointer; border-radius: var(--radius-md) var(--radius-md) 0 0;
   transition: background-color var(--motion-quick) ease, color var(--motion-quick) ease; }
@@ -434,7 +447,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
   :root:has(.ls-tabbar) .ls-nav { display: none; }
 }
 .ls-tabbar__item { position: relative; flex: 1 1 0; min-width: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  padding: 0 var(--space-1); border-radius: var(--radius-md); font: 600 12px/16px var(--font-sans); color: var(--ink-muted); text-decoration: none; }
+  padding: 0 var(--space-1); border-radius: var(--radius-md); font: 600 12px/16px var(--font-sans); color: var(--ink-muted); text-decoration: none;
+  transition: scale var(--motion-base) var(--ease-enter); } /* scale only: the current place still changes at once */
 .ls-tabbar__item svg { flex: none; width: 20px; height: 20px; }
 .ls-tabbar__label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (hover: hover) { .ls-tabbar__item:hover { color: var(--ink); } }
@@ -500,7 +514,7 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 .ls-filterbar__count { flex: none; margin: 0 0 0 auto; font: 400 13px/18px var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .ls-chip { position: relative; display: inline-flex; align-items: center; gap: var(--space-1); height: 32px; padding: 0 var(--space-3); border: 1px solid var(--line-strong);
   border-radius: var(--radius-pill); background: var(--surface); font: 600 13px/16px var(--font-sans); color: var(--ink); white-space: nowrap; cursor: pointer;
-  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease; }
+  transition: background-color var(--motion-quick) ease, border-color var(--motion-quick) ease, scale var(--motion-base) var(--ease-enter); }
 /* 44px tall to a finger, 32px to the eye. */
 .ls-chip::after { content: ""; position: absolute; inset: -6px 0; }
 @media (hover: hover) { .ls-chip:hover { background: var(--surface-sunken); } }
@@ -569,7 +583,8 @@ code, kbd { font-family: var(--font-mono); font-size: 13px; background: var(--su
 /* An empty column keeps a 44px drop target. */
 .ls-column__cards { display: flex; flex-direction: column; gap: var(--space-2); min-height: 44px; margin: 0; padding: 0; list-style: none; }
 .ls-board__card { position: relative; display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--radius-md); -webkit-touch-callout: none; transition: border-color var(--motion-quick) ease; }
+  border-radius: var(--radius-md); -webkit-touch-callout: none;
+  transition: border-color var(--motion-quick) ease, background-color var(--motion-quick) ease, scale var(--motion-base) var(--ease-enter); }
 @media (hover: hover) { .ls-board__card:hover { border-color: var(--line-strong); } }
 .ls-board__top { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-2); }
 .ls-board__number { font: 500 12px/16px var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
@@ -735,6 +750,11 @@ html:has(.ls-dialog:modal) { overflow: hidden; }
 .ls-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-7) var(--space-4); text-align: center;
   border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); }
 .ls-empty svg { width: 32px; height: 32px; color: var(--ink-muted); }
+/* Done (#107): the state that appears when the last item goes draws its check once over motion-base. The circle and the tick each carry
+   pathLength="1", and the circle starts at the top. Arriving at a list that is already empty shows a plain ls-empty. */
+.ls-empty--done svg { color: var(--success-ink); }
+.ls-empty--done svg :is(circle, path) { stroke-dasharray: 1; animation: ls-draw var(--motion-base) var(--ease-enter) both; }
+.ls-empty--done svg circle { rotate: -90deg; transform-origin: center; transform-box: fill-box; }
 .ls-empty__text { max-width: 40ch; margin: 0; font: 400 15px/22px var(--font-sans); color: var(--ink); }
 .ls-empty__actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: var(--space-2) var(--space-4); }
 @media (max-width: 640px) {
@@ -886,6 +906,92 @@ html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { anim
 .ls-dragging { cursor: grabbing; -webkit-user-select: none; user-select: none; }
 .ls-drag-handle { cursor: grab; touch-action: none; } /* a finger on the handle drags instead of scrolling */
 
+/* ---------- Motion that finishes a change (decided 25 November, #107) ---------- */
+@keyframes ls-roll-out { to { opacity: 0; translate: 0 -4px; } }
+@keyframes ls-roll-in { from { opacity: 0; translate: 0 4px; } }
+@keyframes ls-draw { from { stroke-dashoffset: 1; } }
+@keyframes ls-countdown { to { scale: 0 1; } }
+
+/* Pressed: a control presses in to 98% over motion-quick and turns one step darker, then springs back over motion-base with no overshoot.
+   A row or card presses with its title, whose hit area covers it; a held card lifts instead. Under reduced motion only the colour changes. */
+:root { --ls-press-scale: 0.98; }
+@media (prefers-reduced-motion: reduce) {
+  :root { --ls-press-scale: 1; }
+}
+.ls-btn:not(:disabled, [aria-disabled="true"]):active, .ls-chip:active, .ls-tabbar__item:active,
+.ls-board__card:not(.ls-lifted):has(> .ls-board__title:active), .ls-list__row:not(.ls-lifted):has(> .ls-list__main > :is(a, button).ls-list__title:active) {
+  scale: var(--ls-press-scale); transition-duration: var(--motion-quick); }
+.ls-btn:not(:disabled, [aria-disabled="true"]):active { background: var(--surface-sunken); }
+.ls-btn--primary:not(:disabled, [aria-disabled="true"]):active { background: var(--accent-hover); border-color: var(--accent-hover); }
+.ls-btn--secondary:not(:disabled, [aria-disabled="true"]):active { background: var(--sage-hover); border-color: var(--sage-hover); }
+.ls-btn--soft:not(:disabled, [aria-disabled="true"]):active { background: var(--accent-soft-pressed); border-color: var(--accent-soft-pressed); }
+.ls-btn--ghost:not(:disabled, [aria-disabled="true"]):active { background: var(--accent-soft); color: var(--on-accent-soft); }
+.ls-btn--danger:not(:disabled, [aria-disabled="true"]):active { background: var(--danger-pressed); border-color: var(--danger-pressed); }
+.ls-chip:active, .ls-tabbar__item:active { background: var(--surface-sunken); }
+.ls-chip:is([aria-pressed="true"], .ls-chip--active):active, .ls-tabbar__item[aria-current="page"]:active { background: var(--accent-soft-pressed); border-color: var(--accent-soft-pressed); }
+.ls-board__card:not(.ls-lifted):has(> .ls-board__title:active), .ls-list__row:not(.ls-lifted):has(> .ls-list__main > :is(a, button).ls-list__title:active) { background: var(--surface-sunken); }
+
+/* The current place in ls-segmented and ls-tabs slides to the new option over motion-base. span.ls-marker (aria-hidden) sits first in the
+   control and placeMarker() from motion.js places it; until then the option keeps its own fill. The sidebar and tab bar don't use it:
+   the shell's current place changes at once. */
+.ls-marker { position: absolute; left: 0; top: 0; z-index: 0; pointer-events: none; translate: var(--ls-marker-x, 0) var(--ls-marker-y, 0);
+  transition: translate var(--motion-base) var(--ease-enter), scale var(--motion-base) var(--ease-enter); }
+.ls-marker:not(.ls-marker--placed) { display: none; }
+.ls-segmented > .ls-marker { width: var(--ls-marker-w); height: var(--ls-marker-h); border-radius: var(--radius-sm); background: var(--accent-soft); }
+.ls-segmented:has(> .ls-marker--placed) > .ls-segmented__option { z-index: 1; }
+/* The underline is 1px wide and scaled to the tab's width, so one transition moves and resizes it. */
+.ls-tabs > .ls-marker { top: auto; bottom: -1px; width: 1px; height: 2px; translate: var(--ls-marker-x, 0) 0; scale: var(--ls-marker-scale, 0) 1;
+  transform-origin: 0 0; background: var(--accent); }
+@media not (forced-colors: active) {
+  .ls-segmented:has(> .ls-marker--placed) > .ls-segmented__option:has(input:checked) { background: transparent; }
+  .ls-tabs:has(> .ls-marker--placed) > .ls-tab[aria-selected="true"] { border-bottom-color: transparent; }
+}
+
+/* An amount that changed after a command rolls: the old value fades out up 4px over motion-quick while the new one fades in from 4px
+   below over motion-base. Both sit in one grid cell, so nothing beside them moves. The old one is aria-hidden; drop it after afterLeaving.
+   A first render, a period change or a refetch shows the amount alone, with no roll. */
+.ls-amount { display: inline-grid; }
+.ls-amount > * { grid-area: 1 / 1; }
+.ls-amount__old { animation: ls-roll-out var(--motion-quick) var(--ease-exit) forwards; pointer-events: none; }
+.ls-amount__new { animation: ls-roll-in var(--motion-base) var(--ease-enter) both; }
+
+/* A toast with an action shows how long it stays: a hairline along its bottom edge empties over motion-toast. toastTimer() in motion.js
+   adds ls-toast--held while the pointer is over the toast or focus is inside, which pauses the line and the timer together. Under reduced
+   motion the line empties in six steps, one a second, since a still line would read as stuck. */
+.ls-toast { position: relative; }
+.ls-toast:has(.ls-toast__action)::after { content: ""; position: absolute; left: var(--radius-md); right: var(--radius-md); bottom: 0; height: 2px;
+  border-radius: var(--radius-pill); background: var(--toast-action); transform-origin: 0 0; animation: ls-countdown var(--motion-toast) linear forwards; }
+.ls-toast:is(.ls-toast--held, .ls-toast--leaving)::after { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .ls-toast::after { animation-timing-function: steps(6, end); }
+}
+
+/* A list's first rows in turn: staggerIn() in motion.js adds ls-stagger on the list's first render with data. Its first six rows fade in
+   motion-stagger apart and later rows arrive with the sixth; the class comes off once they land, so a re-sort or a new row never replays it. */
+.ls-stagger > * { animation: ls-fade var(--motion-base) var(--ease-enter) both; }
+.ls-stagger > :nth-child(2) { animation-delay: var(--motion-stagger); }
+.ls-stagger > :nth-child(3) { animation-delay: calc(2 * var(--motion-stagger)); }
+.ls-stagger > :nth-child(4) { animation-delay: calc(3 * var(--motion-stagger)); }
+.ls-stagger > :nth-child(5) { animation-delay: calc(4 * var(--motion-stagger)); }
+.ls-stagger > :nth-child(n + 6) { animation-delay: calc(5 * var(--motion-stagger)); }
+
+/* Opening from where you tapped: openFrom() in motion.js names the tapped row or card ls-origin and then the dialog, so the dialog grows
+   out of it over motion-travel; closeTo() shrinks it back over motion-base. Nothing else is named during these two types, so the page
+   stays still under one root snapshot and only the backdrop fades. The dialog's own rise and drop are off, since the group carries it.
+   While the 200ms run, taps land on the transition: the one exception to "nothing blocks the next tap". */
+html:active-view-transition-type(ls-origin, ls-origin-back) :is(.ls-main, .ls-auth, .ls-tabbar, .ls-toasts) { view-transition-name: none; }
+html:active-view-transition-type(ls-origin, ls-origin-back) .ls-dialog,
+html:active-view-transition-type(ls-origin, ls-origin-back) .ls-dialog::backdrop { animation: none; transition: none; }
+html:active-view-transition-type(ls-origin, ls-origin-back)::view-transition-old(root) { opacity: 1; }
+html:active-view-transition-type(ls-origin)::view-transition-new(root) { animation: ls-fade var(--motion-travel) var(--ease-enter) both; }
+html:active-view-transition-type(ls-origin-back)::view-transition-new(root) { animation: ls-fade var(--motion-base) var(--ease-exit) both; }
+::view-transition-group(ls-origin) { overflow: clip; border-radius: var(--radius-lg); animation-duration: var(--motion-travel); animation-timing-function: var(--ease-enter); }
+html:active-view-transition-type(ls-origin-back)::view-transition-group(ls-origin) { animation-duration: var(--motion-base); animation-timing-function: var(--ease-exit); }
+/* Each snapshot keeps its own size, pinned top left, so the box grows and the content inside it doesn't stretch. */
+::view-transition-old(ls-origin), ::view-transition-new(ls-origin) { width: 100%; height: 100%; object-fit: none; object-position: 0 0; }
+::view-transition-old(ls-origin) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
+::view-transition-new(ls-origin) { animation: ls-fade var(--motion-base) var(--ease-enter) both; }
+
 /* ---------- Forced colours (Windows High Contrast and other forced palettes) ---------- */
 /* The browser swaps every colour for the user's palette and drops backgrounds and shadows, so states drawn with a fill vanish.
    Each such state is redrawn here with system colours: SelectedItem for what is chosen or current, Highlight for a fill or ring,
@@ -906,7 +1012,7 @@ html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { anim
   .ls-tab:not([aria-selected="true"]) { border-bottom-style: hidden; }
   .ls-tab[aria-selected="true"] { border-bottom-color: Highlight; }
   /* Radio dot, switch knob and track. */
-  .ls-check input[type="radio"]:checked::after { forced-color-adjust: none; background: CanvasText; }
+  .ls-check input[type="radio"]:checked::after, .ls-check input[type="checkbox"]::after { forced-color-adjust: none; background: CanvasText; }
   .ls-switch input { forced-color-adjust: none; background: Canvas; border-color: CanvasText; }
   .ls-switch input::after { background: CanvasText; }
   .ls-switch input:checked { background: Highlight; border-color: Highlight; }
@@ -916,6 +1022,10 @@ html:active-view-transition-type(ls-back)::view-transition-group(ls-page) { anim
   .ls-progress__bar::-webkit-progress-bar { background: Canvas; }
   .ls-progress__bar::-webkit-progress-value { background: Highlight; }
   .ls-progress__bar::-moz-progress-bar { background: Highlight; }
+  .ls-progress__fill { background: Highlight; }
+  /* The current-place marker gives way to the option's own SelectedItem fill and the tab's Highlight underline above. */
+  .ls-marker { display: none; }
+  .ls-toast::after { forced-color-adjust: none; background: CanvasText; }
   /* Placeholders and the busy spinner. */
   .ls-placeholder { forced-color-adjust: none; background: GrayText; }
   .ls-btn[aria-busy="true"]::before { border-color: ButtonText; border-right-color: transparent; }

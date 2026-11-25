@@ -11,6 +11,7 @@ Triggers an action. **Primary** (`ls-btn--primary`, accent fill) at most once pe
 - Disabled: native `disabled`, or `aria-disabled="true"` when the button must stay focusable. Each variant has its own disabled fill and text tokens (`accent-disabled` with `on-accent-disabled`, and so on) that read in both themes. Never fade a button with `opacity`.
 - Busy: while its command is on the way, set `aria-busy="true"` on the button and leave it enabled-looking, since the backend owns the action and it may still succeed. After `motion-wait` (400ms) the bundle shows a spinner before the label, and the button keeps its width. Ignore further clicks while it is busy, and remove the attribute when the command settles. See Loading and errors.
 - A link may carry `ls-btn` when it navigates but sits among buttons (an empty state's action, "Add bill" in a page header). It looks the same as a `button.ls-btn`, with no underline at rest, on hover or on focus.
+- Pressed: the bundle presses it in to 98% over `motion-quick` and one step darker (`accent-hover`, `sage-hover`, `accent-soft-pressed`, `danger-pressed`, `surface-sunken` for the default), then springs it back over `motion-base` (#107). Chips, tab bar items, board cards and list rows whose title opens them press the same way. Under reduced motion only the colour changes. Safari applies `:active` on touch only once the page has a `touchstart` listener, so an app adds an empty passive one at the root.
 - Don't put two primary buttons side by side; don't use sage for destructive actions.
 
 Example markup:
@@ -270,6 +271,7 @@ Example markup (December 2026, the 1st chosen, today the 8th of November so no r
 
 - Consumer provides: the native input and its visible label text.
 - Don't use a switch inside a form that has a Save button — use a checkbox.
+- Motion is built in (#107): the box fills over `motion-quick` and the tick draws from its short arm to its long one over `motion-base`; unticking covers it again over `motion-quick`. Under reduced motion it is marked at once. In forced colours the tick is `CanvasText`.
 - `ls-check` also holds a radio (`input[type=radio]`, drawn round with a dot), for a list of choices that each need a line of help. Group them in a `fieldset` with a `legend.ls-label`. For short choices use `ls-segmented`; see Choosing one option.
 
 Example markup:
@@ -297,12 +299,13 @@ A list that can't grow from the field stays an `ls-select` or `ls-segmented`, ho
 `div.ls-segmented` with `role="radiogroup"` and `aria-labelledby` pointing at the field's label, holding one `label.ls-segmented__option` per choice, each wrapping a real `input[type=radio]` (same `name`) and its text. The inputs are invisible and cover their option, so the browser gives the arrow keys, the form value and the group's name.
 
 - The chosen option fills with `accent-soft` and `on-accent-soft`. Focus shows the ring on the option.
+- The fill slides to the new option over `motion-base` (#107): put `span.ls-marker` with `aria-hidden="true"` first in the control and place it with `placeMarker(marker, option)` from `@jameswilson1996/ui-tokens/motion.js` on mount, when the choice changes, and with `{ animate: false }` when the control resizes (a `ResizeObserver`) or fonts load. The option is the checked `label.ls-segmented__option`. Until it is placed the option keeps its own fill, so a page that never calls it still works.
 - 36px tall with a pointer. On a phone or touch screen it is 44px and fills the field's width.
 - It submits with the form like any radio. For a setting that applies at once (Appearance), send the command on `change`.
 
 ```html
 <div class="ls-field"><span class="ls-label" id="paid-label">Paid by</span>
-<div class="ls-segmented" role="radiogroup" aria-labelledby="paid-label"><label class="ls-segmented__option"><input type="radio" name="paidBy" value="alex" checked>Alex</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="sam">Sam</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="split">Split</label></div></div>
+<div class="ls-segmented" role="radiogroup" aria-labelledby="paid-label"><span class="ls-marker" aria-hidden="true"></span><label class="ls-segmented__option"><input type="radio" name="paidBy" value="alex" checked>Alex</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="sam">Sam</label><label class="ls-segmented__option"><input type="radio" name="paidBy" value="split">Split</label></div></div>
 ```
 
 ### Combobox
@@ -522,14 +525,15 @@ Confirms that a command worked, with at most one action, usually Undo: "Netflix 
 - One toast at a time. A new toast replaces the current one at once, without the leaving animation.
 - Text: what changed, past tense, naming the item ("Council tax marked paid", "3 items moved to Bought"). One line where it fits; it wraps on a phone.
 - Action: one verb ("Undo", "View"). Undo sends the inverse command to the backend; the UI never restores state by itself. Never put a destructive action in a toast.
-- Timing: 6 seconds, paused while the pointer is over the toast or focus is inside it, so it can be read and reached. Escape dismisses it when focus is inside. Errors from a form are an `ls-alert` or a field error, not a toast; a one-tap action that failed gets a toast with Try again in place of its success toast (see Loading and errors).
+- Timing: `TOAST_MS` (6 seconds, the `motion-toast` token), held while a mouse is over the toast or focus is inside it, so it can be read and reached, then running on with the time left. Use `toastTimer(toast, dismiss)` from `@jameswilson1996/ui-tokens/motion.js`: it holds the timer and the countdown line together and returns a stop function.
+- Countdown (#107): a toast with an action shows a 2px `toast-action` hairline along its bottom edge that empties over its 6 seconds, so it shows how long Undo stays. It holds with the toast (`ls-toast--held`, set by `toastTimer`). Under reduced motion it empties in six steps, one a second. Escape dismisses it when focus is inside. Errors from a form are an `ls-alert` or a field error, not a toast; a one-tap action that failed gets a toast with Try again in place of its success toast (see Loading and errors).
 - Position: `space-5` above the bottom edge plus the safe area. At 640px and below, when the page has an `ls-tabbar`, it sits above the bar. It is `toast-width` (440px) at most and the viewport width less `overlay-margin` on each side.
 - Colours: `toast` with `on-toast` text and `toast-action` for the button. The fill is darker than the page in light and lighter in dark, so it stands out over any surface.
 - A dialog is in the top layer and covers the toast. If a command in a dialog closes it, show the toast after the dialog closes.
 - Motion is built in: the toast rises 8px and fades in over `motion-base`. To dismiss, add `ls-toast--leaving`: it fades and drops 8px over `motion-quick` with `ease-exit`; remove the element on `animationend`. Under reduced motion both run in 0ms and `animationend` still fires.
 
 ```ts
-const TOAST_MS = 6000;
+import { toastTimer } from "@jameswilson1996/ui-tokens/motion.js";
 
 // Shows one toast, replacing any current one. Returns a function that dismisses it.
 export function showToast(region: HTMLElement, text: string, action?: { label: string; run: () => void }) {
@@ -541,7 +545,7 @@ export function showToast(region: HTMLElement, text: string, action?: { label: s
   p.textContent = text;
   toast.append(p);
   const dismiss = () => {
-    clearTimeout(timer);
+    stopTimer();
     toast.classList.add("ls-toast--leaving");
     toast.addEventListener("animationend", () => toast.remove(), { once: true });
   };
@@ -553,13 +557,7 @@ export function showToast(region: HTMLElement, text: string, action?: { label: s
     button.addEventListener("click", () => { action.run(); dismiss(); });
     toast.append(button);
   }
-  let timer = setTimeout(dismiss, TOAST_MS);
-  const pause = () => clearTimeout(timer);
-  const resume = () => { if (!toast.matches(":hover, :focus-within")) timer = setTimeout(dismiss, TOAST_MS); };
-  toast.addEventListener("pointerenter", pause);
-  toast.addEventListener("focusin", pause);
-  toast.addEventListener("pointerleave", resume);
-  toast.addEventListener("focusout", resume);
+  const stopTimer = toastTimer(toast, dismiss);
   toast.addEventListener("keydown", (e) => e.key === "Escape" && dismiss());
   region.append(toast);
   return dismiss;
@@ -685,7 +683,7 @@ Actions (decided 8 November, #23): every row shows its one main action as a visi
 - The list is a size container, so it takes its width from where it sits and never from its rows: in a flex row or grid give it a width (`flex: 1`, a column), or it collapses.
 - Date chip tones match the status: `ls-date--danger` overdue, `--warning` due soon, `--success` paid, neutral otherwise. The tone never stands alone: the row's meta or a badge says "4 days overdue".
 - Details open in an `ls-dialog` with the open state in the URL. The whole row is not a link; only the title opens it, so the row's buttons stay separate targets.
-- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. Reordering uses the drag classes in Motion utilities, and a row that moves after a command slides there (A row that moves, in Motion utilities). A toast with Undo confirms the change.
+- Motion (brand book pattern 2): a ticked row gets `ls-list__row--done` at once (title struck through in `ink-muted`), then after 400ms folds away with `ls-list__row--leaving` over `motion-base`. A new row gets `ls-enter`. An amount or count that a command changed rolls with `ls-amount` (see Amounts in Motion utilities), and when the last row goes the empty state that replaces the list is `ls-empty--done`. On the list's first render with data, `staggerIn(list)` fades its first six rows in turn. Reordering uses the drag classes in Motion utilities, and a row that moves after a command slides there (A row that moves, in Motion utilities). A toast with Undo confirms the change.
 - Consumer provides: the rows from the API, each row's `allowedActions` deciding which main action shows.
 
 ```ts
@@ -755,21 +753,21 @@ Lists and tables longer than one page show the first page and a Load more button
 
 ## Progress
 
-How far through something is: spent of budget, cards done of a project. `div.ls-progress` holds `div.ls-progress__head` (`span.ls-progress__label` and `span.ls-progress__value`) and a native `progress.ls-progress__bar` with `value`, `max` and `aria-labelledby` pointing at the label.
+How far through something is: spent of budget, cards done of a project. `div.ls-progress` holds `div.ls-progress__head` (`span.ls-progress__label` and `span.ls-progress__value`) and the bar: `div.ls-progress__bar` with `role="progressbar"`, `aria-valuemin="0"`, `aria-valuemax`, `aria-valuenow`, `aria-labelledby` pointing at the label and `style="--ls-progress-value: 0.67"` (the fraction, 0 to 1), holding an empty `span.ls-progress__fill`. A native `progress.ls-progress__bar` still works but can't move, so its fill jumps.
 
 - The value says it in words beside the bar: "£2,140 of £3,200", "5 of 8 done". The bar never carries the number alone.
 - Fill: `accent` by default. `ls-progress--done` (`success-ink`) when the work is complete; `ls-progress--over` (`danger`) past a limit, with the value saying so ("£120 over"). The tone follows the API's state, never a threshold the client works out.
-- Over the limit, set `value` to `max` so the bar is full; the words carry the overspend.
-- The bar is 8px with `radius-pill`, on a `surface-sunken` track. Changes are instant: no animated fill and no counting up.
+- Over the limit, set `--ls-progress-value` to 1 (or `value` to `max`) so the bar is full; the words carry the overspend.
+- The bar is 8px with `radius-pill`, on a `surface-sunken` track. When the value changes the fill moves to it over `motion-base` (#107); the value beside it changes at once and never counts up. A first render shows the value with no motion, so render the bar with its real value, never 0 first.
 - An indeterminate wait (no `value`) is not this component; under 400ms show nothing.
 
 Example markup:
 
 ```html
 <div class="ls-stack">
-<div class="ls-progress"><div class="ls-progress__head"><span class="ls-progress__label" id="p1">Spent this month</span><span class="ls-progress__value">£2,140 of £3,200</span></div><progress class="ls-progress__bar" value="2140" max="3200" aria-labelledby="p1">67%</progress></div>
-<div class="ls-progress ls-progress--done"><div class="ls-progress__head"><span class="ls-progress__label" id="p2">Kitchen snagging</span><span class="ls-progress__value">8 of 8 done</span></div><progress class="ls-progress__bar" value="8" max="8" aria-labelledby="p2">100%</progress></div>
-<div class="ls-progress ls-progress--over"><div class="ls-progress__head"><span class="ls-progress__label" id="p3">Eating out</span><span class="ls-progress__value">£320 of £200 · £120 over</span></div><progress class="ls-progress__bar" value="200" max="200" aria-labelledby="p3">Over</progress></div>
+<div class="ls-progress"><div class="ls-progress__head"><span class="ls-progress__label" id="p1">Spent this month</span><span class="ls-progress__value">£2,140 of £3,200</span></div><div class="ls-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="3200" aria-valuenow="2140" aria-labelledby="p1" style="--ls-progress-value: 0.67"><span class="ls-progress__fill"></span></div></div>
+<div class="ls-progress ls-progress--done"><div class="ls-progress__head"><span class="ls-progress__label" id="p2">Kitchen snagging</span><span class="ls-progress__value">8 of 8 done</span></div><div class="ls-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="8" aria-labelledby="p2" style="--ls-progress-value: 1"><span class="ls-progress__fill"></span></div></div>
+<div class="ls-progress ls-progress--over"><div class="ls-progress__head"><span class="ls-progress__label" id="p3">Eating out</span><span class="ls-progress__value">£320 of £200 · £120 over</span></div><div class="ls-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="200" aria-valuenow="200" aria-valuetext="£120 over" aria-labelledby="p3" style="--ls-progress-value: 1"><span class="ls-progress__fill"></span></div></div>
 </div>
 ```
 
@@ -778,7 +776,7 @@ Example markup:
 Switch between views of the same object. `div.ls-tabs[role=tablist] > button.ls-tab[role=tab]`; the active tab has `aria-selected="true"`.
 
 - Consumer provides: tab labels and the panels. Each tab is a route segment or search param (TanStack Router) so it survives reload and can be linked.
-- Switching tabs fades through (see Tab bar), never slides.
+- Switching tabs fades the content below through (see Tab bar); the content never slides. The underline slides to the new tab over `motion-base` (#107): put `span.ls-marker` with `aria-hidden="true"` first in the `ls-tabs` and place it with `placeMarker(marker, tab)` as for the segmented control (Choosing one option). The tab row can scroll sideways on a phone; the marker scrolls with it.
 - A tab that is its own route is a link: `a.ls-tab` with `role="tab"` and `aria-selected`. The bundle takes the link underline off, as for `a.ls-btn` (#88).
 
 Example markup:
@@ -1209,7 +1207,7 @@ Example markup:
 Columns of numbered cards that move between stages: a project's To do, In progress and Done. `div.ls-board` holds one `section.ls-column` per stage.
 
 - Column: `div.ls-column__head` with `h2.ls-column__title` wrapping a `button.ls-column__toggle` (`aria-expanded`, `aria-controls` on the cards, a 16px Lucide `chevron-down` that turns when folded) and `span.ls-column__count`; then `ol.ls-column__cards`. A folded column gets `ls-column--folded` and shows only its head. Fold state is per device (local storage), not on the server.
-- Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL. Cards hold no other buttons.
+- Card: `article.ls-board__card` in an `li`, with `div.ls-board__top` (`span.ls-board__number` "#4" and an optional badge), `button.ls-board__title` (or a link) and an optional `p.ls-board__meta`. The title's hit area covers the whole card, and it opens the card in an `ls-dialog` with the open state in the URL, growing out of the card (see Opening from a row in Motion utilities). Cards hold no other buttons.
 - Desktop: columns sit side by side at `board-column-width` (280px); the board scrolls sideways when they don't fit. The board is `position: relative`, so everything in it, a count's `ls-sr-only` text included, stays inside its scroll and never widens the page (#93).
 - Phone (decided 8 November, #26): one column at a time. The columns become the page header's tab row (`div.ls-tabs.ls-page-header__tabs.ls-board__tabs`, each tab "To do" with `span.ls-tab__count`), sticky at the top as in Page header. The column on screen has `ls-column--current`; the others and the column heads are hidden. The current column lives in the URL (`?column=todo`). The tab row is hidden above 640px, where every column shows.
 - Dragging (brand book Motion pattern 1): cards have no handle. A mouse drag starts at once; on touch the card lifts after a 350ms press, with a 15ms vibration where supported, so a swipe still scrolls (`pressToLift`). The lifted card takes `ls-lifted ls-lifted--tilt`, an `ls-drop-slot` opens where it will land (`moveSlot` in Motion utilities), and the column under the pointer gets `ls-column--drop`. On a phone, dragging onto a tab gives it `ls-tab--drop`; holding there for 500ms switches to that column so the card can be placed in it, and letting go on the tab puts the card at the top of that column.
@@ -1277,6 +1275,7 @@ A modal window over the current page. Record details (a bill, a transaction) and
 - Focus: `showModal()` makes the rest of the page inert, so Tab stays inside the dialog. Focus moves to the first focusable element (the close button) or to the element with `autofocus`; put `autofocus` on the first field of a form. On close the browser returns focus to the element that opened the dialog. When it opened from a link with no trigger on the page, move focus to the page's `h1`.
 - One dialog at a time. A popover inside a dialog is fine.
 - Motion is built in: the dialog rises 8px and fades in over `motion-base` and the backdrop fades with it; at 640px and below it, and a sheet, rise from the bottom edge over `motion-travel` while the backdrop fades. Closing is the reverse and quicker (decided 8 November, #54): the dialog fades and drops 8px over `motion-quick` with `ease-exit`, and at 640px and below it slides off the bottom edge over `motion-base`. The bundle holds the dialog in the top layer until the fade ends (`overlay` with `transition-behavior: allow-discrete`); browsers without `overlay` close at once. The `close` event fires at the start, so URL and focus handling don't wait for the motion.
+- Opened from a board card or a list row, the dialog grows out of it over `motion-travel` and shrinks back into it on close (#107). See Opening from a row in Motion utilities.
 - Keep the `dialog` element on the page while it closes, or the exit never shows (see Leaving in Motion utilities). The example below renders it all the time and calls `close()`. A component that renders the dialog only while it is open calls `close()` first and unmounts it after `afterLeaving(dialog)`.
 
 ### Confirm
@@ -1528,12 +1527,14 @@ What a list or page shows when there is nothing in it yet. `div.ls-empty` holds 
 - Filtered to nothing: say so and offer the way back: "No bills match these filters." with a "Clear filters" button. Don't show the first-use text, because the list isn't empty.
 - An empty section inside a card (no meals today) is one line of `ink-muted` text, not an `ls-empty`.
 - It sits where the list would be, inside the same width. Actions are 44px on a phone.
+- Done (#107): when the last item goes (the last step, the last thing to get, every bill this month paid), show `ls-empty ls-empty--done ls-enter` with Lucide `circle-check`, its `circle` and `path` each carrying `pathLength="1"`. The check draws once over `motion-base` in `success-ink`; the text says it's done ("Everything's picked up."). Arriving at a list that is already empty shows the plain empty state.
 
 Example markup:
 
 ```html
 <div class="ls-stack">
 <div class="ls-empty"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><p class="ls-empty__text">Bills you add appear here, with what is due this month at the top.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Add bill</button><a href="#">Import a statement</a></div></div>
+<div class="ls-empty ls-empty--done"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" pathLength="1"/><path d="m9 12 2 2 4-4" pathLength="1"/></svg><p class="ls-empty__text">Every bill this month is paid.</p></div>
 <div class="ls-empty"><p class="ls-empty__text">No bills match these filters.</p><div class="ls-empty__actions"><button class="ls-btn" type="button">Clear filters</button></div></div>
 </div>
 ```
@@ -1729,6 +1730,46 @@ Classes for the patterns in the brand book's Motion section. Their durations com
 - `ls-lifted`: the item being dragged. Add it on pick-up after setting `left`, `top` and `width` from the item's rect; the item becomes `position: fixed` above the page. Move it by setting `translate`, never `top`, so it follows the pointer without layout work. Add `ls-lifted--tilt` for board cards.
 - `ls-drop-slot`: the dashed placeholder where the item will land. Insert it in the item's place on pick-up, with the item's height, and move it as the pointer moves.
 - `ls-dragging`: on `body` while a drag is in progress, for the grabbing cursor and to stop text selection.
+- `ls-marker`: the sliding current option in `ls-segmented` and `ls-tabs`, placed by `placeMarker`. See those components.
+- `ls-amount` with `ls-amount__old` and `ls-amount__new`: an amount rolling to its new value. See Amounts below.
+- `ls-stagger`: a list's first six rows fading in `motion-stagger` apart. Add it with `staggerIn(list)`, which takes it off once they land; never add it by hand, or a re-sort replays it.
+- `ls-empty--done`: the done state's check drawing once (Empty state).
+
+### Amounts
+
+An amount or count that changed because of a command (a total after Mark paid, "2 bills left", "3 of 8 picked up") rolls (#107): the old one fades out up 4px over `motion-quick` while the new one fades in from 4px below over `motion-base`. The first render, a change of period or filter, and a refetch from another device show the new value at once.
+
+```tsx
+import { afterLeaving } from "@jameswilson1996/ui-tokens/motion.js";
+
+// Rolls when `value` changes after mount; the old text stays for motion-quick, hidden from screen readers.
+export function Amount({ value }: { value: string }) {
+  const [shown, setShown] = useState({ value, old: null as string | null, key: 0 });
+  if (shown.value !== value) setShown({ value, old: shown.value, key: shown.key + 1 });
+  const oldRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (oldRef.current) afterLeaving(oldRef.current).then(() => setShown((s) => ({ ...s, old: null })));
+  }, [shown.key]);
+  return (
+    <span className="ls-amount">
+      {shown.old !== null && <span className="ls-amount__old" aria-hidden="true" ref={oldRef}>{shown.old}</span>}
+      <span key={shown.key} className={shown.key ? "ls-amount__new" : undefined}>{shown.value}</span>
+    </span>
+  );
+}
+```
+
+Give it a `key` for the period or filter it belongs to, so a change of period remounts it and shows the new figure at once.
+
+### Opening from a row
+
+A board card or a list row whose title opens a dialog grows into it (#107). `openFrom(row, open, () => dialog)` from `motion.js` names the row `ls-origin`, runs `open` inside a view transition of type `ls-origin`, then names the dialog, so the browser morphs the row into the dialog over `motion-travel`. `closeTo(row, close, () => dialog)` does the reverse over `motion-base` with type `ls-origin-back`. The bundle keeps the page, tab bar and toasts out of these two transitions, so the page stays still and only the backdrop fades.
+
+- `open` must leave the dialog open when it returns or its promise resolves: call `showModal()` there, or with React wrap the state change in `flushSync`. With the open state in the URL, await the navigation and then the dialog's mount.
+- Where the browser lacks view transition types, or the row is off screen or gone, they only call `open` or `close`, and the dialog rises and leaves its usual way. Keep the usual exit wiring (Leaving) for that case.
+- A second call skips the first transition to its end, so closing while the dialog grows works.
+- Back and Escape close the dialog through the same `closeTo`. A dialog opened from a deep link has no row, so it rises as usual.
+- While the transition runs, taps land on it: the one exception to "nothing blocks the next tap", kept to 200ms.
 
 ### Leaving
 
