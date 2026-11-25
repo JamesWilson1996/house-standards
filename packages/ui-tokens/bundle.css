@@ -992,6 +992,94 @@ html:active-view-transition-type(ls-origin-back)::view-transition-group(ls-origi
 ::view-transition-old(ls-origin) { animation: ls-fade-out var(--motion-quick) var(--ease-exit) both; }
 ::view-transition-new(ls-origin) { animation: ls-fade var(--motion-base) var(--ease-enter) both; }
 
+/* ---------- Polish (decided 25 November, #109) ---------- */
+/* Android draws its own blue tap highlight and zooms on a quick double tap. Controls with their own pressed state need neither.
+   :where keeps these at no specificity, so a drag handle's touch-action: none still wins. */
+:where(.ls-btn, .ls-chip, .ls-tabbar__item, .ls-nav__item, .ls-tab, .ls-segmented__option, .ls-list__title, .ls-board__title, .ls-board__card,
+  .ls-menu__item, .ls-check, .ls-switch, .ls-toast__action, .ls-column__toggle, .ls-stepper__step, .ls-stepper__now, .ls-page-header__account) {
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+/* Thin scrollbars in the theme's own colours, so Windows' grey bars match both themes; selected text in the accent's soft pair. */
+:root { scrollbar-color: var(--line-strong) transparent; }
+* { scrollbar-width: thin; }
+::selection { background: var(--accent-soft); color: var(--on-accent-soft); }
+
+/* A count in the tab bar, a chip or a tab rolls like ls-amount when it changes; centred, since the badge is. */
+:is(.ls-tabbar__badge, .ls-chip__count, .ls-tab__count) .ls-amount { justify-items: center; }
+
+/* A row whose title opens it tints on hover, as a table row does, so its hit area shows before the click. The end rows round to the
+   list's corners, which also shapes a pressed row and a flash. */
+@media (hover: hover) {
+  .ls-list__row:has(> .ls-list__main > :is(a, button).ls-list__title):hover { background: var(--surface-sunken); }
+}
+.ls-list__row:first-child { border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+.ls-list__row:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+.ls-list__row:only-child { border-radius: var(--radius-lg); }
+
+/* A failed one-tap command: the row it put back is marked in danger-soft beside the toast with Try again. */
+@keyframes ls-flash-failed { 0%, 25% { background-color: var(--danger-soft); } }
+.ls-flash--failed, .ls-table tr.ls-flash--failed > td { animation: ls-flash-failed var(--motion-flash) ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .ls-flash--failed, .ls-table tr.ls-flash--failed > td { animation-timing-function: step-end; }
+}
+
+/* Done on a button: after a busy command succeeds, the app shows span.ls-btn__done (a tick and the past tense) for MOTION_FLASH_MS,
+   keeping the button's width, then the label again. The toast still confirms. */
+.ls-btn__done { display: inline-flex; align-items: center; gap: var(--space-2); animation: ls-fade var(--motion-base) var(--ease-enter); }
+.ls-btn__done svg { flex: none; width: 16px; height: 16px; }
+
+/* A chart's bar drawn at the plot's full height with --ls-bar (0 to 1) grows or shrinks to a new value over motion-base, after a command
+   or a change of period while the chart stays on the page. It scales from its baseline, and non-scaling-stroke keeps the 2px gap.
+   The first render shows the values with no motion. Lines and points change at once. */
+.ls-chart__bar--scaled { transform-box: fill-box; transform-origin: 50% 100%; scale: 1 var(--ls-bar, 0); vector-effect: non-scaling-stroke;
+  transition: scale var(--motion-base) var(--ease-enter); }
+
+/* Changing the theme crossfades the whole window over motion-base (switchTheme in motion.js). Nothing moves, so nothing is named. */
+html:active-view-transition-type(ls-theme) :is(.ls-main, .ls-auth, .ls-tabbar, .ls-toasts) { view-transition-name: none; }
+html:active-view-transition-type(ls-theme)::view-transition-old(root) { animation: none; opacity: 1; }
+html:active-view-transition-type(ls-theme)::view-transition-new(root) { animation: ls-fade var(--motion-base) var(--ease-enter) both; }
+
+/* On a wide screen a menu, a detail card or the filter panel grows from 96% at the side nearest its trigger, and shrinks back when it
+   closes. Phones keep the rise. Tooltips and a chart's point card keep their plain fade. */
+@keyframes ls-grow { from { opacity: 0; scale: 0.96; } }
+@media (min-width: 641px) {
+  .ls-popover:not(.ls-popover--tip, .ls-popover--at) { transform-origin: top center; }
+  .ls-popover--top:not(.ls-popover--tip, .ls-popover--at) { transform-origin: bottom center; }
+  .ls-popover:not(.ls-popover--tip, .ls-popover--at):popover-open { animation: ls-grow var(--motion-base) var(--ease-enter); }
+  @supports (overlay: auto) {
+    .ls-popover:not(.ls-popover--tip, .ls-popover--at):not(:popover-open) { translate: none; scale: 0.96;
+      transition: opacity var(--motion-quick) var(--ease-exit), scale var(--motion-quick) var(--ease-exit), overlay var(--motion-quick) allow-discrete, display var(--motion-quick) allow-discrete; }
+  }
+}
+
+/* Scroll-driven edges. They follow the scroll exactly, as a dragged item follows the pointer, so reduced motion keeps them. Browsers
+   without scroll timelines show neither, since the animation would otherwise play once and stick at its end. */
+@property --ls-edge-start { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --ls-edge-end { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes ls-stuck-edge { from { box-shadow: none; } to { box-shadow: var(--shadow-md); } }
+@keyframes ls-board-edges {
+  0% { --ls-edge-start: 0px; --ls-edge-end: var(--space-6); }
+  8% { --ls-edge-start: var(--space-6); }
+  92% { --ls-edge-end: var(--space-6); }
+  100% { --ls-edge-start: var(--space-6); --ls-edge-end: 0px; }
+}
+@supports (animation-timeline: view()) {
+  /* The stuck tab row on a phone gains a shadow as the page header's title scrolls away above it. */
+  @media (max-width: 640px) {
+    .ls-main { timeline-scope: --ls-page-head; }
+    .ls-page-header:has(> .ls-page-header__tabs) > .ls-page-header__main { view-timeline: --ls-page-head block; }
+    .ls-page-header__tabs { animation: ls-stuck-edge linear both; animation-timeline: --ls-page-head; animation-range: exit 60% exit 100%; }
+  }
+  /* A board wider than the window fades out over 32px at each edge with more beyond it. The mask's colours are alpha only. While a card
+     is held the mask comes off, since it would also hide the lifted card wherever it leaves the board. */
+  @media (min-width: 641px) {
+    .ls-board { -webkit-mask-image: linear-gradient(to right, transparent, black var(--ls-edge-start), black calc(100% - var(--ls-edge-end)), transparent);
+      mask-image: linear-gradient(to right, transparent, black var(--ls-edge-start), black calc(100% - var(--ls-edge-end)), transparent);
+      animation: ls-board-edges linear both; animation-timeline: scroll(self inline); }
+    .ls-board:has(.ls-lifted) { -webkit-mask-image: none; mask-image: none; }
+  }
+}
+
 /* ---------- Forced colours (Windows High Contrast and other forced palettes) ---------- */
 /* The browser swaps every colour for the user's palette and drops backgrounds and shadows, so states drawn with a fill vanish.
    Each such state is redrawn here with system colours: SelectedItem for what is chosen or current, Highlight for a fill or ring,

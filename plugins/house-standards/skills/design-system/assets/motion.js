@@ -394,3 +394,66 @@ export function closeTo(origin, close, dialog) {
   if (!el || !canGrowFrom(origin)) return Promise.resolve(close()).then(() => undefined);
   return growBetween(ORIGIN_CLOSE, el, () => (origin.isConnected ? origin : null), close);
 }
+/** The motion-flash token in ms: how long ls-flash marks a row, and how long a button says it's done. A test keeps it equal to tokens.json. */
+export const MOTION_FLASH_MS = 1200;
+/** The buzz when an item is ticked or a list is finished, where the device supports vibration. */
+export const TICK_VIBRATION_MS = 10;
+
+const THEME_TYPE = "ls-theme";
+const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
+
+/**
+ * Buzzes for TICK_VIBRATION_MS when an item is ticked or the done state appears. Never under reduced motion, and never for a change
+ * from the other person. Returns whether it buzzed.
+ */
+export function vibrateTick() {
+  if (globalThis.matchMedia?.(REDUCED_MOTION).matches) return false;
+  return globalThis.navigator?.vibrate?.(TICK_VIBRATION_MS) ?? false;
+}
+
+/**
+ * Applies a theme change as a crossfade over motion-base (view transition type ls-theme). `apply` sets the theme, such as
+ * data-theme on the root. Without view transition types it just applies it. Resolves once the new theme is in place.
+ */
+export function switchTheme(apply) {
+  if (typeof document.startViewTransition !== "function" || !("types" in (globalThis.ViewTransition?.prototype ?? {}))) {
+    apply();
+    return Promise.resolve();
+  }
+  const transition = document.startViewTransition({ update: apply, types: [THEME_TYPE] });
+  // A second change straight after skips this one; that is expected, not an error.
+  transition.ready.catch(() => {});
+  transition.finished.catch(() => {});
+  return transition.updateCallbackDone.catch(() => {});
+}
+
+/**
+ * When tooltips show (brand book Motion pattern 3): the first after the pointer rests on its control for motion-wait, so sweeping
+ * across a toolbar shows none; the next at once while one is showing or within motion-wait of one closing; and at once for keyboard
+ * focus. Make one for the app and call enter, focus and leave from every tooltip's control.
+ */
+export function tooltipTiming() {
+  let timer = 0;
+  let open = false;
+  let closedAt = -Infinity;
+  const showNow = (show) => {
+    clearTimeout(timer);
+    open = true;
+    show();
+  };
+  return {
+    enter(show) {
+      clearTimeout(timer);
+      if (open || Date.now() - closedAt < MOTION_WAIT_MS) showNow(show);
+      else timer = setTimeout(() => showNow(show), MOTION_WAIT_MS);
+    },
+    focus: showNow,
+    leave(hide) {
+      clearTimeout(timer);
+      if (!open) return;
+      open = false;
+      closedAt = Date.now();
+      hide();
+    },
+  };
+}

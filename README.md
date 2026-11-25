@@ -37,6 +37,7 @@ house-standards (this repo, the only copy)
 | Motion helpers | `plugins/house-standards/skills/design-system/assets/motion.js` (+ `motion.d.ts`, tests in `motion.test.mjs`) | same as above |
 | Day helpers (date picker) | `plugins/house-standards/skills/design-system/assets/days.js` (+ `days.d.ts`, tests in `days.test.mjs`) | same as above |
 | Combobox helpers | `plugins/house-standards/skills/design-system/assets/combobox.js` (+ `combobox.d.ts`, tests in `combobox.test.mjs`) | same as above |
+| Keyboard shortcuts | `plugins/house-standards/skills/design-system/assets/keyboard.js` (+ `keyboard.d.ts`, tests in `keyboard.test.mjs`) | same as above |
 | Mark and app icons | `plugins/house-standards/skills/design-system/assets/icons.js` (+ `icons.d.ts`, tests in `icons.test.mjs`); `assets/Logos/` is generated | `npm install`, `npm run render-icons` (the PNGs), then same as above |
 | Brand and component rules | `plugins/house-standards/skills/design-system/reference/*.md` | merge |
 
