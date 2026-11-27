@@ -5,7 +5,7 @@ description: Lilac & Sage, the house design system (pastel lilac and sage, light
 
 # Lilac & Sage design system
 
-Apps consume this system through the `@jameswilson1996/ui-tokens` package (`fonts.css` + `tokens.css` + `bundle.css`, in that order, `motion.js` for the drag, navigation, marker, toast timer, stagger and dialog-from-row helpers, `days.js` for the day helpers, `combobox.js` for the combobox helpers, `keyboard.js` for the shortcuts and `icons.js` for the mark and app icons). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
+Apps consume this system through the `@jameswilson1996/ui-tokens` package (`fonts.css` + `tokens.css` + `bundle.css`, in that order, `motion.js` for the drag, navigation, marker, toast timer, stagger, dialog-from-row and launch helpers, `days.js` for the day helpers, `combobox.js` for the combobox helpers, `keyboard.js` for the shortcuts and `icons.js` for the mark and app icons). The files in `assets/` here are the same source the package is built from; read them to see exact token names and classes.
 
 Before building UI:
 
@@ -21,6 +21,7 @@ Hard rules:
 - Keep the 2px `focus-ring` outline on every interactive element.
 - Every state must survive forced colours (Windows High Contrast): a fill or shadow alone is lost, so chosen, current and progress states get a system-colour rule in the bundle's forced-colours block.
 - The frame is the App shell in `reference/components.md`: `ls-app` with the sidebar and a left-aligned `ls-main` capped at `content-width`, a skip link, the head (viewport, `theme-color`, icons from `appIcons()`, manifest), the mark and name as `ls-brand` at the sidebar's head, and after each navigation a "Page · App" title and focus on the `h1`.
+- The installed app opens on the Launch in `reference/components.md`: `ls-launch` written in `index.html`, the mark growing from its stem, handed over to the first page by `endLaunch()` from `motion.js`. The manifest's `background_color` is the light `--bg`; no iOS startup images.
 - Sign in and its states use Signed-out pages (`ls-auth`): the brand above one card, outside the shell. Settings follows the Settings section: a tab per area, each its own route.
 - Every page starts with an `ls-page-header`: area or back link, one `h1`, one state line, at most one primary action with the rest under More, and the page's tabs.
 - Build every form from `ls-form`, `ls-field`, `ls-field__row` (a button beside an input) and `ls-file` (file inputs), as `reference/components.md` shows. No inline `style=` and no custom gaps or margins between fields. One of 2 to 4 short options is an `ls-segmented`, 5 or more an `ls-select`, a list people add to from the field (categories, accounts, tags) an `ls-combobox`, a long or searched list a picker dialog. Never `<datalist>`. Mark optional fields with "(optional)"; required ones carry no mark.

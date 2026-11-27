@@ -1,6 +1,6 @@
 // Lilac & Sage motion helpers: dragging (brand book Motion pattern 1, Holding), a list's first rows in turn (pattern 2), waiting for an
-// exit to finish, a toast's timer and a dialog growing from its row (pattern 3), and a navigation's motion and the current-place
-// marker (pattern 4).
+// exit to finish, a toast's timer and a dialog growing from its row (pattern 3), a navigation's motion and the current-place
+// marker (pattern 4), and the installed app's launch handing over to the first page.
 // Durations come from the motion tokens, so reduced motion stops the slides with no extra code.
 
 /** How long a touch press must last before a card with no handle lifts. */
@@ -429,6 +429,50 @@ export function switchTheme(apply) {
   transition.ready.catch(() => {});
   transition.finished.catch(() => {});
   return transition.updateCallbackDone.catch(() => {});
+}
+
+const LAUNCH = ".ls-launch";
+const LAUNCH_TYPE = "ls-launch";
+const LAUNCH_LEAVING = "ls-launch--leaving";
+const HIDDEN = "none";
+const ending = new WeakMap();
+
+// The launch reached the screen once the page has painted, or once its entrance has started running.
+const launchShown = (launch) =>
+  (globalThis.performance?.getEntriesByType?.("paint")?.length ?? 0) > 0 ||
+  (launch.getAnimations?.({ subtree: true }) ?? []).some((a) => (a.currentTime ?? 0) > 0);
+
+/**
+ * Hands the installed app's launch (ls-launch, #146) over to the first page. Call it once, when the first page has rendered with its data
+ * or with its placeholders after motion-wait, and from the app's error boundary. It waits for the mark's entrance to finish, so the mark
+ * never cuts off half grown, then fades through to the page (view transition type ls-launch), or fades the layer out where the browser
+ * has no view transition types. A launch that never reached the screen (a browser tab, or a page ready before the first paint) goes at
+ * once. Resolves once the layer has gone from the page: true when it was on screen and handed over, so move focus to the page's h1;
+ * false when there was nothing to hand over, where the browser's own start is right.
+ */
+export function endLaunch(launch = document.querySelector(LAUNCH)) {
+  if (!launch?.isConnected) return Promise.resolve(false);
+  if (ending.has(launch)) return ending.get(launch);
+  const remove = () => launch.remove();
+  let done;
+  if (getComputedStyle(launch).display === HIDDEN || !launchShown(launch)) {
+    remove();
+    done = Promise.resolve(false);
+  } else {
+    done = afterMotion(launch).then(() => {
+      if (hasTransitionTypes()) {
+        const transition = document.startViewTransition({ update: remove, types: [LAUNCH_TYPE] });
+        // A navigation straight after skips the fade; that is expected, not an error.
+        transition.ready.catch(() => {});
+        transition.finished.catch(() => {});
+        return transition.updateCallbackDone.catch(() => {}).then(() => true);
+      }
+      launch.classList.add(LAUNCH_LEAVING);
+      return afterMotion(launch).then(remove).then(() => true);
+    });
+  }
+  ending.set(launch, done);
+  return done;
 }
 
 /**

@@ -90,7 +90,14 @@ export declare function vibrateTick(): boolean;
 /** Applies a theme change as a crossfade over motion-base (view transition type ls-theme), or at once without view transition types. */
 export declare function switchTheme(apply: () => void): Promise<void>;
 
-/** When tooltips show: the first after motion-wait, the next at once while one is showing or just closed, and at once for focus. */
+/**
+ * Hands the installed app's launch (ls-launch) over to the first page once it has rendered, after the mark's entrance: a fade through
+ * (view transition type ls-launch), or a fade out without view transition types. Removes a launch that never showed at once.
+ * Resolves once the layer has gone: true when it was on screen, so focus the page's h1; false when there was nothing to hand over.
+ */
+export declare function endLaunch(launch?: Element | null): Promise<boolean>;
+
+/** When tooltips show:the first after motion-wait, the next at once while one is showing or just closed, and at once for focus. */
 export interface TooltipTiming {
   enter(show: () => void): void;
   focus(show: () => void): void;

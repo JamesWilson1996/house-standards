@@ -1,7 +1,7 @@
 {
   "name": "@jameswilson1996/ui-tokens",
-  "version": "1.12.0",
-  "description": "Lilac & Sage fonts, design tokens, ls- component styles, motion helpers (drag, navigation, current-place marker, toast timer, first rows in turn, dialog from its row), day helpers, combobox helpers, keyboard shortcuts and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
+  "version": "1.13.0",
+  "description": "Lilac & Sage fonts, design tokens, ls- component styles, motion helpers (drag, navigation, current-place marker, toast timer, first rows in turn, dialog from its row, launch hand-over), day helpers, combobox helpers, keyboard shortcuts and the mark and app icons. Generated from plugins/house-standards; do not edit files here.",
   "license": "UNLICENSED",
   "type": "module",
   "files": ["fonts.css", "fonts/", "tokens.css", "bundle.css", "tokens.json", "motion.js", "motion.d.ts", "days.js", "days.d.ts", "combobox.js", "combobox.d.ts", "keyboard.js", "keyboard.d.ts", "icons.js", "icons.d.ts", "icons/"],
