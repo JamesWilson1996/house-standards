@@ -341,9 +341,13 @@ export function staggerIn(list) {
 
 let originTransition = null;
 
+// The bundle picks each transition's motion by its type, so a browser without types gets the change with no transition.
+const hasTransitionTypes = () =>
+  typeof document.startViewTransition === "function" && "types" in (globalThis.ViewTransition?.prototype ?? {});
+
 // Growing needs view transition types (for the bundle's ls-origin rules) and a row the user can see.
 const canGrowFrom = (origin) => {
-  if (typeof document.startViewTransition !== "function" || !("types" in (globalThis.ViewTransition?.prototype ?? {}))) return false;
+  if (!hasTransitionTypes()) return false;
   if (!origin?.isConnected) return false;
   const { top, right, bottom, left } = origin.getBoundingClientRect();
   return bottom > 0 && right > 0 && top < innerHeight && left < innerWidth;
@@ -416,7 +420,7 @@ export function vibrateTick() {
  * data-theme on the root. Without view transition types it just applies it. Resolves once the new theme is in place.
  */
 export function switchTheme(apply) {
-  if (typeof document.startViewTransition !== "function" || !("types" in (globalThis.ViewTransition?.prototype ?? {}))) {
+  if (!hasTransitionTypes()) {
     apply();
     return Promise.resolve();
   }
