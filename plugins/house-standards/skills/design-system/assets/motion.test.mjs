@@ -24,6 +24,7 @@ import {
   TICK_VIBRATION_MS,
   MOTION_FLASH_MS,
   placeMemory,
+  endLaunch,
   LIFT_DELAY_MS,
   LIFT_VIBRATION_MS,
   MOVE_TOLERANCE_PX,
@@ -83,6 +84,7 @@ beforeEach(() => {
   };
   globalThis.getComputedStyle = (el) => ({
     position: el?.position ?? "static",
+    display: el?.display ?? "block",
     getPropertyValue: (name) => ({ "--motion-base": motionBase, "--ease-enter": EASING })[name] ?? "",
   });
 });
@@ -806,4 +808,107 @@ test("placeMemory forgets a place when asked, as after signing out", () => {
   places.leave("money", "/money/bills/42", 640);
   places.forget();
   assert.equal(places.target("money", "/money").href, "/money");
+});
+
+// ---------- #146: the installed app's launch handing over to the first page ----------
+
+const PAINTED = [{ name: "first-paint" }];
+// A launch layer: a class list, an entrance made of the given animations, and remove().
+const launchLayer = ({ entrance = [], display = "grid" } = {}) => {
+  const launch = new FakeNode();
+  launch.display = display;
+  launch.getAnimations = () => entrance;
+  launch.remove = () => { launch.isConnected = false; };
+  return launch;
+};
+const painted = (t, entries = PAINTED) => t.mock.method(performance, "getEntriesByType", (type) => (type === "paint" ? entries : []));
+const launchTransitions = () => {
+  const runs = [];
+  globalThis.ViewTransition = class { get types() { return null; } };
+  document.startViewTransition = ({ update, types }) => {
+    const done = Promise.resolve().then(update);
+    runs.push({ types });
+    return { updateCallbackDone: done, ready: done, finished: done };
+  };
+  return runs;
+};
+
+test("endLaunch waits for the mark's entrance, then fades through to the page with the ls-launch type", async (t) => {
+  painted(t);
+  const runs = launchTransitions();
+  const leaf = fakeAnimation();
+  const launch = launchLayer({ entrance: [leaf] });
+  const ended = endLaunch(launch);
+  assert.equal(await settled(ended), false);
+  assert.equal(runs.length, 0);
+  leaf.end();
+  assert.equal(await ended, true);
+  assert.deepEqual(runs, [{ types: ["ls-launch"] }]);
+  assert.equal(launch.isConnected, false);
+});
+
+test("endLaunch fades the layer out where the browser has no view transition types, and removes it after", async (t) => {
+  painted(t);
+  delete globalThis.ViewTransition;
+  const fade = fakeAnimation();
+  const launch = launchLayer();
+  // The fade starts once ls-launch--leaving is on.
+  launch.getAnimations = () => (launch.classList.contains("ls-launch--leaving") ? [fade] : []);
+  const ended = endLaunch(launch);
+  assert.equal(await settled(ended), false);
+  assert.equal(launch.classList.contains("ls-launch--leaving"), true);
+  assert.equal(launch.isConnected, true);
+  fade.end();
+  assert.equal(await ended, true);
+  assert.equal(launch.isConnected, false);
+});
+
+test("endLaunch removes a launch that never reached the screen at once, with no fade", async (t) => {
+  painted(t, []);
+  const runs = launchTransitions();
+  const pending = { ...fakeAnimation(), currentTime: 0 };
+  const beforePaint = launchLayer({ entrance: [pending] });
+  assert.equal(await endLaunch(beforePaint), false);
+  const inABrowserTab = launchLayer({ display: "none" });
+  assert.equal(await endLaunch(inABrowserTab), false);
+  assert.equal(beforePaint.isConnected, false);
+  assert.equal(inABrowserTab.isConnected, false);
+  assert.equal(runs.length, 0);
+});
+
+test("endLaunch counts a running entrance as shown where the browser has no paint timing", async (t) => {
+  painted(t, []);
+  const runs = launchTransitions();
+  const leaf = { ...fakeAnimation(), currentTime: 40 };
+  const launch = launchLayer({ entrance: [leaf] });
+  const ended = endLaunch(launch);
+  leaf.end();
+  await ended;
+  assert.deepEqual(runs, [{ types: ["ls-launch"] }]);
+});
+
+test("endLaunch hands over once when called twice, and does nothing without a launch", async (t) => {
+  painted(t);
+  const runs = launchTransitions();
+  const launch = launchLayer();
+  const first = endLaunch(launch);
+  assert.equal(endLaunch(launch), first);
+  await first;
+  await endLaunch(null);
+  await endLaunch(launch);
+  assert.equal(runs.length, 1);
+});
+
+test("motion-launch is 560ms, chosen in review, and stops under reduced motion like every movement (#146)", () => {
+  const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
+  const launch = tokens.motion.tokens.find((t) => t.name === "motion-launch");
+  assert.equal(launch.value, "560ms");
+  assert.equal(launch.reducedMotion, "0ms");
+});
+
+test("motion-fade has no reduced-motion value, so the launch fades rather than cuts under reduced motion", () => {
+  const tokens = JSON.parse(readFileSync(new URL("./tokens.json", import.meta.url), "utf8"));
+  const fade = tokens.motion.tokens.find((t) => t.name === "motion-fade");
+  assert.equal(fade.value, "150ms");
+  assert.equal(fade.reducedMotion, undefined);
 });

@@ -829,6 +829,7 @@ What every app's frame is, so each app doesn't build its own (decided 8 November
 ```
 
 - `viewport-fit=cover` makes `env(safe-area-inset-*)` real, so the tab bar, toasts and sheets clear the system bars on Android gesture navigation and the iPhone home indicator. `interactive-widget=resizes-content` keeps sheets above the Android keyboard.
+- An installed app also shows the launch from `index.html` while its first page loads: see Launch below.
 - `theme-color` colours the phone's browser bar and the installed app's title bar. Set it from `--bg` after the theme is applied (see Appearance), so it matches in both themes and follows the Appearance choice.
 - Icons: an SVG favicon, a 180px `apple-touch-icon`, and a web app manifest. The manifest has `name`, `short_name` (12 characters at most, the home-screen label), `display: "standalone"`, `start_url: "/"`, `background_color` and `theme_color` set to the light `--bg`, and 192px and 512px PNG icons plus a 512px `"purpose": "maskable"` one, which Android crops to its icon shape.
 - Every icon comes from `appIcons()` in `@jameswilson1996/ui-tokens/icons.js` (#97): the mark on an `accent-soft` tile, or the app's Lucide glyph in its place. Don't draw icons by hand. The favicon is used as SVG and follows a dark OS theme; the others are PNGs at their size (`APP_ICONS` lists each). The maskable icon keeps its art inside the middle 52%, within Android's 80% safe circle.
@@ -862,6 +863,64 @@ for (const [file, svg] of Object.entries(appIcons({ glyph: GLYPH }))) {
 
 The manifest is JSON, so its colours are the light `--bg` written out; it is the one place outside tokens.css a colour value appears.
 
+### Launch
+
+What the installed app shows between the tap on its Home Screen icon and its first page (#146): the mark on `bg`, centred, its two leaves growing from the stem, then a fade through into the first page. `div.ls-launch` sits in `index.html` itself, so the first paint already shows it, before the app's script has loaded.
+
+- Where: only in the installed app. The bundle hides `ls-launch` unless `display-mode` is `standalone`, `fullscreen` or `minimal-ui`; a browser tab has the browser's own loading and gets no launch.
+- Markup: the last child of `body`, after the app's root, holding `svg.ls-launch__mark` with the paths from `MARK_LEAVES`. It is `aria-hidden="true"`: the title already names the app, and a screen reader starts on the page's `h1` once it hands over. The mark is 96px, with the whole screen as its clear space.
+- Styles: the launch's rules are in `bundle.css`, so link `fonts.css`, `tokens.css` and `bundle.css` in the head as render-blocking stylesheets (Vite's build does this for CSS the entry imports; check the built `index.html`). Nothing is inline but the markup, so a Content-Security-Policy with no `'unsafe-inline'` still allows it.
+- Theme: the head's Appearance script sets `data-theme` before the body is parsed, so the launch draws in this device's theme. Before it runs, or if it never does, `tokens.css` follows `prefers-color-scheme` on a root with no `data-theme`, so never hard-code `data-theme="light"` on `<html>`. `theme-color` comes from `--bg`, as everywhere (see Appearance), so the title bar matches the launch.
+- Entrance: the lilac leaf grows from the stem's foot (60% to full size, fading in) over `motion-launch` (560ms) with `ease-enter`, and the sage leaf starts halfway through it, so the mark is whole at 840ms. It is the slowest motion in the system on purpose: tried at 320ms and 600ms, it read as a blur. No other motion: no pulse, spinner or text.
+- Opened again in the same session (a reload for a new build, the return from sign-in, a service worker taking over): the head script sets `data-launch="again"` on `<html>` and the mark shows still, at once. The entrance plays when the app opens, not on every load.
+- Hand-over: call `endLaunch()` from `@jameswilson1996/ui-tokens/motion.js` once the first page has rendered with its data, or with its placeholders once the router has held for `motion-wait`, and from the app's error component, so a page that failed to load is never hidden. It waits for the entrance to finish, then runs a view transition of type `ls-launch`: the mark fades out over `motion-quick`, then the page fades in and grows from 96% over `motion-base`, as on a change of place. The page was drawn under the layer, so it arrives once. The shell (sidebar, tab bar) shows at once under the fading mark, as it does when crossing the shell's edge. Without view transition types the layer fades out over `motion-quick` (`ls-launch--leaving`); it never takes the next tap.
+- Shortest and longest: once it has appeared, the launch stays until its entrance has finished (840ms), so the mark never cuts off half grown. A page ready before the first paint removes it unseen. Past the entrance it stays no longer than the first page takes, and that wait is capped at `motion-wait` by the router's `defaultPendingMs`, after which it hands over to the page's `ls-loading` placeholders. On a fast open the page waits for the mark: the 840ms is the launch, played once a session. Only a slow script load (a first open on a slow network) keeps it longer, and then the mark is better than a blank screen.
+- Focus: `endLaunch` resolves with `true` when it handed over; move focus to the page's `h1` then (`ls-page-header__title`, or `ls-auth__title` on a signed-out page), so a screen reader starts at the page. In a browser tab it resolves `false` and focus stays at the browser's own start, as After navigation says for a first load.
+- Reduced motion: the mark is still and fades in over `motion-fade`, and the hand-over is a crossfade over `motion-fade` with no scale. `motion-fade` is kept under reduced motion, since a cut from the mark to the page would flash.
+- Forced colours: the mark is drawn in `CanvasText` on `Canvas`, as `ls-brand` is.
+- Offline and service workers: the launch is in `index.html`, so a shell served from the service worker's cache shows it the same way.
+
+```html
+<body>
+<div id="root"></div>
+<div class="ls-launch" aria-hidden="true"><svg class="ls-launch__mark" viewBox="0 0 32 32"><path class="ls-mark-lilac" d="M15.5 27C9 25.5 4.5 19.5 5 8.5c7 .5 12 6.5 10.5 18.5z"/><path class="ls-mark-sage" d="M16.5 27c-1.5-12 3.5-18 11-21 1 11.5-4 19.5-11 21z"/></svg></div>
+<script type="module" src="/src/main.tsx"></script>
+</body>
+```
+
+The head script gains one line after it sets `data-theme`. Keep it a classic script, inline or a same-origin file, never `type="module"`, `defer` or `async`, so it runs before the first paint.
+
+```js
+// The entrance plays once a session; a reload, a new build or the return from sign-in shows the still mark.
+try { if (sessionStorage.getItem("ls-launched")) root.dataset.launch = "again"; else sessionStorage.setItem("ls-launched", "1"); } catch { /* storage blocked: play it */ }
+```
+
+The hand-over, with TanStack Router. The first `onRendered` is the first page with its data; a pending or error component that renders first hands over from its own effect. `endLaunch` runs once, however many call it.
+
+```ts
+import { endLaunch } from "@jameswilson1996/ui-tokens/motion.js";
+
+const PAGE_TITLE = ".ls-page-header__title, .ls-auth__title";
+
+export function handOver() {
+  void endLaunch().then((shown) => {
+    if (shown) document.querySelector<HTMLElement>(PAGE_TITLE)?.focus({ preventScroll: true });
+  });
+}
+
+const stop = router.subscribe("onRendered", () => { stop(); handOver(); });
+
+// In the pending component the router shows after motion-wait, and in the error component:
+useLayoutEffect(handOver, []);
+```
+
+#### The system splash
+
+Before the page paints, the phone shows its own splash. Make it lead into the launch:
+
+- Android draws its splash from the manifest: `background_color` filling the screen and the app's icon in the middle. Set `background_color` and `theme_color` to the light `--bg`, as The head says. The manifest has one `background_color` for both themes, so on a phone in dark mode the splash is light for a moment and the launch then draws on the dark `bg`. Don't set it to the dark `--bg` to avoid that: most phones are in the light theme, and they would get a dark flash instead.
+- iOS shows no splash from the manifest. Don't add `apple-touch-startup-image`s: iOS needs one image per screen size and orientation (a dozen or more, each light and dark), every new iPhone size needs another, and reports from recent iOS versions say they don't show reliably. Without them iOS shows a plain screen until the page paints, and the page's first paint is the launch.
+
 ### Brand
 
 The mark and the app's name together (brand book Iconography). `a.ls-brand` (the app's home) or `div.ls-brand` holds `svg.ls-brand__mark` (`viewBox="0 0 32 32"`, `aria-hidden="true"`, the two paths from `MARK_LEAVES` with classes `ls-mark-lilac` and `ls-mark-sage`) and the name as text. The bundle fills the paths from `mark-lilac` and `mark-sage`, so the mark follows the theme.
@@ -882,7 +941,7 @@ The mark and the app's name together (brand book Iconography). `a.ls-brand` (the
 On every route change, the page says where you are:
 
 - `document.title` is "Page · App" ("Bills · Hearth"); the app's home is just the app's name.
-- Focus moves to the page's `h1` (`tabindex="-1"`), so a screen reader reads the new page from its title and Tab continues from there. Not on the first load, where the browser's own start is right, and not when only the search params change (a filter, a dialog's param).
+- Focus moves to the page's `h1` (`tabindex="-1"`), so a screen reader reads the new page from its title and Tab continues from there. Not on the first load, where the browser's own start is right (in the installed app, the launch moves it there when it hands over; see Launch), and not when only the search params change (a filter, a dialog's param).
 - Back and Forward restore the scroll position; a new page starts at the top. TanStack Router's `scrollRestoration: true` does both.
 
 ```ts
@@ -1767,6 +1826,7 @@ Classes for the patterns in the brand book's Motion section. Their durations com
 - `ls-amount` with `ls-amount__old` and `ls-amount__new`: an amount rolling to its new value. See Amounts below.
 - `ls-stagger`: a list's first six rows fading in `motion-stagger` apart. Add it with `staggerIn(list)`, which takes it off once they land; never add it by hand, or a re-sort replays it.
 - `ls-empty--done`: the done state's check drawing once (Empty state). Call `vibrateTick()` when it appears, and on each tick (#109).
+- `ls-launch`: the installed app's launch, handed over by `endLaunch()`, which adds `ls-launch--leaving` where the browser has no view transition types (Launch, under App shell).
 - `ls-flash--failed`: the row a failed one-tap command put back (A command failed).
 - A count on `ls-tabbar__badge`, `ls-chip__count` or `ls-tab__count` uses the Amount component below, so it rolls when it changes (#109).
 

@@ -150,6 +150,66 @@
   --shadow-lg: 0 24px 48px rgba(0,0,0,0.6);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --bg: var(--mist-950);
+    --surface: var(--mist-900);
+    --surface-sunken: var(--mist-1000);
+    --line: #34304a;
+    --line-strong: #6e6888;
+    --ink: #ece8f5;
+    --ink-muted: var(--mist-400);
+    --accent: var(--lilac-300);
+    --accent-hover: var(--lilac-200);
+    --on-accent: var(--lilac-900);
+    --accent-soft: #2e2645;
+    --on-accent-soft: var(--lilac-200);
+    --accent-soft-pressed: #3a3058;
+    --link: var(--lilac-300);
+    --sage: var(--sage-300);
+    --sage-hover: var(--sage-200);
+    --on-sage: var(--sage-900);
+    --mark-lilac: var(--lilac-300);
+    --mark-sage: var(--sage-300);
+    --focus-ring: var(--lilac-400);
+    --success-soft: #1c3326;
+    --success-ink: #93d3ae;
+    --warning-soft: #3a2c16;
+    --warning-ink: #f2c987;
+    --danger-soft: #3d1e25;
+    --danger-ink: #f4a9b6;
+    --danger: #e88a9b;
+    --on-danger: #2a1016;
+    --danger-pressed: #f4a9b6;
+    --info-soft: #192c3d;
+    --info-ink: #a9cdee;
+    --disabled-fill: var(--mist-1000);
+    --on-disabled: var(--mist-500);
+    --disabled-line: #34304a;
+    --accent-disabled: var(--lilac-800);
+    --on-accent-disabled: var(--lilac-400);
+    --sage-disabled: var(--sage-900);
+    --on-sage-disabled: var(--sage-500);
+    --danger-disabled: #3d1e25;
+    --on-danger-disabled: #b86577;
+    --backdrop: rgba(8,7,12,0.70);
+    --toast: var(--mist-700);
+    --on-toast: #ece8f5;
+    --toast-action: var(--lilac-200);
+    --chart-1: var(--lilac-500);
+    --chart-2: var(--sage-500);
+    --chart-3: #b87a2a;
+    --chart-4: #4f95d6;
+    --chart-5: #c8607e;
+    --chart-grid: #34304a;
+    --chart-axis: #6e6888;
+    --chart-label: var(--mist-400);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+    --shadow-md: 0 8px 24px rgba(0,0,0,0.5);
+    --shadow-lg: 0 24px 48px rgba(0,0,0,0.6);
+  }
+}
+
 :root {
   --space-1: 4px;
   --space-2: 8px;
@@ -187,6 +247,8 @@
   --motion-base: 150ms;
   --motion-travel: 200ms;
   --motion-stagger: 30ms;
+  --motion-launch: 560ms;
+  --motion-fade: 150ms;
   --motion-flash: 1200ms;
   --motion-toast: 6000ms;
   --motion-wait: 400ms;
@@ -204,6 +266,7 @@
     --motion-base: 0ms;
     --motion-travel: 0ms;
     --motion-stagger: 0ms;
+    --motion-launch: 0ms;
   }
 }
 

@@ -16,6 +16,8 @@ const resolve = (value, theme) => {
   const raw = typeof value === "string" ? value : value[theme] ?? value[primaryTheme];
   return raw.startsWith("{") ? `var(--${raw.slice(1, -1)})` : raw;
 };
+// The theme id that matches prefers-color-scheme: dark.
+const OS_DARK_THEME = "dark";
 const isThemed = (token) => typeof token.value !== "string";
 const declare = (list, theme) => list.map((t) => `  --${t.name}: ${resolve(t.value, theme)};`).join("\n");
 
@@ -43,6 +45,10 @@ const css = [
   GENERATED_HEADER,
   `:root, [data-theme="${primaryTheme}"] {\n${declare(themedFamilies, primaryTheme)}\n}`,
   ...otherThemes.map((theme) => `[data-theme="${theme}"] {\n${declare(themedFamilies.filter(isThemed), theme)}\n}`),
+  // Before the head script sets data-theme (or if it never runs), the page follows the OS, so the launch never flashes light (#146).
+  ...otherThemes
+    .filter((theme) => theme === OS_DARK_THEME)
+    .map((theme) => `@media (prefers-color-scheme: ${theme}) {\n  :root:not([data-theme]) {\n${declare(themedFamilies.filter(isThemed), theme).replace(/^/gm, "  ")}\n  }\n}`),
   `:root {\n${declare(staticFamilies, primaryTheme)}\n${fontVars.join("\n")}\n}`,
   ...(reducedMotion.length
     ? [`@media (prefers-reduced-motion: reduce) {\n  :root {\n${reducedMotion.map((t) => `    --${t.name}: ${t.reducedMotion};`).join("\n")}\n  }\n}`]
